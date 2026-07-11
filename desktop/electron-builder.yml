@@ -1,0 +1,40 @@
+# MV SQL NLP — configuración del instalador profesional (electron-builder)
+appId: com.mvsql.nlp
+productName: MV SQL NLP
+copyright: © 2026 MV SQL NLP
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - dist/**
+  - electron/**
+  - package.json
+
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**"
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: portable
+      arch: [x64]
+  icon: build/icon.ico
+  artifactName: "MV-SQL-NLP-Setup-${version}.${ext}"
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: MV SQL NLP
+  installerLanguages: [es_ES, en_US, pt_BR]
+  license: build/LICENSE.txt
+  runAfterFinish: true
+
+publish:
+  provider: github
+  owner: vieraschiavi
+  repo: Mv-Sql

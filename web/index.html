@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MV SQL NLP — Tu base de datos, en tu idioma</title>
+  <meta name="description" content="Consultá cualquier base SQL en lenguaje natural, sin saber código. SQL optimizado con CTEs, intervalo de confianza, gráficos y exportación a Excel/PDF. IA a tu elección. Prueba gratis 3 días.">
+  <meta property="og:title" content="MV SQL NLP — Tu base de datos, en tu idioma">
+  <meta property="og:description" content="Preguntá en español, inglés o portugués. La IA genera SQL profesional validado contra tu esquema real.">
+  <meta property="og:type" content="website">
+  <link rel="alternate" hreflang="es" href="/">
+  <link rel="alternate" hreflang="en" href="/en/">
+  <link rel="alternate" hreflang="pt" href="/pt/">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+
+<nav>
+  <div class="container nav-inner">
+    <a class="logo" href="#"><span class="bolt">⚡</span> MV&nbsp;SQL&nbsp;<span class="grad-text">NLP</span></a>
+    <div class="nav-links">
+      <a href="#features" data-i18n="nav_features">Funciones</a>
+      <a href="#how" data-i18n="nav_how">Cómo funciona</a>
+      <a href="#pricing" data-i18n="nav_pricing">Precios</a>
+      <a href="#faq" data-i18n="nav_faq">Preguntas</a>
+      <div class="lang-switch">
+        <button data-lang="es">ES</button>
+        <button data-lang="en">EN</button>
+        <button data-lang="pt">PT</button>
+      </div>
+      <a href="#download" class="btn btn-primary btn-sm" data-i18n="nav_cta">Prueba gratis 3 días</a>
+    </div>
+  </div>
+</nav>
+
+<header class="container hero">
+  <div>
+    <h1 data-i18n="hero_title">Consultá tu base de datos <span class="grad-text">hablando en tu idioma</span></h1>
+    <p class="sub" data-i18n="hero_sub"></p>
+    <div class="hero-badges">
+      <span class="badge" data-i18n="badge1"></span>
+      <span class="badge" data-i18n="badge2"></span>
+      <span class="badge" data-i18n="badge3"></span>
+      <span class="badge" data-i18n="badge4"></span>
+    </div>
+    <div class="hero-cta">
+      <a href="#download" class="btn btn-primary" data-i18n="hero_cta1"></a>
+      <a href="#video" class="btn btn-ghost" data-i18n="hero_cta2"></a>
+    </div>
+    <p class="hero-note" data-i18n="hero_note"></p>
+  </div>
+  <div class="terminal">
+    <div class="terminal-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="terminal-title" data-i18n="term_title"></span>
+    </div>
+    <div class="terminal-body" id="demo-body"></div>
+  </div>
+</header>
+
+<section style="padding:1rem 0 0">
+  <div class="container">
+    <p style="text-align:center;color:var(--muted);font-size:.9rem" data-i18n="strip_title"></p>
+    <div class="strip">
+      <span class="chip">SQL Server</span><span class="chip">MySQL / MariaDB</span>
+      <span class="chip">PostgreSQL</span><span class="chip">SQLite</span>
+      <span class="chip">Claude</span><span class="chip">GPT</span><span class="chip">Gemini</span>
+      <span class="chip">Groq</span><span class="chip">Mistral</span><span class="chip">DeepSeek</span>
+      <span class="chip">Ollama (local)</span>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker" data-i18n="f_kicker"></span>
+      <h2 data-i18n="f_title"></h2>
+      <p data-i18n="f_sub"></p>
+    </div>
+    <div class="grid">
+      <div class="card"><span class="icon">💬</span><h3 data-i18n="f1t"></h3><p data-i18n="f1d"></p></div>
+      <div class="card"><span class="icon">🤖</span><h3 data-i18n="f2t"></h3><p data-i18n="f2d"></p></div>
+      <div class="card"><span class="icon">🚀</span><h3 data-i18n="f3t"></h3><p data-i18n="f3d"></p></div>
+      <div class="card"><span class="icon">📐</span><h3 data-i18n="f4t"></h3><p data-i18n="f4d"></p></div>
+      <div class="card"><span class="icon">⭐</span><h3 data-i18n="f5t"></h3><p data-i18n="f5d"></p></div>
+      <div class="card"><span class="icon">📊</span><h3 data-i18n="f6t"></h3><p data-i18n="f6d"></p></div>
+      <div class="card"><span class="icon">🛡️</span><h3 data-i18n="f7t"></h3><p data-i18n="f7d"></p></div>
+      <div class="card"><span class="icon">🔒</span><h3 data-i18n="f8t"></h3><p data-i18n="f8d"></p></div>
+      <div class="card"><span class="icon">📈</span><h3 data-i18n="f9t"></h3><p data-i18n="f9d"></p></div>
+    </div>
+  </div>
+</section>
+
+<section id="how">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker" data-i18n="how_kicker"></span>
+      <h2 data-i18n="how_title"></h2>
+      <p data-i18n="how_sub"></p>
+    </div>
+    <div class="steps">
+      <div class="step"><h3 data-i18n="s1t"></h3><p data-i18n="s1d"></p></div>
+      <div class="step"><h3 data-i18n="s2t"></h3><p data-i18n="s2d"></p></div>
+      <div class="step"><h3 data-i18n="s3t"></h3><p data-i18n="s3d"></p></div>
+      <div class="step"><h3 data-i18n="s4t"></h3><p data-i18n="s4d"></p></div>
+    </div>
+  </div>
+</section>
+
+<section id="video">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker" data-i18n="video_kicker"></span>
+      <h2 data-i18n="video_title"></h2>
+      <p data-i18n="video_sub"></p>
+    </div>
+    <div class="video-wrap" id="video-slot">
+      <!-- Reemplazar por: <video controls preload="metadata" poster="/assets/video-poster.jpg" src="/assets/demo.mp4" style="width:100%;height:100%"></video> -->
+      <button class="play-btn" onclick="document.getElementById('video-note').textContent='🎬 El video demo se publica junto con el lanzamiento (guion listo en docs/GUION_VIDEO_DEMO.md)'">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <p id="video-note" data-i18n="video_note"></p>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker" data-i18n="price_kicker"></span>
+      <h2 data-i18n="price_title"></h2>
+      <p data-i18n="price_sub"></p>
+    </div>
+
+    <div class="pricing-toggle">
+      <button data-mode="sub" class="active" data-i18n="toggle_sub"></button>
+      <button data-mode="cred" data-i18n="toggle_cred"></button>
+    </div>
+
+    <div class="plans" id="plans-sub">
+      <div class="plan">
+        <h3 data-i18n="p1n"></h3>
+        <div class="price">US$ 15<small data-i18n="per_month"></small></div>
+        <p class="desc" data-i18n="p1d"></p>
+        <ul>
+          <li data-i18n="p1f1"></li><li data-i18n="p1f2"></li><li data-i18n="p1f3"></li>
+          <li data-i18n="p1f4"></li><li data-i18n="p1f5"></li>
+        </ul>
+        <a href="#download" class="btn btn-ghost" data-i18n="plan_cta"></a>
+      </div>
+      <div class="plan featured">
+        <span class="tag" data-i18n="p2tag"></span>
+        <h3 data-i18n="p2n"></h3>
+        <div class="price">US$ 29<small data-i18n="per_month"></small></div>
+        <p class="desc" data-i18n="p2d"></p>
+        <ul>
+          <li data-i18n="p2f1"></li><li data-i18n="p2f2"></li><li data-i18n="p2f3"></li>
+          <li data-i18n="p2f4"></li><li data-i18n="p2f5"></li>
+        </ul>
+        <a href="#download" class="btn btn-primary" data-i18n="plan_cta"></a>
+      </div>
+      <div class="plan">
+        <h3 data-i18n="p3n"></h3>
+        <div class="price">US$ 79<small data-i18n="per_month"></small></div>
+        <p class="desc" data-i18n="p3d"></p>
+        <ul>
+          <li data-i18n="p3f1"></li><li data-i18n="p3f2"></li><li data-i18n="p3f3"></li>
+          <li data-i18n="p3f4"></li><li data-i18n="p3f5"></li>
+        </ul>
+        <a href="#download" class="btn btn-ghost" data-i18n="plan_cta"></a>
+      </div>
+    </div>
+
+    <div class="plans" id="plans-cred" style="display:none">
+      <div class="plan">
+        <h3 data-i18n="c1n"></h3>
+        <div class="price">US$ 9<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="c1d"></p>
+        <ul>
+          <li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li><li data-i18n="c_f4"></li>
+        </ul>
+        <a href="#download" class="btn btn-ghost" data-i18n="plan_cta"></a>
+      </div>
+      <div class="plan featured">
+        <span class="tag" data-i18n="p2tag"></span>
+        <h3 data-i18n="c2n"></h3>
+        <div class="price">US$ 35<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="c2d"></p>
+        <ul>
+          <li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li><li data-i18n="c_f4"></li>
+        </ul>
+        <a href="#download" class="btn btn-primary" data-i18n="plan_cta"></a>
+      </div>
+      <div class="plan">
+        <h3 data-i18n="c3n"></h3>
+        <div class="price">US$ 110<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="c3d"></p>
+        <ul>
+          <li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li><li data-i18n="c_f4"></li>
+        </ul>
+        <a href="#download" class="btn btn-ghost" data-i18n="plan_cta"></a>
+      </div>
+    </div>
+
+    <p class="credits-note" data-i18n="credits_note"></p>
+    <p class="mp-badge" data-i18n="mp_badge"></p>
+  </div>
+</section>
+
+<section id="download">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker" data-i18n="dl_kicker"></span>
+      <h2 data-i18n="dl_title"></h2>
+    </div>
+    <div class="downloads">
+      <div class="dl-card">
+        <span class="icon">🖥️</span>
+        <h3 data-i18n="dl1t"></h3>
+        <p data-i18n="dl1d"></p>
+        <a href="https://github.com/vieraschiavi/Mv-Sql/releases" class="btn btn-primary" data-i18n="dl1b"></a>
+      </div>
+      <div class="dl-card">
+        <span class="icon">⚡</span>
+        <h3 data-i18n="dl2t"></h3>
+        <p data-i18n="dl2d"></p>
+        <a href="https://github.com/vieraschiavi/Mv-Sql/tree/main/app-python" class="btn btn-ghost" data-i18n="dl2b"></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="container">
+    <div class="section-head">
+      <span class="kicker" data-i18n="faq_kicker"></span>
+      <h2 data-i18n="faq_title"></h2>
+    </div>
+    <div class="faq">
+      <details><summary data-i18n="q1"></summary><div class="faq-body" data-i18n="a1"></div></details>
+      <details><summary data-i18n="q2"></summary><div class="faq-body" data-i18n="a2"></div></details>
+      <details><summary data-i18n="q3"></summary><div class="faq-body" data-i18n="a3"></div></details>
+      <details><summary data-i18n="q4"></summary><div class="faq-body" data-i18n="a4"></div></details>
+      <details><summary data-i18n="q5"></summary><div class="faq-body" data-i18n="a5"></div></details>
+      <details><summary data-i18n="q6"></summary><div class="faq-body" data-i18n="a6"></div></details>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta">
+  <div class="container">
+    <h2 data-i18n="cta_title"></h2>
+    <p data-i18n="cta_sub"></p>
+    <a href="#download" class="btn btn-primary" data-i18n="cta_btn"></a>
+  </div>
+</section>
+
+<footer>
+  <div class="container foot-inner">
+    <span data-i18n="foot_rights"></span>
+    <span>
+      <a href="#" data-i18n="foot_terms"></a>
+      <a href="#" data-i18n="foot_privacy"></a>
+      <a href="mailto:vieraschiavi@gmail.com" data-i18n="foot_contact"></a>
+    </span>
+  </div>
+</footer>
+
+<script src="/assets/i18n.js"></script>
+<script src="/assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# dependencias y builds
+node_modules/
+desktop/dist/
+desktop/release/
+.venv/
+__pycache__/
+*.pyc
+
+# datos locales
+app-python/cartera_demo.db
+app-python/catalogo_demo.json
+.mvsql/
+
+# entornos
+.env
+.env.local
