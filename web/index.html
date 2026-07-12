@@ -119,13 +119,13 @@
       <h2 data-i18n="video_title"></h2>
       <p data-i18n="video_sub"></p>
     </div>
-    <div class="video-wrap" id="video-slot">
-      <!-- Reemplazar por: <video controls preload="metadata" poster="/assets/video-poster.jpg" src="/assets/demo.mp4" style="width:100%;height:100%"></video> -->
-      <button class="play-btn" onclick="document.getElementById('video-note').textContent='🎬 El video demo se publica junto con el lanzamiento (guion listo en docs/GUION_VIDEO_DEMO.md)'">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <p id="video-note" data-i18n="video_note"></p>
+    <div class="video-wrap" id="video-slot" style="display:block;padding:0">
+      <video controls preload="metadata" playsinline
+             style="width:100%;height:100%;display:block;border-radius:var(--radius)">
+        <source src="/assets/video/demo.webm" type="video/webm">
+      </video>
     </div>
+    <p id="video-note" style="text-align:center;color:var(--muted);font-size:.85rem;margin-top:1rem" data-i18n="video_note"></p>
   </div>
 </section>
 
@@ -202,7 +202,7 @@
     <div class="plans" id="plans-sub">
       <div class="plan">
         <h3 data-i18n="p1n"></h3>
-        <div class="price">US$ 15<small data-i18n="per_month"></small></div>
+        <div class="price" data-usd="15">US$ 15<small data-i18n="per_month"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="p1d"></p>
         <ul>
           <li data-i18n="p1f1"></li><li data-i18n="p1f2"></li><li data-i18n="p1f3"></li>
@@ -213,7 +213,7 @@
       <div class="plan featured">
         <span class="tag" data-i18n="p2tag"></span>
         <h3 data-i18n="p2n"></h3>
-        <div class="price">US$ 29<small data-i18n="per_month"></small></div>
+        <div class="price" data-usd="29">US$ 29<small data-i18n="per_month"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="p2d"></p>
         <ul>
           <li data-i18n="p2f1"></li><li data-i18n="p2f2"></li><li data-i18n="p2f3"></li>
@@ -223,7 +223,7 @@
       </div>
       <div class="plan">
         <h3 data-i18n="p3n"></h3>
-        <div class="price">US$ 79<small data-i18n="per_month"></small></div>
+        <div class="price" data-usd="79">US$ 79<small data-i18n="per_month"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="p3d"></p>
         <ul>
           <li data-i18n="p3f1"></li><li data-i18n="p3f2"></li><li data-i18n="p3f3"></li>
@@ -236,7 +236,7 @@
     <div class="plans" id="plans-cred" style="display:none">
       <div class="plan">
         <h3 data-i18n="c1n"></h3>
-        <div class="price">US$ 9<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="9">US$ 9<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="c1d"></p>
         <ul>
           <li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li><li data-i18n="c_f4"></li>
@@ -246,7 +246,7 @@
       <div class="plan featured">
         <span class="tag" data-i18n="p2tag"></span>
         <h3 data-i18n="c2n"></h3>
-        <div class="price">US$ 35<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="35">US$ 35<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="c2d"></p>
         <ul>
           <li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li><li data-i18n="c_f4"></li>
@@ -255,7 +255,7 @@
       </div>
       <div class="plan">
         <h3 data-i18n="c3n"></h3>
-        <div class="price">US$ 110<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="110">US$ 110<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="c3d"></p>
         <ul>
           <li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li><li data-i18n="c_f4"></li>
@@ -292,7 +292,7 @@
     <div class="plans" id="plans-own_ai">
       <div class="plan">
         <h3 data-i18n="p1n"></h3>
-        <div class="price">US$ 19<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="19">US$ 19<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="p1d"></p>
         <ul><li data-i18n="p1f1"></li><li data-i18n="p1f2"></li><li data-i18n="p1f3"></li><li data-i18n="p1f4"></li></ul>
         <button class="btn btn-ghost" onclick="mvsqlComprar('personal','own_ai')" data-i18n="buy_cta"></button>
@@ -300,14 +300,14 @@
       <div class="plan featured">
         <span class="tag" data-i18n="p2tag"></span>
         <h3 data-i18n="p2n"></h3>
-        <div class="price">US$ 39<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="39">US$ 39<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="p2d"></p>
         <ul><li data-i18n="p2f1"></li><li data-i18n="p2f2"></li><li data-i18n="p2f3"></li><li data-i18n="p2f4"></li></ul>
         <button class="btn btn-primary" onclick="mvsqlComprar('profesional','own_ai')" data-i18n="buy_cta"></button>
       </div>
       <div class="plan">
         <h3 data-i18n="p3n"></h3>
-        <div class="price">US$ 99<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="99">US$ 99<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="p3d"></p>
         <ul><li data-i18n="p3f1"></li><li data-i18n="p3f2"></li><li data-i18n="p3f3"></li><li data-i18n="p3f4"></li></ul>
         <button class="btn btn-ghost" onclick="mvsqlComprar('empresa','own_ai')" data-i18n="buy_cta"></button>
@@ -317,7 +317,7 @@
     <div class="plans" id="plans-credits" style="display:none">
       <div class="plan">
         <h3 data-i18n="c1n"></h3>
-        <div class="price">US$ 9<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="9">US$ 9<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="c1d"></p>
         <ul><li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li></ul>
         <button class="btn btn-ghost" onclick="mvsqlComprar('personal','credits')" data-i18n="buy_cta"></button>
@@ -325,14 +325,14 @@
       <div class="plan featured">
         <span class="tag" data-i18n="p2tag"></span>
         <h3 data-i18n="c2n"></h3>
-        <div class="price">US$ 35<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="35">US$ 35<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="c2d"></p>
         <ul><li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li></ul>
         <button class="btn btn-primary" onclick="mvsqlComprar('profesional','credits')" data-i18n="buy_cta"></button>
       </div>
       <div class="plan">
         <h3 data-i18n="c3n"></h3>
-        <div class="price">US$ 110<small data-i18n="one_time"></small></div>
+        <div class="price" data-usd="110">US$ 110<small data-i18n="one_time"></small><span class="price-uyu"></span></div>
         <p class="desc" data-i18n="c3d"></p>
         <ul><li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li></ul>
         <button class="btn btn-ghost" onclick="mvsqlComprar('empresa','credits')" data-i18n="buy_cta"></button>

@@ -176,6 +176,7 @@ section { padding: 5rem 0; }
 .plan h3 { font-size: 1.1rem; }
 .plan .price { font-size: 2.4rem; font-weight: 800; margin: .8rem 0 .2rem; }
 .plan .price small { font-size: .95rem; color: var(--muted); font-weight: 500; }
+.price-uyu { display: block; font-size: .78rem; font-weight: 500; color: var(--muted); margin-top: .1rem; }
 .plan .desc { color: var(--muted); font-size: .85rem; margin-bottom: 1.2rem; }
 .plan ul { list-style: none; margin: 0 0 1.6rem; flex: 1; }
 .plan li { padding: .35rem 0; color: var(--txt); font-size: .88rem; display: flex; gap: .5rem; }

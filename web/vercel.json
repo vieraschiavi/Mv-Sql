@@ -8,5 +8,10 @@
         { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/download.js": {
+      "includeFiles": "downloads/**"
+    }
+  }
 }

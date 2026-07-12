@@ -1,4 +1,20 @@
 // MV SQL NLP — flujo de compra (Checkout Pro de MercadoPago)
+
+// Tasa de referencia USD → UYU (peso uruguayo). Es un valor aproximado para
+// mostrar al lado del precio en dólares — no es cotización en vivo. Antes de
+// vender en volumen, conviene reemplazar esto por una API de cambio real
+// (ej. https://open.er-api.com) o actualizar el número manualmente cada tanto.
+const USD_TO_UYU = 40;
+
+function pintarPreciosUyu() {
+  document.querySelectorAll(".price[data-usd]").forEach((el) => {
+    const usd = Number(el.dataset.usd);
+    const uyu = Math.round(usd * USD_TO_UYU / 10) * 10; // redondeado a $10
+    const span = el.querySelector(".price-uyu");
+    if (span) span.textContent = `≈ UYU ${uyu.toLocaleString("es-UY")}`;
+  });
+}
+
 let BUY_MODE = "own_ai";
 
 function setBuyMode(mode) {
@@ -50,6 +66,7 @@ async function mvsqlComprar(plan, mode) {
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-buymode]").forEach((b) =>
     b.addEventListener("click", () => setBuyMode(b.dataset.buymode)));
+  pintarPreciosUyu();
 });
 
 window.mvsqlComprar = mvsqlComprar;

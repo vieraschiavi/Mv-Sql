@@ -1,5 +1,13 @@
 # 🎬 Guion del video demostrativo — MV SQL NLP
 
+> ✅ **Ya publicado:** `web/assets/video/demo.webm` — captura de pantalla real
+> (27s) de la landing con la demo animada, embebida en la sección "Miralo en
+> acción" de la web. Es una captura del sitio, **sin narración de voz**: no
+> hay herramienta de síntesis de voz conectada en este entorno para generar
+> el audio rioplatense. Lo que falta para la versión final de 2 minutos con
+> voz — grabar la app real (no solo la landing) y sumar la narración — está
+> detallado abajo, listo para producir con OBS + ElevenLabs/Azure TTS.
+
 **Duración objetivo:** 2:00–2:30 min
 **Voz:** rioplatense (español de Argentina/Uruguay), tono cercano y profesional. Voseo natural ("mirá", "tenés", "preguntale").
 **Ritmo:** sin pausas muertas — cada frase acompaña una acción en pantalla. Grabar la pantalla a 60 fps para que se vea fluido, sin lag.
