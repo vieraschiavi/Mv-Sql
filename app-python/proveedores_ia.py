@@ -11,13 +11,35 @@ Todo por REST puro (requests) — sin SDKs, sin dependencias pesadas.
 """
 
 import json
+import os
 import requests
 
 TIMEOUT = 90
 
+RUTA_LICENCIA = os.path.join(os.path.dirname(__file__), "licencia_mvsql.json")
+
+
+def cargar_licencia_creditos():
+    """Si el zip descargado incluye créditos embebidos, devuelve la licencia."""
+    if not os.path.exists(RUTA_LICENCIA):
+        return None
+    try:
+        with open(RUTA_LICENCIA, encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 # Catálogo de proveedores soportados "de fábrica".
 # El usuario puede además agregar un proveedor "custom" (OpenAI-compatible).
 PROVEEDORES = {
+    "mvsql_creditos": {
+        "nombre": "MV SQL Créditos (sin API key)",
+        "modelos": [],
+        "modelo_default": "",
+        "necesita_key": False,
+        "url_keys": "https://mvsqlnlp.com/#pricing",
+    },
     "anthropic": {
         "nombre": "Anthropic (Claude)",
         "modelos": ["claude-sonnet-5", "claude-haiku-4-5-20251001", "claude-opus-4-8"],
@@ -123,6 +145,22 @@ def completar(proveedor, api_key, system, user, modelo=None, max_tokens=1500,
     base_url:  para 'custom' (endpoint OpenAI-compatible) u 'ollama' remoto.
     """
     proveedor = (proveedor or "anthropic").lower()
+
+    if proveedor == "mvsql_creditos":
+        licencia = cargar_licencia_creditos()
+        if not licencia:
+            raise ErrorProveedor(
+                "No se encontró licencia_mvsql.json. Este proveedor solo funciona en el "
+                "zip descargado con el plan de créditos embebidos — comprá uno en "
+                "mvsqlnlp.com o elegí otro proveedor y pon tu propia API key.")
+        data = _post(
+            licencia["proxy_url"], {"content-type": "application/json"},
+            {"token": licencia["token"], "system": system, "user": user,
+             "max_tokens": max_tokens},
+        )
+        if "error" in data:
+            raise ErrorProveedor(data["error"])
+        return data.get("text", "")
 
     if proveedor == "anthropic":
         data = _post(

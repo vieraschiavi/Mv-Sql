@@ -1,91 +1,91 @@
-# 💳 Integración de MercadoPago — MV SQL NLP
+# 💳 Compra y descarga por MercadoPago — MV SQL NLP
 
-Cómo cobrar suscripciones y créditos desde la web (Vercel) con MercadoPago,
-y cómo activar las licencias en la app.
+Implementado y funcionando en el repo (`web/api/*.js`): el cliente paga un
+**pago único** con MercadoPago Checkout Pro y descarga el producto al toque,
+sin backend propio ni base de datos — todo corre como Vercel Serverless
+Functions + licencias firmadas (JWT), igual de simple que descargar el zip
+de ejemplo original pero gateado por el pago.
 
 ## Modelo de cobro
 
-| Producto | Mecanismo MP | Nota |
+| Producto | Precio (pago único) | Qué recibe el cliente |
 |---|---|---|
-| Planes Personal / Profesional / Empresa (US$ 15 / 29 / 79 mes) | **Suscripciones (preapproval)** | Débito automático mensual en moneda local |
-| Paquetes de créditos 100 / 500 / 2000 (US$ 9 / 35 / 110) | **Checkout Pro (preference)** | Pago único; acreditar créditos al aprobarse |
-| Prueba 3 días | Sin pago | Licencia trial emitida al registrarse (email) |
+| Personal / Profesional / Empresa — **IA propia** | US$ 19 / 39 / 99 | El zip de la app. Configura su propia API key de Claude/GPT/Gemini/etc. |
+| Personal / Profesional / Empresa — **créditos embebidos** | US$ 9 / 35 / 110 | El **mismo zip**, pero con `nl2sql_rag/licencia_mvsql.json` ya cargado: elige el proveedor **"MV SQL Créditos"** en la app y pregunta sin configurar nada — la IA la pagamos nosotros y se factura en el precio. |
+| Suscripciones recurrentes (sección "Precios") | US$ 15/29/79 por mes | Se mantienen para el modelo SaaS de acceso continuo; usan el mismo Checkout Pro con `preapproval` si se decide activarlas (no implementado en esta iteración — ver nota al final). |
 
-Comisión de MercadoPago (Argentina, dinero disponible al instante): ~6,3 % + IVA
-por transacción (verificar la tarifa vigente en el panel). Considerarla en el precio.
+Comisión de MercadoPago (Argentina, acreditación estándar): ≈6–8 % + IVA por
+transacción — ya contemplada en el margen de `docs/PLAN_DE_NEGOCIO.md`.
 
-## Arquitectura mínima (sin servidor propio)
-
-La web es estática en Vercel; los endpoints de pago van como
-**Vercel Serverless Functions** (`web/api/*.js`):
+## Cómo funciona (flujo real, sin base de datos)
 
 ```
-web/api/crear-preferencia.js   → crea preference de Checkout Pro (créditos)
-web/api/crear-suscripcion.js   → crea preapproval (planes mensuales)
-web/api/webhook.js             → recibe notificaciones IPN/webhook de MP
+Cliente en mvsqlnlp.com/#download
+  → elige modo (IA propia / créditos) + plan + email
+  → POST /api/create-preference          (crea el Checkout Pro)
+  → redirige a MercadoPago, paga
+  → MercadoPago lo devuelve a /gracias?payment_id=...
+  → /gracias llama GET /api/verify-and-issue?payment_id=...
+       · re-verifica el pago EN VIVO contra la API de MercadoPago
+         (nunca confía en el query string)
+       · si está aprobado, firma un JWT de licencia (JWT, sin DB)
+  → /gracias muestra el botón "Descargar" → GET /api/download?token=...
+       · modo "own_ai":  sirve downloads/mvsql-nlp-app.zip tal cual
+       · modo "credits": inyecta licencia_mvsql.json dentro del zip al vuelo
+         (con JSZip) antes de devolverlo — nunca se genera ni guarda en disco
 ```
 
-Variables de entorno en Vercel: `MP_ACCESS_TOKEN` (producción) y
-`MP_WEBHOOK_SECRET`.
+No hace falta base de datos porque el JWT firmado ES la licencia: contiene
+`email`, `plan`, `mode`, `credits` y expira a los 365 días. `verify-and-issue`
+solo se ejecuta cuando MercadoPago confirma el pago, así que no hay estado
+que sincronizar.
 
-### Ejemplo: crear preferencia de créditos
+### Archivos
 
-```js
-// web/api/crear-preferencia.js
-import { MercadoPagoConfig, Preference } from "mercadopago";
-
-const mp = new MercadoPagoConfig({ accessToken: process.env.MP_ACCESS_TOKEN });
-
-const PAQUETES = {
-  cred100:  { title: "MV SQL NLP — 100 créditos",  unit_price: 9 },
-  cred500:  { title: "MV SQL NLP — 500 créditos",  unit_price: 35 },
-  cred2000: { title: "MV SQL NLP — 2000 créditos", unit_price: 110 },
-};
-
-export default async function handler(req, res) {
-  const { paquete, email } = req.body;
-  const item = PAQUETES[paquete];
-  if (!item) return res.status(400).json({ error: "paquete inválido" });
-
-  const pref = await new Preference(mp).create({ body: {
-    items: [{ ...item, quantity: 1, currency_id: "USD" }],
-    payer: { email },
-    back_urls: {
-      success: "https://mvsqlnlp.com/gracias",
-      failure: "https://mvsqlnlp.com/pago-fallido",
-    },
-    auto_return: "approved",
-    external_reference: `${paquete}:${email}`,
-    notification_url: "https://mvsqlnlp.com/api/webhook",
-  }});
-  res.json({ init_point: pref.init_point });
-}
+```
+web/api/_mp.js              cliente de MercadoPago (Preference/Payment)
+web/api/_license.js         emitir/verificar JWT de licencia
+web/api/_products.js        catálogo de precios (plan+modo → título/precio)
+web/api/create-preference.js  POST → crea el link de pago
+web/api/verify-and-issue.js   GET  → re-verifica el pago y emite el token
+web/api/webhook.js          POST → notificación IPN de MP (solo logging)
+web/api/download.js         GET  → sirve el zip, gateado por token
+web/api/ai-proxy.js         POST → IA server-side para el modo "créditos"
+web/downloads/mvsql-nlp-app.zip   paquete descargable (app-python empaquetada)
+web/gracias/index.html      página de éxito: verifica pago y ofrece descarga
+web/pago-fallido/index.html   página de pago no completado
+web/assets/purchase.js      lógica de compra en la landing (#download)
 ```
 
-### Webhook → emisión de licencia
+## Variables de entorno requeridas en Vercel
 
-Al recibir `payment.approved`:
-1. Verificar el pago con la API de MP (`GET /v1/payments/{id}`) — nunca confiar
-   solo en el webhook.
-2. Generar una **clave de licencia** firmada (JWT con email, plan, vencimiento,
-   créditos) y enviarla por email.
-3. La app de escritorio valida la licencia offline (firma) y descuenta créditos
-   localmente, sincronizando cuando hay conexión.
+| Variable | Para qué |
+|---|---|
+| `MP_ACCESS_TOKEN` | Credencial de producción de MercadoPago (Developers → Credenciales) |
+| `LICENSE_SECRET` | String random largo — firma los JWT de licencia. **Nunca lo cambies** una vez emitidas licencias, o todas se invalidan |
+| `ANTHROPIC_API_KEY` | Solo si vendés el modo "créditos embebidos": es la key que factura por vos las consultas de esos clientes |
 
-## Facturación de créditos de IA
+Opcional (recomendado antes de vender créditos en volumen):
 
-El plan con créditos usa **nuestra** API key (server-side proxy):
-- Un endpoint `web/api/consulta-ia.js` recibe la petición de la app con la
-  licencia, valida créditos restantes, llama al proveedor elegido y descuenta 1 crédito.
-- Ventaja: el cliente no necesita API key y facturamos todo junto (el margen de
-  crédito cubre el costo de la IA — ver PLAN_DE_NEGOCIO.md).
+| Variable | Para qué |
+|---|---|
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Conectar **Vercel KV** (Storage → KV en el dashboard) para descontar créditos de verdad por licencia. Sin esto, `ai-proxy.js` funciona pero **no aplica el tope de créditos** server-side (lo documenta en el propio código) — aceptable para las primeras ventas, no para escalar. |
 
-## Checklist para salir a producción
+## Cómo activarlo (checklist)
 
-- [ ] Cuenta MercadoPago verificada (vendedor) + credenciales de producción
-- [ ] Alta de suscripciones (preapproval) aprobada por MP
-- [ ] Webhook con verificación de firma (`x-signature`)
-- [ ] Emails transaccionales (licencia, recibo) — Resend/SendGrid gratis hasta 100/día
-- [ ] Página de términos y política de privacidad (links del footer)
-- [ ] Precios en moneda local: MP convierte USD→ARS/UYU automáticamente, pero
-      conviene publicar precio local fijo por país para evitar sorpresas
+1. Cuenta de MercadoPago verificada (vendedor) → sacar `MP_ACCESS_TOKEN` de producción.
+2. En Vercel: Project Settings → Environment Variables → cargar `MP_ACCESS_TOKEN`, `LICENSE_SECRET` (generar con `openssl rand -hex 32`), y `ANTHROPIC_API_KEY`.
+3. Deploy (`vercel --prod` o conectar el repo por Git — ver README del repo).
+4. Probar el flujo completo con una compra real de bajo monto antes de anunciar.
+5. (Opcional) Agregar Vercel KV para metering real de créditos.
+6. (Opcional) Reemplazar el zip base por builds más recientes: pisar `web/downloads/mvsql-nlp-app.zip` con el contenido actualizado de `app-python/` antes de cada release.
+
+## Nota sobre las suscripciones recurrentes
+
+La sección "Precios" de la landing mantiene los 3 planes mensuales (SaaS
+tradicional) como opción para quien prefiera pago continuo con soporte y
+actualizaciones — para activarlos de verdad hace falta un endpoint adicional
+con `preapproval` (suscripción) en vez de `preference` (pago único), y sí
+requiere donde guardar el estado de la suscripción (Vercel KV o una base
+real). Lo dejamos documentado para una segunda iteración; el flujo de
+**pago único → descarga** de esta sección ya está completo y funcional.

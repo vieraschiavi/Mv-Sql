@@ -26,7 +26,7 @@ import streamlit as st
 from conectores import ConexionBD, MOTORES
 from exportar import a_csv, a_excel, a_pdf, a_html
 from motor import MotorMVSQL
-from proveedores_ia import PROVEEDORES, probar_conexion
+from proveedores_ia import PROVEEDORES, probar_conexion, cargar_licencia_creditos
 import guardadas
 
 # ──────────────────────────────────────────────────────────────
@@ -243,27 +243,37 @@ with st.sidebar:
     proveedor = st.selectbox(t["ia"], prov_keys, label_visibility="collapsed",
                              format_func=lambda k: PROVEEDORES[k]["nombre"])
     info_prov = PROVEEDORES[proveedor]
+    modelo, base_url, api_key = "", None, ""
 
-    if info_prov["modelos"]:
-        modelo = st.selectbox(t["modelo"], info_prov["modelos"],
-                              index=info_prov["modelos"].index(info_prov["modelo_default"]))
+    if proveedor == "mvsql_creditos":
+        licencia = cargar_licencia_creditos()
+        if licencia:
+            st.success(f"✓ Créditos activos — {licencia.get('creditos', '?')} incluidos "
+                       f"({licencia.get('plan', '')})")
+            st.caption(f"Licencia de {licencia.get('email', '')} · vence {licencia.get('vence', '')[:10]}")
+        else:
+            st.error("No se encontró licencia_mvsql.json en esta carpeta. "
+                     "Este proveedor solo funciona en el zip comprado con créditos embebidos.")
+            st.caption(f"[Comprar créditos]({info_prov['url_keys']})")
     else:
-        modelo = st.text_input(t["modelo"], placeholder="gpt-4o-mini")
+        if info_prov["modelos"]:
+            modelo = st.selectbox(t["modelo"], info_prov["modelos"],
+                                  index=info_prov["modelos"].index(info_prov["modelo_default"]))
+        else:
+            modelo = st.text_input(t["modelo"], placeholder="gpt-4o-mini")
 
-    base_url = None
-    if proveedor in ("custom", "ollama"):
-        base_url = st.text_input("Base URL",
-                                 value="http://localhost:11434" if proveedor == "ollama" else "",
-                                 placeholder="https://api.miproveedor.com/v1")
+        if proveedor in ("custom", "ollama"):
+            base_url = st.text_input("Base URL",
+                                     value="http://localhost:11434" if proveedor == "ollama" else "",
+                                     placeholder="https://api.miproveedor.com/v1")
 
-    api_key = ""
-    if info_prov["necesita_key"]:
-        api_key = st.text_input(t["apikey"], type="password",
-                                value=os.environ.get(f"{proveedor.upper()}_API_KEY",
-                                                     os.environ.get("ANTHROPIC_API_KEY", "")
-                                                     if proveedor == "anthropic" else ""))
-        if info_prov["url_keys"]:
-            st.caption(f"[Obtener API key]({info_prov['url_keys']})")
+        if info_prov["necesita_key"]:
+            api_key = st.text_input(t["apikey"], type="password",
+                                    value=os.environ.get(f"{proveedor.upper()}_API_KEY",
+                                                         os.environ.get("ANTHROPIC_API_KEY", "")
+                                                         if proveedor == "anthropic" else ""))
+            if info_prov["url_keys"]:
+                st.caption(f"[Obtener API key]({info_prov['url_keys']})")
 
     if st.button(f"🔌 {t['probar']}", use_container_width=True):
         ok, msg = probar_conexion(proveedor, api_key, modelo, base_url)
