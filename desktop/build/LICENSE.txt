@@ -1,0 +1,21 @@
+MV SQL NLP - Acuerdo de Licencia de Usuario Final (EULA)
+
+1. LICENCIA. Se otorga al usuario una licencia de uso personal e
+   intransferible del software MV SQL NLP, sujeta al plan contratado
+   (Personal, Profesional, Empresa o Creditos).
+
+2. PRUEBA. La version de prueba habilita todas las funciones por 3 dias.
+
+3. DATOS. MV SQL NLP se conecta a las bases de datos del usuario en modo
+   de solo lectura. Los datos del usuario no se transmiten a servidores
+   de MV SQL NLP. Solo el esquema (nombres de tablas y columnas) se envia
+   al proveedor de IA que el propio usuario configure.
+
+4. RESPONSABILIDAD. El software se provee "tal cual". El usuario es
+   responsable de revisar las consultas generadas antes de tomar
+   decisiones de negocio basadas en sus resultados.
+
+5. PAGOS. Las suscripciones y creditos se procesan a traves de
+   MercadoPago u otros medios habilitados.
+
+(c) 2026 MV SQL NLP. Todos los derechos reservados.

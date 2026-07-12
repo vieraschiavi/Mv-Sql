@@ -1,0 +1,36 @@
+{
+  "name": "mv-sql-nlp",
+  "productName": "MV SQL NLP",
+  "version": "1.0.0",
+  "description": "Tu base de datos, en tu idioma. Consultas SQL en lenguaje natural con IA a elección.",
+  "author": "MV SQL NLP <vieraschiavi@gmail.com>",
+  "license": "UNLICENSED",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env VITE_DEV=1 electron .\"",
+    "build": "vite build",
+    "dist": "vite build && electron-builder --win",
+    "dist:portable": "vite build && electron-builder --win portable"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "mssql": "^11.0.1",
+    "mysql2": "^3.11.0",
+    "pg": "^8.13.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.13.0",
+    "xlsx": "^0.18.5",
+    "jspdf": "^2.5.2",
+    "jspdf-autotable": "^3.8.3"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "concurrently": "^9.0.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.0",
+    "vite": "^5.4.0",
+    "wait-on": "^8.0.0"
+  }
+}

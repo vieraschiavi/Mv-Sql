@@ -1,0 +1,14 @@
+# MV SQL NLP — dependencias
+streamlit>=1.35
+pandas>=2.0
+plotly>=5.20
+scikit-learn>=1.4
+requests>=2.31
+openpyxl>=3.1
+reportlab>=4.0
+
+# Conectores de base de datos (opcionales — instalá el que uses)
+# pyodbc>=5.0        # SQL Server (requiere ODBC Driver 17/18)
+# pymysql>=1.1       # MySQL / MariaDB
+# psycopg2-binary>=2.9  # PostgreSQL
+faker>=24
