@@ -12,7 +12,7 @@ function detectLang() {
   return LANGS.includes(nav) ? nav : "es";
 }
 
-let LANG = detectLang();
+var LANG = detectLang();
 
 function applyLang(lang) {
   LANG = lang;

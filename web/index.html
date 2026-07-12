@@ -274,19 +274,80 @@
     <div class="section-head">
       <span class="kicker" data-i18n="dl_kicker"></span>
       <h2 data-i18n="dl_title"></h2>
+      <p data-i18n="dl_sub"></p>
     </div>
-    <div class="downloads">
+
+    <div class="pricing-toggle">
+      <button data-buymode="own_ai" class="active" data-i18n="mode_byok_label"></button>
+      <button data-buymode="credits" data-i18n="mode_credits_label"></button>
+    </div>
+    <p class="credits-note" id="buy-mode-desc" data-i18n="byok_desc"></p>
+
+    <div style="max-width:26rem;margin:0 auto 2rem">
+      <label style="display:block;color:var(--muted);font-size:.82rem;margin-bottom:.4rem" data-i18n="email_label"></label>
+      <input type="email" id="buy-email" placeholder="tu@email.com"
+             style="width:100%;padding:.7rem .9rem;border-radius:10px;border:1px solid var(--border);background:rgba(148,163,184,.06);color:var(--txt);font-size:.95rem">
+    </div>
+
+    <div class="plans" id="plans-own_ai">
+      <div class="plan">
+        <h3 data-i18n="p1n"></h3>
+        <div class="price">US$ 19<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="p1d"></p>
+        <ul><li data-i18n="p1f1"></li><li data-i18n="p1f2"></li><li data-i18n="p1f3"></li><li data-i18n="p1f4"></li></ul>
+        <button class="btn btn-ghost" onclick="mvsqlComprar('personal','own_ai')" data-i18n="buy_cta"></button>
+      </div>
+      <div class="plan featured">
+        <span class="tag" data-i18n="p2tag"></span>
+        <h3 data-i18n="p2n"></h3>
+        <div class="price">US$ 39<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="p2d"></p>
+        <ul><li data-i18n="p2f1"></li><li data-i18n="p2f2"></li><li data-i18n="p2f3"></li><li data-i18n="p2f4"></li></ul>
+        <button class="btn btn-primary" onclick="mvsqlComprar('profesional','own_ai')" data-i18n="buy_cta"></button>
+      </div>
+      <div class="plan">
+        <h3 data-i18n="p3n"></h3>
+        <div class="price">US$ 99<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="p3d"></p>
+        <ul><li data-i18n="p3f1"></li><li data-i18n="p3f2"></li><li data-i18n="p3f3"></li><li data-i18n="p3f4"></li></ul>
+        <button class="btn btn-ghost" onclick="mvsqlComprar('empresa','own_ai')" data-i18n="buy_cta"></button>
+      </div>
+    </div>
+
+    <div class="plans" id="plans-credits" style="display:none">
+      <div class="plan">
+        <h3 data-i18n="c1n"></h3>
+        <div class="price">US$ 9<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="c1d"></p>
+        <ul><li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li></ul>
+        <button class="btn btn-ghost" onclick="mvsqlComprar('personal','credits')" data-i18n="buy_cta"></button>
+      </div>
+      <div class="plan featured">
+        <span class="tag" data-i18n="p2tag"></span>
+        <h3 data-i18n="c2n"></h3>
+        <div class="price">US$ 35<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="c2d"></p>
+        <ul><li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li></ul>
+        <button class="btn btn-primary" onclick="mvsqlComprar('profesional','credits')" data-i18n="buy_cta"></button>
+      </div>
+      <div class="plan">
+        <h3 data-i18n="c3n"></h3>
+        <div class="price">US$ 110<small data-i18n="one_time"></small></div>
+        <p class="desc" data-i18n="c3d"></p>
+        <ul><li data-i18n="c_f1"></li><li data-i18n="c_f2"></li><li data-i18n="c_f3"></li></ul>
+        <button class="btn btn-ghost" onclick="mvsqlComprar('empresa','credits')" data-i18n="buy_cta"></button>
+      </div>
+    </div>
+
+    <p id="buy-status" style="text-align:center;color:var(--muted);font-size:.85rem;min-height:1.2rem"></p>
+    <p class="mp-badge" data-i18n="mp_badge"></p>
+
+    <div class="downloads" style="margin-top:2.5rem">
       <div class="dl-card">
         <span class="icon">🖥️</span>
         <h3 data-i18n="dl1t"></h3>
         <p data-i18n="dl1d"></p>
-        <a href="https://github.com/vieraschiavi/Mv-Sql/releases" class="btn btn-primary" data-i18n="dl1b"></a>
-      </div>
-      <div class="dl-card">
-        <span class="icon">⚡</span>
-        <h3 data-i18n="dl2t"></h3>
-        <p data-i18n="dl2d"></p>
-        <a href="https://github.com/vieraschiavi/Mv-Sql/tree/main/app-python" class="btn btn-ghost" data-i18n="dl2b"></a>
+        <a href="https://github.com/vieraschiavi/Mv-Sql/releases" class="btn btn-ghost" data-i18n="dl1b"></a>
       </div>
     </div>
   </div>
@@ -330,5 +391,6 @@
 
 <script src="/assets/i18n.js"></script>
 <script src="/assets/app.js"></script>
+<script src="/assets/purchase.js"></script>
 </body>
 </html>

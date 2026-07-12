@@ -1,0 +1,14 @@
+{
+  "name": "mv-sql-nlp-web",
+  "private": true,
+  "version": "1.0.0",
+  "description": "MV SQL NLP — landing + funciones serverless (MercadoPago + descarga con licencia)",
+  "dependencies": {
+    "mercadopago": "^2.0.9",
+    "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.1"
+  },
+  "optionalDependencies": {
+    "@vercel/kv": "^2.0.0"
+  }
+}
