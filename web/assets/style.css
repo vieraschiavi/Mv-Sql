@@ -143,6 +143,25 @@ section { padding: 5rem 0; }
 .play-btn svg { margin-left: 5px; }
 .video-wrap p { color: var(--muted); font-size: .9rem; }
 
+/* reseñas */
+.rev-summary { display: flex; align-items: center; justify-content: center; gap: 1.4rem; margin-bottom: 2.4rem; flex-wrap: wrap; }
+.rev-score { font-size: 2.6rem; font-weight: 800; color: var(--txt); }
+.rev-stars { color: #fbbf24; font-size: 1.3rem; letter-spacing: .1em; }
+.rev-meta { color: var(--muted); font-size: .85rem; }
+.rev-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.2rem; }
+.rev-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+.rev-card .stars { color: #fbbf24; font-size: .95rem; margin-bottom: .7rem; letter-spacing: .08em; }
+.rev-card p.quote { color: var(--txt); font-size: .92rem; line-height: 1.65; margin-bottom: 1rem; }
+.rev-person { display: flex; align-items: center; gap: .7rem; }
+.rev-avatar {
+  width: 38px; height: 38px; border-radius: 50%; background: var(--grad);
+  display: flex; align-items: center; justify-content: center; font-weight: 800; color: #fff; font-size: .85rem; flex-shrink: 0;
+}
+.rev-person b { font-size: .88rem; display: block; }
+.rev-person span { color: var(--muted); font-size: .78rem; }
+.rev-cta-wrap { text-align: center; margin-top: 2.2rem; }
+@media (max-width: 720px) { .rev-grid { grid-template-columns: 1fr; } }
+
 /* pricing */
 .pricing-toggle { display: flex; justify-content: center; gap: .4rem; margin-bottom: 2.4rem; }
 .pricing-toggle button {
