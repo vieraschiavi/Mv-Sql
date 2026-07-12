@@ -58,6 +58,10 @@ T = {
         "err_valid": "La validación encontró problemas:", "advertencias": "Advertencias",
         "sin_grafico": "No hay un gráfico automático para esta forma de datos.",
         "demo_hint": "¿Sin base propia? Usá la demo: motor SQLite, ruta cartera_demo.db (se genera con: python generar_db_demo.py).",
+        "creditos_activos": "✓ Créditos activos — {n} incluidos ({plan})",
+        "creditos_licencia": "Licencia de {email} · vence {vence}",
+        "creditos_falta": "No se encontró licencia_mvsql.json en esta carpeta. Este proveedor solo funciona en el zip comprado con créditos embebidos.",
+        "creditos_comprar": "[Comprar créditos]({url})",
     },
     "en": {
         "titulo": "MV SQL NLP", "sub": "Your database, in your language. Ask in plain words — AI generates optimized SQL, validates it against your schema, and returns tables, charts and analysis.",
@@ -84,6 +88,10 @@ T = {
         "err_valid": "Validation found problems:", "advertencias": "Warnings",
         "sin_grafico": "No automatic chart for this data shape.",
         "demo_hint": "No database yet? Use the demo: SQLite engine, path cartera_demo.db (generate it with: python generar_db_demo.py).",
+        "creditos_activos": "✓ Active credits — {n} included ({plan})",
+        "creditos_licencia": "License for {email} · expires {vence}",
+        "creditos_falta": "licencia_mvsql.json not found in this folder. This provider only works in the zip purchased with embedded credits.",
+        "creditos_comprar": "[Buy credits]({url})",
     },
     "pt": {
         "titulo": "MV SQL NLP", "sub": "Seu banco de dados, no seu idioma. Pergunte em linguagem natural — a IA gera SQL otimizado, valida contra seu esquema e devolve tabelas, gráficos e análises.",
@@ -110,6 +118,10 @@ T = {
         "err_valid": "A validação encontrou problemas:", "advertencias": "Avisos",
         "sin_grafico": "Sem gráfico automático para este formato de dados.",
         "demo_hint": "Sem banco próprio? Use a demo: motor SQLite, caminho cartera_demo.db (gere com: python generar_db_demo.py).",
+        "creditos_activos": "✓ Créditos ativos — {n} incluídos ({plan})",
+        "creditos_licencia": "Licença de {email} · vence {vence}",
+        "creditos_falta": "licencia_mvsql.json não encontrado nesta pasta. Este provedor só funciona no zip comprado com créditos embutidos.",
+        "creditos_comprar": "[Comprar créditos]({url})",
     },
 }
 
@@ -248,13 +260,13 @@ with st.sidebar:
     if proveedor == "mvsql_creditos":
         licencia = cargar_licencia_creditos()
         if licencia:
-            st.success(f"✓ Créditos activos — {licencia.get('creditos', '?')} incluidos "
-                       f"({licencia.get('plan', '')})")
-            st.caption(f"Licencia de {licencia.get('email', '')} · vence {licencia.get('vence', '')[:10]}")
+            st.success(t["creditos_activos"].format(
+                n=licencia.get("creditos", "?"), plan=licencia.get("plan", "")))
+            st.caption(t["creditos_licencia"].format(
+                email=licencia.get("email", ""), vence=licencia.get("vence", "")[:10]))
         else:
-            st.error("No se encontró licencia_mvsql.json en esta carpeta. "
-                     "Este proveedor solo funciona en el zip comprado con créditos embebidos.")
-            st.caption(f"[Comprar créditos]({info_prov['url_keys']})")
+            st.error(t["creditos_falta"])
+            st.caption(t["creditos_comprar"].format(url=info_prov["url_keys"]))
     else:
         if info_prov["modelos"]:
             modelo = st.selectbox(t["modelo"], info_prov["modelos"],
