@@ -47,11 +47,17 @@ jobs:
 
   attach-python-zip:
     needs: build-windows-exe
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Determinar el tag del Release
+        id: version
+        # electron-builder etiqueta el Release según version en package.json,
+        # no según el ref que disparó el workflow — por eso lo leemos de ahí
+        # en vez de usar github.ref_name (que en un disparo manual es "main",
+        # no una versión, y antes hacía que este job se salteara siempre).
+        run: echo "tag=v$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_OUTPUT"
       - name: Subir versión autoinstalable (.bat) al Release
-        run: gh release upload "${{ github.ref_name }}" web/downloads/mvsql-nlp-app.zip --clobber
+        run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/mvsql-nlp-app.zip --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

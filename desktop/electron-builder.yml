@@ -47,3 +47,6 @@ publish:
   provider: github
   owner: vieraschiavi
   repo: Mv-Sql
+  # Sin esto, electron-builder crea el Release como borrador (draft) y no
+  # aparece en la página pública de Releases hasta publicarlo a mano.
+  releaseType: release
