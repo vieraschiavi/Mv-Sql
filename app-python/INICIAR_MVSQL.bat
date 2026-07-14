@@ -74,12 +74,17 @@ if not exist "cartera_demo.db" (
 )
 
 :: ── 5. Lanzar ──────────────────────────────────────────────────
-echo   [5/5] Iniciando MV SQL NLP en http://localhost:8501 ...
+:: Puerto fijo poco comun (8791) para no chocar con otras apps que uses
+:: en tu PC (muchos programas usan el 8501 por defecto de Streamlit).
+set "MVSQL_PORT=8791"
+echo   [5/5] Iniciando MV SQL NLP en http://localhost:%MVSQL_PORT% ...
 echo.
 echo   ─────────────────────────────────────────────────────────
 echo    La app se abre sola en tu navegador.
+echo    Si se abre otra pagina distinta, entra manualmente a:
+echo    http://localhost:%MVSQL_PORT%
 echo    Para cerrarla: Ctrl+C o cerra esta ventana.
 echo   ─────────────────────────────────────────────────────────
 echo.
-"%VPY%" -m streamlit run app.py --server.headless false --browser.gatherUsageStats false --theme.base dark
+"%VPY%" -m streamlit run app.py --server.port %MVSQL_PORT% --server.headless false --browser.gatherUsageStats false --theme.base dark
 pause
