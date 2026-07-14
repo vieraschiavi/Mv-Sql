@@ -24,7 +24,10 @@ win:
     - target: zip
       arch: [x64]
   icon: build/icon.ico
-  artifactName: "MV-SQL-NLP-Setup-${version}.${ext}"
+  # nsis y portable producen ambos un .exe: si comparten el mismo nombre,
+  # el segundo "pisa" al primero en el Release de GitHub y esa operación
+  # de reemplazo se puede colgar (timeout). Nombres distintos por target.
+  artifactName: "MV-SQL-NLP-${version}.${ext}"
 
 nsis:
   oneClick: false
@@ -35,6 +38,10 @@ nsis:
   installerLanguages: [es_ES, en_US, pt_BR]
   license: build/LICENSE.txt
   runAfterFinish: true
+  artifactName: "MV-SQL-NLP-Setup-${version}.${ext}"
+
+portable:
+  artifactName: "MV-SQL-NLP-Portable-${version}.${ext}"
 
 publish:
   provider: github
