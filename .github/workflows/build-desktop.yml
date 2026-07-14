@@ -1,0 +1,57 @@
+name: Build MV SQL NLP releases
+
+# Compila el instalador de Windows (Electron + React) en un runner Windows
+# real, con acceso de red sin restricciones: ahí sí se puede compilar el
+# módulo nativo de SQLite (better-sqlite3) y descargar el binario de
+# Electron para win32-x64. También sube la versión autoinstalable
+# (Python/Streamlit) al mismo Release, como zip listo para descargar.
+#
+# Se dispara al publicar un tag "v*" (ej. v1.0.0) o manualmente desde la
+# pestaña Actions ("Run workflow"). Ambos artefactos quedan en
+# https://github.com/<owner>/<repo>/releases
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-exe:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar frontend (Vite)
+        run: npm run build
+
+      - name: Generar instalador Windows (NSIS + portable + zip)
+        run: npx electron-builder --win nsis portable zip --x64 --publish=always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  attach-python-zip:
+    needs: build-windows-exe
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Subir versión autoinstalable (.bat) al Release
+        run: gh release upload "${{ github.ref_name }}" web/downloads/mvsql-nlp-app.zip --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
