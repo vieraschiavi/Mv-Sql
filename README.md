@@ -32,7 +32,13 @@ gráficos y análisis exportables a Excel, CSV, PDF y HTML.
 
 **Versión autoinstalable (Windows, 2 minutos):** entrá a `app-python/` y hacé
 doble clic en **`INICIAR_MVSQL.bat`**. Instala Python/dependencias, genera una
-base demo y abre la app en el navegador.
+base demo y abre la app en `http://localhost:8791` (puerto fijo, para no
+chocar con otras apps que tengas corriendo en tu PC).
+
+> ⚠️ Si ya habías descargado una copia vieja del programa (por ejemplo, del
+> zip de ejemplo original), volvé a descargarla — las versiones viejas tenían
+> un bug conocido de pandas al mostrar columnas de fecha (`AssertionError` en
+> `pd.to_datetime`), ya corregido acá.
 
 **App de escritorio (desarrollo):**
 ```bash
