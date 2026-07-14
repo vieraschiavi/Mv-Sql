@@ -21,7 +21,16 @@ async function connect(cfg) {
   const { motor } = cfg;
 
   if (motor === "sqlite") {
-    const Database = require("better-sqlite3");
+    let Database;
+    try {
+      Database = require("better-sqlite3");
+    } catch {
+      throw new Error(
+        "SQLite no está disponible en este build. Este paquete de Windows se generó sin " +
+        "compilar el módulo nativo de SQLite — usá SQL Server, MySQL o PostgreSQL, o " +
+        "compilalo vos: abrí una terminal en la carpeta de la app y corré 'npm rebuild'."
+      );
+    }
     const conn = new Database(cfg.ruta, { readonly: true, fileMustExist: true });
     current = {
       motor,
