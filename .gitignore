@@ -14,3 +14,4 @@ app-python/catalogo_demo.json
 # entornos
 .env
 .env.local
+licencia_mvsql.json

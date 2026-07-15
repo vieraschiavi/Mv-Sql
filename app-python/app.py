@@ -341,7 +341,9 @@ def _aplicar_tema(fig, p, x=None, y=None, y_es_moneda=False, y_es_pct=False):
         plot_bgcolor="#0f172a", paper_bgcolor="#0f172a", font_color="#e2e8f0",
         font_family="Inter, system-ui, sans-serif",
         separators=",." if p["estilo"] == "1.234,56" else ".,",
-        margin=dict(t=42, r=24, b=52, l=64),
+        # margen generoso arriba/derecha: las etiquetas de valores usan
+        # cliponaxis=False y sin esto se cortan contra el borde del lienzo
+        margin=dict(t=56, r=70, b=52, l=64),
         hoverlabel=dict(bgcolor="#1e293b", font_color="#e2e8f0"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
         legend_title_text="",
@@ -351,10 +353,10 @@ def _aplicar_tema(fig, p, x=None, y=None, y_es_moneda=False, y_es_pct=False):
     )
     tickfmt = f",.{dec}f" if p["miles"] else f".{dec}f"
     fig.update_yaxes(gridcolor="#1e293b", zerolinecolor="#334155",
-                     tickformat=tickfmt,
+                     tickformat=tickfmt, automargin=True,
                      tickprefix=f"{p['moneda']} " if (y_es_moneda and p["moneda"]) else None,
                      ticksuffix=" %" if y_es_pct else None)
-    fig.update_xaxes(gridcolor="#1e293b")
+    fig.update_xaxes(gridcolor="#1e293b", automargin=True)
     return fig
 
 
@@ -414,8 +416,10 @@ def graficar(df, tipo="auto", x=None, y=None):
             fig = fn(dfx, x=x, y=y, markers=True, color_discrete_sequence=PALETA)
             if len(dfx) <= 15 and len(y) == 1:      # etiquetas solo si no se amontonan
                 fig.update_traces(texttemplate="%{y:" + vfmt + "}",
-                                  textposition="top center", mode="lines+markers+text")
+                                  textposition="top center", cliponaxis=False,
+                                  mode="lines+markers+text")
             fig = _aplicar_tema(fig, p, x, y0 if len(y) == 1 else None, es_moneda, es_pct)
+            fig.update_layout(showlegend=len(y) > 1)
 
         elif tipo in ("barras", "barras_h"):
             if not (x and y):
@@ -444,6 +448,7 @@ def graficar(df, tipo="auto", x=None, y=None):
                                       textposition="outside", cliponaxis=False)
                 fig = _aplicar_tema(fig, p, x, y0 if len(y) == 1 else None,
                                     es_moneda, es_pct)
+                fig.update_layout(showlegend=len(y) > 1)
                 if dfx[x].astype(str).str.len().max() > 8 or len(dfx) > 8:
                     fig.update_xaxes(tickangle=-30)   # que no se pisen las etiquetas
 
