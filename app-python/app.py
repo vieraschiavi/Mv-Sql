@@ -76,6 +76,12 @@ T = {
         "subir_archivo": "Subí tu archivo",
         "archivo_hint": "El archivo se convierte a una base consultable al instante y queda en caché: la próxima carga es inmediata. Excel: cada hoja se vuelve una tabla.",
         "archivo_falta": "Subí un archivo primero.",
+        "explorar": "Explorar", "eda_fuente": "Analizar",
+        "eda_resultado": "El resultado actual",
+        "eda_corr": "Correlación entre variables",
+        "eda_infl": "Influencia de variables", "eda_objetivo": "Variable objetivo",
+        "eda_infl_hint": "Importancia calculada con Random Forest sobre una muestra (hasta 5.000 filas): cuánto ayuda cada variable a predecir la variable objetivo.",
+        "eda_pocas": "Se necesitan al menos 2 columnas numéricas con variación para este análisis.",
     },
     "en": {
         "titulo": "MV SQL NLP", "sub": "Your database, in your language. Ask in plain words — AI generates optimized SQL, validates it against your schema, and returns tables, charts and analysis.",
@@ -120,6 +126,12 @@ T = {
         "subir_archivo": "Upload your file",
         "archivo_hint": "The file becomes an instantly queryable base and is cached: the next load is immediate. Excel: each sheet becomes a table.",
         "archivo_falta": "Upload a file first.",
+        "explorar": "Explore", "eda_fuente": "Analyze",
+        "eda_resultado": "Current result",
+        "eda_corr": "Correlation between variables",
+        "eda_infl": "Variable influence", "eda_objetivo": "Target variable",
+        "eda_infl_hint": "Importance computed with a Random Forest on a sample (up to 5,000 rows): how much each variable helps predict the target.",
+        "eda_pocas": "At least 2 numeric columns with variation are needed for this analysis.",
     },
     "pt": {
         "titulo": "MV SQL NLP", "sub": "Seu banco de dados, no seu idioma. Pergunte em linguagem natural — a IA gera SQL otimizado, valida contra seu esquema e devolve tabelas, gráficos e análises.",
@@ -164,6 +176,12 @@ T = {
         "subir_archivo": "Envie seu arquivo",
         "archivo_hint": "O arquivo vira uma base consultável na hora e fica em cache: a próxima carga é imediata. Excel: cada planilha vira uma tabela.",
         "archivo_falta": "Envie um arquivo primeiro.",
+        "explorar": "Explorar", "eda_fuente": "Analisar",
+        "eda_resultado": "O resultado atual",
+        "eda_corr": "Correlação entre variáveis",
+        "eda_infl": "Influência de variáveis", "eda_objetivo": "Variável alvo",
+        "eda_infl_hint": "Importância calculada com Random Forest sobre uma amostra (até 5.000 linhas): quanto cada variável ajuda a prever a variável alvo.",
+        "eda_pocas": "São necessárias pelo menos 2 colunas numéricas com variação para esta análise.",
     },
 }
 
@@ -496,6 +514,80 @@ def graficar(df, tipo="auto", x=None, y=None):
 
 
 # ──────────────────────────────────────────────────────────────
+# EXPLORAR (EDA) — correlación entre variables e influencia de unas
+# sobre otras (Random Forest), sobre el resultado o una tabla completa
+# ──────────────────────────────────────────────────────────────
+def _sin_ids(df_e):
+    """Columnas *_id / id no aportan al análisis y dominan los rankings."""
+    fuera = [c for c in df_e.columns
+             if str(c).lower() == "id" or str(c).lower().endswith("_id")]
+    return df_e.drop(columns=fuera) if fuera else df_e
+
+
+def eda_correlacion(df_e):
+    """Mapa de calor de correlaciones entre las columnas numéricas."""
+    nums = _sin_ids(df_e).select_dtypes(include="number")
+    nums = nums.loc[:, nums.nunique() > 1]
+    if nums.shape[1] < 2:
+        return None
+    corr = nums.corr(numeric_only=True).round(2)
+    fig = px.imshow(corr, text_auto=True, color_continuous_scale="RdBu_r",
+                    zmin=-1, zmax=1, aspect="auto")
+    fig.update_layout(plot_bgcolor="#0f172a", paper_bgcolor="#0f172a",
+                      font_color="#e2e8f0", margin=dict(t=30, r=30, b=30, l=30),
+                      coloraxis_colorbar=dict(title=""))
+    fig.update_xaxes(tickangle=-30)
+    return fig
+
+
+def eda_influencia(df_e, objetivo):
+    """Qué variables influyen más sobre `objetivo` (importancia Random Forest)."""
+    from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+
+    d = _sin_ids(df_e).dropna(subset=[objetivo])
+    if len(d) < 20:
+        return None
+    y = d[objetivo]
+    X = d.drop(columns=[objetivo])
+    Xe = pd.DataFrame(index=d.index)
+    for c in X.columns:
+        col = X[c]
+        if pd.api.types.is_numeric_dtype(col):
+            Xe[c] = col.fillna(col.median())
+        elif pd.api.types.is_datetime64_any_dtype(col):
+            Xe[c] = col.astype("int64")
+        elif col.nunique() <= 50:
+            Xe[c] = pd.factorize(col.astype(str))[0]
+    if Xe.shape[1] < 1:
+        return None
+    es_regresion = pd.api.types.is_numeric_dtype(y) and y.nunique() > 10
+    if es_regresion:
+        modelo = RandomForestRegressor(n_estimators=60, max_depth=8,
+                                       random_state=0, n_jobs=-1)
+        y_fit = y.astype(float)
+    else:
+        modelo = RandomForestClassifier(n_estimators=60, max_depth=8,
+                                        random_state=0, n_jobs=-1)
+        y_fit = pd.factorize(y.astype(str))[0]
+    try:
+        modelo.fit(Xe, y_fit)
+    except Exception:
+        return None
+    imp = (pd.Series(modelo.feature_importances_, index=Xe.columns)
+           .sort_values().tail(12))
+    fig = px.bar(x=imp.values, y=[_titulo_eje(c) for c in imp.index],
+                 orientation="h", color_discrete_sequence=["#38bdf8"])
+    fig.update_layout(plot_bgcolor="#0f172a", paper_bgcolor="#0f172a",
+                      font_color="#e2e8f0", margin=dict(t=30, r=40, b=40, l=30),
+                      xaxis_title=None, yaxis_title=None,
+                      height=max(300, 34 * len(imp) + 90))
+    fig.update_traces(texttemplate="%{x:.0%}", textposition="outside",
+                      cliponaxis=False)
+    fig.update_xaxes(tickformat=".0%", gridcolor="#1e293b")
+    return fig
+
+
+# ──────────────────────────────────────────────────────────────
 # MODO ARCHIVO — CSV/Excel/Parquet/JSON a base consultable, con caché
 # (la primera carga convierte; las siguientes son instantáneas)
 # ──────────────────────────────────────────────────────────────
@@ -791,8 +883,9 @@ if r:
                       fmt_numero(df[nums[0]].sum(), pct=(tipo_c == "pct"),
                                  moneda=(tipo_c == "moneda")))
 
-        tab1, tab2, tab3, tab4 = st.tabs([f"📋 {t['tabla']}", f"📈 {t['grafico']}",
-                                          f"🧠 {t['analisis']}", f"⬇️ {t['exportar']}"])
+        tab1, tab2, tab3, tab5, tab4 = st.tabs([
+            f"📋 {t['tabla']}", f"📈 {t['grafico']}", f"🧠 {t['analisis']}",
+            f"🔍 {t['explorar']}", f"⬇️ {t['exportar']}"])
         with tab1:
             st.dataframe(estilizar_df(df), use_container_width=True, height=420)
         with tab2:
@@ -816,6 +909,45 @@ if r:
                 st.info(t["sin_grafico"])
         with tab3:
             st.write(r["explicacion"] or "—")
+        with tab5:
+            # EDA: sobre el resultado actual o sobre una tabla completa
+            fuentes = [t["eda_resultado"]]
+            if ss.motor:
+                fuentes += list(ss.motor.catalogo["tablas"].keys())
+            fuente = st.selectbox(t["eda_fuente"], fuentes, key="eda_fuente")
+            if fuente == t["eda_resultado"]:
+                df_eda = df
+            else:
+                try:
+                    cols_e, filas_e, _ = ss.motor.cx.ejecutar(
+                        f"SELECT * FROM {fuente}", limite=5000)
+                    df_eda = pd.DataFrame(filas_e, columns=cols_e)
+                except Exception as e:
+                    st.error(str(e))
+                    df_eda = df
+
+            st.markdown(f"###### 🔗 {t['eda_corr']}")
+            fig_corr = eda_correlacion(df_eda)
+            if fig_corr:
+                st.plotly_chart(fig_corr, use_container_width=True)
+            else:
+                st.info(t["eda_pocas"])
+
+            st.markdown(f"###### 🎯 {t['eda_infl']}")
+            candidatas = [c for c in _sin_ids(df_eda).columns
+                          if df_eda[c].nunique() > 1]
+            if len(candidatas) >= 2:
+                objetivo = st.selectbox(t["eda_objetivo"], candidatas,
+                                        index=len(candidatas) - 1 if candidatas else 0,
+                                        key="eda_objetivo")
+                fig_infl = eda_influencia(df_eda, objetivo)
+                if fig_infl:
+                    st.plotly_chart(fig_infl, use_container_width=True)
+                    st.caption(t["eda_infl_hint"])
+                else:
+                    st.info(t["eda_pocas"])
+            else:
+                st.info(t["eda_pocas"])
         with tab4:
             c1, c2, c3, c4 = st.columns(4)
             c1.download_button("Excel (.xlsx)",
