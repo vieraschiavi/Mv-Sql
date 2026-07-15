@@ -28,6 +28,7 @@ gráficos y análisis exportables a Excel, CSV, PDF y HTML.
 - 🛡️ **Anti-alucinación**: el SQL se valida contra el catálogo real; si algo no existe se rechaza y se auto-corrige (self-repair)
 - 🔒 **Seguridad**: conexión read-only, solo `SELECT`/`WITH`; el RAG es local — los datos nunca salen de tu red, solo viaja el esquema
 - ⭐ **Consultas guardadas** con nombre + conversión a **stored procedures** de producción
+- 🔍 **Panel Explorar (EDA)**: mapa de correlaciones entre variables + **influencia de variables** (Random Forest) para ver qué pesa sobre qué — sobre el resultado o sobre cualquier tabla completa
 - 📊 **Gráficos profesionales**: ejes con etiquetas, valores formateados sin solaparse, tipo automático según los datos o a elección (barras, barras horizontales, línea, área, torta, dispersión, histograma) + análisis en lenguaje natural
 - ⬇️ **Exportación** a Excel (con formato), CSV, PDF y HTML
 
