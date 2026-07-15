@@ -54,6 +54,13 @@ PROVEEDORES = {
         "necesita_key": True,
         "url_keys": "https://platform.openai.com/api-keys",
     },
+    "azure": {
+        "nombre": "Microsoft Copilot (Azure OpenAI)",
+        "modelos": [],
+        "modelo_default": "",
+        "necesita_key": True,
+        "url_keys": "https://portal.azure.com/#create/Microsoft.CognitiveServicesOpenAI",
+    },
     "gemini": {
         "nombre": "Google (Gemini)",
         "modelos": ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro"],
@@ -173,6 +180,27 @@ def completar(proveedor, api_key, system, user, modelo=None, max_tokens=1500,
              "messages": [{"role": "user", "content": user}]},
         )
         return "".join(b.get("text", "") for b in data.get("content", []))
+
+    if proveedor == "azure":
+        # Azure OpenAI (el backend de Microsoft Copilot para empresas).
+        # base_url: https://<recurso>.openai.azure.com — modelo = nombre del deployment.
+        if not base_url:
+            raise ErrorProveedor(
+                "Azure OpenAI necesita la URL del recurso (ej: https://mirecurso.openai.azure.com) "
+                "en el campo Base URL, y el nombre del deployment en el campo Modelo.")
+        deployment = modelo or "gpt-4o-mini"
+        data = _post(
+            f"{base_url.rstrip('/')}/openai/deployments/{deployment}/chat/completions"
+            "?api-version=2024-06-01",
+            {"api-key": api_key, "content-type": "application/json"},
+            {"max_tokens": max_tokens, "temperature": temperatura,
+             "messages": [{"role": "system", "content": system},
+                          {"role": "user", "content": user}]},
+        )
+        try:
+            return data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError):
+            raise ErrorProveedor(f"Respuesta inesperada de Azure OpenAI: {json.dumps(data)[:300]}")
 
     if proveedor == "gemini":
         m = modelo or PROVEEDORES["gemini"]["modelo_default"]

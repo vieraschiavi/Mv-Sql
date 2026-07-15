@@ -18,14 +18,17 @@ gráficos y análisis exportables a Excel, CSV, PDF y HTML.
 ## ✨ Funciones principales
 
 - 💬 **Lenguaje natural → SQL** en ES/EN/PT, con JOINs correctos según las relaciones reales del esquema
-- 🤖 **IA a elección del cliente**: Claude, GPT, Gemini, Groq, Mistral, DeepSeek, Grok, **Ollama local (gratis)** o cualquier endpoint OpenAI-compatible — con API key propia o con créditos facturados por nosotros
+- 🤖 **IA a elección del cliente**: Claude, GPT, **Copilot (Azure OpenAI)**, Gemini, Groq, Mistral, DeepSeek, Grok, **Ollama local (gratis)** o cualquier endpoint OpenAI-compatible — con API key propia o con créditos facturados por nosotros
 - 🗄️ **Multi-base**: SQL Server, MySQL/MariaDB, PostgreSQL y SQLite — se adapta a cualquier esquema sin configuración
+- 📄 **Modo Archivo**: consultá un **CSV, Excel o Parquet** sin tener base de datos — carga rápida con caché
+- 🔢 **Formato a medida**: menú de decimales, separador de miles, % y **moneda** ($U, US$, AR$, R$, €…) aplicado a tablas, gráficos y análisis
+- 🧩 **Conector MCP**: `CONECTAR_CLAUDE_MCP.bat` conecta tu **Claude Desktop** directo a tu base (SQL Server/MySQL/PostgreSQL/SQLite) vía MCP
 - 🚀 **Optimización con CTE**: consultas estructuradas con `WITH … AS`, filtros tempranos, sin `SELECT *`; re-optimizador de SQL existente
 - 📐 **Intervalo de confianza** en cada respuesta (ej. 92% ±5), combinando autoevaluación del modelo, señal RAG y validación estructural
 - 🛡️ **Anti-alucinación**: el SQL se valida contra el catálogo real; si algo no existe se rechaza y se auto-corrige (self-repair)
 - 🔒 **Seguridad**: conexión read-only, solo `SELECT`/`WITH`; el RAG es local — los datos nunca salen de tu red, solo viaja el esquema
 - ⭐ **Consultas guardadas** con nombre + conversión a **stored procedures** de producción
-- 📊 **Gráficos automáticos** (línea/barras/dispersión/torta) + análisis en lenguaje natural
+- 📊 **Gráficos profesionales**: ejes con etiquetas, valores formateados sin solaparse, tipo automático según los datos o a elección (barras, barras horizontales, línea, área, torta, dispersión, histograma) + análisis en lenguaje natural
 - ⬇️ **Exportación** a Excel (con formato), CSV, PDF y HTML
 
 ## 🚀 Inicio rápido

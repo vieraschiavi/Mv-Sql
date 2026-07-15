@@ -217,7 +217,12 @@ class MotorMVSQL:
                          system, user, modelo=self.ia.get("modelo"),
                          base_url=self.ia.get("base_url"), max_tokens=max_tokens)
 
-    def responder(self, pregunta, k=4, limite=5000, explicar=True):
+    def responder(self, pregunta, k=4, limite=5000, explicar=True, contexto=""):
+        """
+        contexto: preferencias del usuario (moneda, decimales, etc.) que se
+        pasan a la IA como instrucción adicional — no forman parte de la
+        pregunta guardada ni del historial.
+        """
         resultado = {
             "pregunta": pregunta, "tablas_recuperadas": [], "sql": None,
             "valido": False, "problemas": [], "advertencias": [],
@@ -234,7 +239,8 @@ class MotorMVSQL:
         # 2) generación
         esquema = "\n\n".join(f["texto"] for f in relevantes)
         system = SYSTEM_SQL.format(dialecto=self.cx.dialecto, esquema=esquema)
-        crudo = self._completar(system, pregunta)
+        pregunta_ia = f"{pregunta}\n\n[Preferencias del usuario: {contexto}]" if contexto else pregunta
+        crudo = self._completar(system, pregunta_ia)
         sql, conf_llm, supuestos = _parsear_respuesta_sql(crudo)
         resultado["sql"] = sql
         resultado["supuestos"] = supuestos
@@ -248,7 +254,7 @@ class MotorMVSQL:
 
         # 3b) reintento automático si la validación falló (self-repair)
         if not es_valido:
-            correccion = (f"{pregunta}\n\nTu consulta anterior fue:\n{sql}\n\n"
+            correccion = (f"{pregunta_ia}\n\nTu consulta anterior fue:\n{sql}\n\n"
                           f"Fue RECHAZADA por estos problemas:\n- " + "\n- ".join(problemas) +
                           "\nGenerá una consulta corregida usando SOLO tablas y columnas del esquema.")
             try:
@@ -283,9 +289,10 @@ class MotorMVSQL:
         if explicar and resultado["filas"] is not None:
             try:
                 muestra = _muestra_texto(resultado["columnas"], resultado["filas"])
+                extra = f"\n\nPREFERENCIAS DEL USUARIO: {contexto}" if contexto else ""
                 resultado["explicacion"] = self._completar(
                     SYSTEM_EXPLICAR,
-                    f"PREGUNTA: {pregunta}\n\nSQL:\n{sql}\n\nRESULTADO ({len(resultado['filas'])} filas):\n{muestra}",
+                    f"PREGUNTA: {pregunta}\n\nSQL:\n{sql}\n\nRESULTADO ({len(resultado['filas'])} filas):\n{muestra}{extra}",
                     max_tokens=400)
             except Exception:
                 pass

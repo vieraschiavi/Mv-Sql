@@ -62,6 +62,20 @@ T = {
         "creditos_licencia": "Licencia de {email} · vence {vence}",
         "creditos_falta": "No se encontró licencia_mvsql.json en esta carpeta. Este proveedor solo funciona en el zip comprado con créditos embebidos.",
         "creditos_comprar": "[Comprar créditos]({url})",
+        "fmt_titulo": "Formato de números", "fmt_dec": "Decimales",
+        "fmt_miles": "Separador de miles", "fmt_estilo": "Estilo",
+        "fmt_pct_dec": "Decimales en porcentajes", "fmt_moneda": "Moneda",
+        "fmt_sin_moneda": "(sin moneda)",
+        "fmt_moneda_todas": "Aplicar moneda a todas las columnas numéricas",
+        "fmt_hint": "Se aplica a tablas, gráficos y a la respuesta de la IA.",
+        "tipo_grafico": "Tipo de gráfico", "eje_x": "Eje X", "eje_y": "Eje Y",
+        "g_auto": "✨ Automático (según los datos)", "g_barras": "Barras",
+        "g_barras_h": "Barras horizontales", "g_linea": "Línea", "g_area": "Área",
+        "g_torta": "Torta", "g_dispersion": "Dispersión", "g_histo": "Histograma",
+        "archivo": "📄 Archivo (CSV / Excel / Parquet)",
+        "subir_archivo": "Subí tu archivo",
+        "archivo_hint": "El archivo se convierte a una base consultable al instante y queda en caché: la próxima carga es inmediata. Excel: cada hoja se vuelve una tabla.",
+        "archivo_falta": "Subí un archivo primero.",
     },
     "en": {
         "titulo": "MV SQL NLP", "sub": "Your database, in your language. Ask in plain words — AI generates optimized SQL, validates it against your schema, and returns tables, charts and analysis.",
@@ -92,6 +106,20 @@ T = {
         "creditos_licencia": "License for {email} · expires {vence}",
         "creditos_falta": "licencia_mvsql.json not found in this folder. This provider only works in the zip purchased with embedded credits.",
         "creditos_comprar": "[Buy credits]({url})",
+        "fmt_titulo": "Number format", "fmt_dec": "Decimals",
+        "fmt_miles": "Thousands separator", "fmt_estilo": "Style",
+        "fmt_pct_dec": "Decimals in percentages", "fmt_moneda": "Currency",
+        "fmt_sin_moneda": "(no currency)",
+        "fmt_moneda_todas": "Apply currency to every numeric column",
+        "fmt_hint": "Applies to tables, charts and the AI answer.",
+        "tipo_grafico": "Chart type", "eje_x": "X axis", "eje_y": "Y axis",
+        "g_auto": "✨ Automatic (based on the data)", "g_barras": "Bars",
+        "g_barras_h": "Horizontal bars", "g_linea": "Line", "g_area": "Area",
+        "g_torta": "Pie", "g_dispersion": "Scatter", "g_histo": "Histogram",
+        "archivo": "📄 File (CSV / Excel / Parquet)",
+        "subir_archivo": "Upload your file",
+        "archivo_hint": "The file becomes an instantly queryable base and is cached: the next load is immediate. Excel: each sheet becomes a table.",
+        "archivo_falta": "Upload a file first.",
     },
     "pt": {
         "titulo": "MV SQL NLP", "sub": "Seu banco de dados, no seu idioma. Pergunte em linguagem natural — a IA gera SQL otimizado, valida contra seu esquema e devolve tabelas, gráficos e análises.",
@@ -122,6 +150,20 @@ T = {
         "creditos_licencia": "Licença de {email} · vence {vence}",
         "creditos_falta": "licencia_mvsql.json não encontrado nesta pasta. Este provedor só funciona no zip comprado com créditos embutidos.",
         "creditos_comprar": "[Comprar créditos]({url})",
+        "fmt_titulo": "Formato de números", "fmt_dec": "Decimais",
+        "fmt_miles": "Separador de milhares", "fmt_estilo": "Estilo",
+        "fmt_pct_dec": "Decimais em porcentagens", "fmt_moneda": "Moeda",
+        "fmt_sin_moneda": "(sem moeda)",
+        "fmt_moneda_todas": "Aplicar moeda a todas as colunas numéricas",
+        "fmt_hint": "Aplica-se a tabelas, gráficos e à resposta da IA.",
+        "tipo_grafico": "Tipo de gráfico", "eje_x": "Eixo X", "eje_y": "Eixo Y",
+        "g_auto": "✨ Automático (conforme os dados)", "g_barras": "Barras",
+        "g_barras_h": "Barras horizontais", "g_linea": "Linha", "g_area": "Área",
+        "g_torta": "Pizza", "g_dispersion": "Dispersão", "g_histo": "Histograma",
+        "archivo": "📄 Arquivo (CSV / Excel / Parquet)",
+        "subir_archivo": "Envie seu arquivo",
+        "archivo_hint": "O arquivo vira uma base consultável na hora e fica em cache: a próxima carga é imediata. Excel: cada planilha vira uma tabela.",
+        "archivo_falta": "Envie um arquivo primeiro.",
     },
 }
 
@@ -189,36 +231,310 @@ ss.setdefault("pregunta_precargada", "")
 ss.setdefault("resultado", None)
 
 
-def graficar_auto(df):
-    if df.empty or len(df) > 500:
-        return None
-    cols_num = df.select_dtypes(include="number").columns.tolist()
-    cols_cat = [c for c in df.columns if c not in cols_num]
-    cols_fecha = [c for c in df.columns if any(k in c.lower() for k in
-                  ("fecha", "mes", "periodo", "dia", "anio", "año", "date", "month", "data"))]
-    tema = dict(plot_bgcolor="#0f172a", paper_bgcolor="#0f172a",
-                font_color="#e2e8f0")
+# ──────────────────────────────────────────────────────────────
+# FORMATO DE NÚMEROS (decimales, miles, %, moneda) — elegido por el usuario
+# ──────────────────────────────────────────────────────────────
+MONEDAS = ["", "$U", "US$", "AR$", "R$", "€", "MX$", "CL$", "S/", "£"]
+MONEDA_NOMBRE = {
+    "$U": "pesos uruguayos (UYU)", "US$": "dólares (USD)",
+    "AR$": "pesos argentinos (ARS)", "R$": "reales (BRL)", "€": "euros (EUR)",
+    "MX$": "pesos mexicanos (MXN)", "CL$": "pesos chilenos (CLP)",
+    "S/": "soles (PEN)", "£": "libras (GBP)",
+}
+_KEYS_MONEDA = ("monto", "importe", "deuda", "saldo", "total", "precio", "pago",
+                "capital", "interes", "facturado", "facturacion", "cobrado",
+                "venta", "amount", "revenue", "cost", "price", "value", "valor")
+_KEYS_PCT = ("%", "pct", "porcentaje", "porcentagem", "percent", "tasa", "taxa",
+             "rate", "contactabilidad", "ratio")
+
+
+def _prefs():
+    return dict(dec=int(ss.get("fmt_dec", 2)), miles=bool(ss.get("fmt_miles", True)),
+                estilo=ss.get("fmt_estilo", "1.234,56"),
+                pct_dec=int(ss.get("fmt_pct_dec", 1)),
+                moneda=ss.get("fmt_moneda", ""),
+                moneda_todas=bool(ss.get("fmt_moneda_todas", False)))
+
+
+def fmt_numero(v, dec=None, pct=False, moneda=False, p=None):
+    """Formatea un número según las preferencias del usuario."""
+    p = p or _prefs()
+    if v is None or (isinstance(v, float) and pd.isna(v)):
+        return ""
+    dec = p["pct_dec"] if pct else (p["dec"] if dec is None else dec)
     try:
-        if cols_fecha and cols_num:
-            fig = px.line(df.sort_values(cols_fecha[0]), x=cols_fecha[0], y=cols_num[0],
-                          markers=True, color_discrete_sequence=["#38bdf8"])
-        elif cols_cat and cols_num and len(df) <= 40:
-            fig = px.bar(df.sort_values(cols_num[0], ascending=False),
-                         x=cols_cat[0], y=cols_num[0],
-                         color_discrete_sequence=["#818cf8"])
-        elif len(cols_num) >= 2:
-            fig = px.scatter(df, x=cols_num[0], y=cols_num[1],
-                             color_discrete_sequence=["#c084fc"])
-        elif cols_cat and df[cols_cat[0]].nunique() <= 10:
-            vc = df[cols_cat[0]].value_counts().reset_index()
-            vc.columns = [cols_cat[0], "n"]
-            fig = px.pie(vc, names=cols_cat[0], values="n")
+        s = f"{float(v):,.{dec}f}" if p["miles"] else f"{float(v):.{dec}f}"
+    except (TypeError, ValueError):
+        return str(v)
+    if p["estilo"] == "1.234,56":
+        s = s.replace(",", "\x00").replace(".", ",").replace("\x00", ".")
+    if pct:
+        s += " %"
+    if moneda and p["moneda"]:
+        s = f"{p['moneda']} {s}"
+    return s
+
+
+def _tipo_columna(nombre, p):
+    """'pct' / 'moneda' / 'num' según el nombre de la columna y las prefs."""
+    n = str(nombre).lower()
+    if any(k in n for k in _KEYS_PCT):
+        return "pct"
+    if p["moneda"] and (p["moneda_todas"] or any(k in n for k in _KEYS_MONEDA)):
+        return "moneda"
+    return "num"
+
+
+def estilizar_df(df):
+    """Devuelve un Styler con los números formateados para mostrar en tabla."""
+    p = _prefs()
+    fmts = {}
+    for c in df.select_dtypes(include="number").columns:
+        tipo = _tipo_columna(c, p)
+        es_int = pd.api.types.is_integer_dtype(df[c])
+        dec = 0 if (es_int and tipo == "num") else None
+        fmts[c] = (lambda v, tipo=tipo, dec=dec, p=p:
+                   fmt_numero(v, dec=dec, pct=(tipo == "pct"),
+                              moneda=(tipo == "moneda"), p=p))
+    try:
+        return df.style.format(fmts)
+    except Exception:
+        return df
+
+
+def contexto_formato():
+    """Preferencias de formato que se pasan a la IA junto con la pregunta."""
+    p = _prefs()
+    partes = [f"redondear a {p['dec']} decimales"]
+    if p["moneda"]:
+        partes.append(f"los montos son en {MONEDA_NOMBRE.get(p['moneda'], p['moneda'])} "
+                      f"— mencionar la moneda en el análisis")
+    return "; ".join(partes)
+
+
+# ──────────────────────────────────────────────────────────────
+# GRÁFICOS — ejes con etiqueta, valores formateados sin solaparse,
+# tipo acorde a los datos y elegible por el usuario
+# ──────────────────────────────────────────────────────────────
+PALETA = ["#38bdf8", "#818cf8", "#c084fc", "#f472b6", "#34d399",
+          "#fbbf24", "#f87171", "#22d3ee"]
+
+
+def _titulo_eje(col):
+    return str(col).replace("_", " ").strip().capitalize()
+
+
+def _cols_de(df):
+    nums = df.select_dtypes(include="number").columns.tolist()
+    fechas = [c for c in df.columns
+              if pd.api.types.is_datetime64_any_dtype(df[c])
+              or any(k in str(c).lower() for k in
+                     ("fecha", "mes", "periodo", "dia", "anio", "año", "date",
+                      "month", "data", "semana", "week"))]
+    cats = [c for c in df.columns if c not in nums and c not in fechas]
+    return nums, cats, fechas
+
+
+def _aplicar_tema(fig, p, x=None, y=None, y_es_moneda=False, y_es_pct=False):
+    dec = p["pct_dec"] if y_es_pct else p["dec"]
+    fig.update_layout(
+        plot_bgcolor="#0f172a", paper_bgcolor="#0f172a", font_color="#e2e8f0",
+        font_family="Inter, system-ui, sans-serif",
+        separators=",." if p["estilo"] == "1.234,56" else ".,",
+        margin=dict(t=42, r=24, b=52, l=64),
+        hoverlabel=dict(bgcolor="#1e293b", font_color="#e2e8f0"),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        legend_title_text="",
+        uniformtext_minsize=9, uniformtext_mode="hide",
+        xaxis_title=_titulo_eje(x) if x else None,
+        yaxis_title=_titulo_eje(y) if y else None,
+    )
+    tickfmt = f",.{dec}f" if p["miles"] else f".{dec}f"
+    fig.update_yaxes(gridcolor="#1e293b", zerolinecolor="#334155",
+                     tickformat=tickfmt,
+                     tickprefix=f"{p['moneda']} " if (y_es_moneda and p["moneda"]) else None,
+                     ticksuffix=" %" if y_es_pct else None)
+    fig.update_xaxes(gridcolor="#1e293b")
+    return fig
+
+
+def graficar(df, tipo="auto", x=None, y=None):
+    """Genera el gráfico. tipo: auto/barras/barras_h/linea/area/torta/dispersion/histo."""
+    if df.empty or len(df) > 3000:
+        return None
+    p = _prefs()
+    nums, cats, fechas = _cols_de(df)
+    dfx = df.copy()
+
+    def _misma_escala(cols):
+        """Series con magnitudes MUY distintas en un mismo eje se aplastan:
+        conservar solo las comparables con la primera."""
+        if len(cols) <= 1:
+            return cols
+        base = abs(dfx[cols[0]].abs().max()) or 1
+        return [c for c in cols
+                if base / 50 <= (abs(dfx[c].abs().max()) or 1) <= base * 50]
+
+    # elección automática de tipo y ejes
+    if tipo == "auto":
+        if fechas and nums:
+            tipo, x, y = "linea", fechas[0], _misma_escala(nums[:4])
+        elif cats and nums and len(dfx) <= 60:
+            # nombres largos o muchas categorías → horizontal (no se solapan)
+            etiquetas = dfx[cats[0]].astype(str)
+            tipo = ("barras_h" if (etiquetas.str.len().max() > 12 or len(dfx) > 12)
+                    else "barras")
+            x, y = cats[0], _misma_escala(nums[:2])
+        elif len(nums) >= 2:
+            tipo, x, y = "dispersion", nums[0], [nums[1]]
+        elif cats and dfx[cats[0]].nunique() <= 10:
+            tipo, x, y = "torta", cats[0], None
+        elif len(nums) == 1:
+            tipo, x, y = "histo", nums[0], None
         else:
             return None
-        fig.update_layout(**tema)
+    if isinstance(y, str):
+        y = [y]
+    y = [c for c in (y or []) if c in dfx.columns] or (nums[:1] if nums else None)
+
+    y0 = y[0] if y else None
+    tipo_y = _tipo_columna(y0, p) if y0 else "num"
+    es_moneda, es_pct = tipo_y == "moneda", tipo_y == "pct"
+    dec = p["pct_dec"] if es_pct else p["dec"]
+    vfmt = (f",.{dec}f" if p["miles"] else f".{dec}f")
+    pref = f"{p['moneda']} " if (es_moneda and p["moneda"]) else ""
+    suf = " %" if es_pct else ""
+
+    try:
+        if tipo == "linea" or tipo == "area":
+            if not (x and y):
+                return None
+            dfx = dfx.sort_values(x)
+            fn = px.area if tipo == "area" else px.line
+            fig = fn(dfx, x=x, y=y, markers=True, color_discrete_sequence=PALETA)
+            if len(dfx) <= 15 and len(y) == 1:      # etiquetas solo si no se amontonan
+                fig.update_traces(texttemplate="%{y:" + vfmt + "}",
+                                  textposition="top center", mode="lines+markers+text")
+            fig = _aplicar_tema(fig, p, x, y0 if len(y) == 1 else None, es_moneda, es_pct)
+
+        elif tipo in ("barras", "barras_h"):
+            if not (x and y):
+                return None
+            dfx = dfx.sort_values(y0, ascending=(tipo == "barras_h"))
+            if tipo == "barras_h":
+                fig = px.bar(dfx, y=x, x=y, orientation="h", barmode="group",
+                             color_discrete_sequence=PALETA)
+                if len(dfx) <= 30:
+                    fig.update_traces(texttemplate="%{x:" + vfmt + "}",
+                                      textposition="outside", cliponaxis=False)
+                fig = _aplicar_tema(fig, p, y0 if len(y) == 1 else None, x)
+                tickfmt = f",.{dec}f" if p["miles"] else f".{dec}f"
+                fig.update_xaxes(tickformat=tickfmt, tickprefix=pref or None,
+                                 ticksuffix=suf or None)
+                fig.update_yaxes(tickformat=None, tickprefix=None, ticksuffix=None,
+                                 automargin=True)
+                fig.update_layout(height=max(360, 32 * len(dfx) + 120),
+                                  yaxis_title=_titulo_eje(x),
+                                  xaxis_title=_titulo_eje(y0) if len(y) == 1 else None)
+            else:
+                fig = px.bar(dfx, x=x, y=y, barmode="group",
+                             color_discrete_sequence=PALETA)
+                if len(dfx) <= 30:
+                    fig.update_traces(texttemplate="%{y:" + vfmt + "}",
+                                      textposition="outside", cliponaxis=False)
+                fig = _aplicar_tema(fig, p, x, y0 if len(y) == 1 else None,
+                                    es_moneda, es_pct)
+                if dfx[x].astype(str).str.len().max() > 8 or len(dfx) > 8:
+                    fig.update_xaxes(tickangle=-30)   # que no se pisen las etiquetas
+
+        elif tipo == "dispersion":
+            if not (x and y):
+                return None
+            fig = px.scatter(dfx, x=x, y=y0, color=cats[0] if cats else None,
+                             color_discrete_sequence=PALETA)
+            fig = _aplicar_tema(fig, p, x, y0, es_moneda, es_pct)
+
+        elif tipo == "torta":
+            col = x or (cats[0] if cats else None)
+            if col is None:
+                return None
+            if y and y0 in nums:
+                vc = dfx.groupby(col, as_index=False)[y0].sum().nlargest(12, y0)
+                names, values = col, y0
+            else:
+                vc = dfx[col].value_counts().reset_index().head(12)
+                vc.columns = [col, "n"]
+                names, values = col, "n"
+            fig = px.pie(vc, names=names, values=values, hole=0.35,
+                         color_discrete_sequence=PALETA)
+            fig.update_traces(textinfo="label+percent",
+                              texttemplate="%{label}<br>%{percent:.1%}")
+            fig = _aplicar_tema(fig, p)
+
+        elif tipo == "histo":
+            col = x or (nums[0] if nums else None)
+            if col is None:
+                return None
+            fig = px.histogram(dfx, x=col, color_discrete_sequence=PALETA)
+            fig = _aplicar_tema(fig, p, col, None)
+            fig.update_layout(yaxis_title="Frecuencia")
+
+        else:
+            return None
+
+        # hover con el formato elegido
+        if tipo not in ("torta", "histo"):
+            fig.update_traces(hovertemplate=None)
         return fig
     except Exception:
         return None
+
+
+# ──────────────────────────────────────────────────────────────
+# MODO ARCHIVO — CSV/Excel/Parquet/JSON a base consultable, con caché
+# (la primera carga convierte; las siguientes son instantáneas)
+# ──────────────────────────────────────────────────────────────
+@st.cache_data(show_spinner=False)
+def archivo_a_sqlite(nombre, contenido: bytes) -> str:
+    import hashlib
+    import io
+    import re as _re
+    import sqlite3
+    import tempfile
+
+    h = hashlib.sha1(contenido).hexdigest()[:12]
+    ruta = os.path.join(tempfile.gettempdir(), f"mvsql_archivo_{h}.db")
+    if os.path.exists(ruta):
+        return ruta          # ya convertido en una sesión anterior
+
+    ext = nombre.lower().rsplit(".", 1)[-1]
+    buf = io.BytesIO(contenido)
+    if ext == "csv":
+        try:
+            tablas = {"datos": pd.read_csv(io.BytesIO(contenido), engine="pyarrow")}
+        except Exception:      # pyarrow no instalado o CSV raro → autodetectar separador
+            tablas = {"datos": pd.read_csv(buf, sep=None, engine="python")}
+    elif ext in ("xlsx", "xls"):
+        hojas = pd.read_excel(buf, sheet_name=None)
+        tablas = {(_re.sub(r"\W+", "_", str(k)).strip("_").lower() or f"hoja{i}"): v
+                  for i, (k, v) in enumerate(hojas.items(), 1)}
+    elif ext == "parquet":
+        tablas = {"datos": pd.read_parquet(buf)}
+    else:                      # json
+        tablas = {"datos": pd.read_json(buf)}
+
+    tmp = ruta + ".tmp"
+    con = sqlite3.connect(tmp)
+    try:
+        for tabla, df_t in tablas.items():
+            df_t.columns = [_re.sub(r"\W+", "_", str(c)).strip("_") or f"col{i}"
+                            for i, c in enumerate(df_t.columns)]
+            df_t.to_sql(tabla, con, index=False, if_exists="replace")
+        con.commit()
+    finally:
+        con.close()
+    os.replace(tmp, ruta)
+    return ruta
 
 
 def barra_confianza(conf, t):
@@ -248,6 +564,20 @@ with st.sidebar:
                            format_func=lambda x: {"es": "Español", "en": "English",
                                                   "pt": "Português"}[x])
     t = T[ss.lang]
+
+    with st.expander(f"🔢 {t['fmt_titulo']}"):
+        c1, c2 = st.columns(2)
+        c1.number_input(t["fmt_dec"], 0, 6, 2, key="fmt_dec")
+        c2.number_input(t["fmt_pct_dec"], 0, 4, 1, key="fmt_pct_dec")
+        st.checkbox(t["fmt_miles"], value=True, key="fmt_miles")
+        st.radio(t["fmt_estilo"], ["1.234,56", "1,234.56"], horizontal=True,
+                 key="fmt_estilo")
+        st.selectbox(t["fmt_moneda"], MONEDAS, key="fmt_moneda",
+                     format_func=lambda m: t["fmt_sin_moneda"] if m == "" else
+                     f"{m} — {MONEDA_NOMBRE.get(m, '')}")
+        if ss.get("fmt_moneda"):
+            st.checkbox(t["fmt_moneda_todas"], key="fmt_moneda_todas")
+        st.caption(t["fmt_hint"])
 
     st.divider()
     st.subheader(f"🤖 {t['ia']}")
@@ -296,10 +626,16 @@ with st.sidebar:
 
     st.divider()
     st.subheader(f"🗄️ {t['bd']}")
-    motor_bd = st.selectbox(t["motor_bd"], list(MOTORES.keys()),
-                            format_func=lambda k: MOTORES[k]["nombre"])
+    motor_bd = st.selectbox(t["motor_bd"], ["archivo"] + list(MOTORES.keys()),
+                            format_func=lambda k: t["archivo"] if k == "archivo"
+                            else MOTORES[k]["nombre"])
 
-    if motor_bd == "sqlite":
+    if motor_bd == "archivo":
+        archivo_subido = st.file_uploader(
+            t["subir_archivo"], type=["csv", "xlsx", "xls", "parquet", "json"])
+        st.caption(t["archivo_hint"])
+        params = None
+    elif motor_bd == "sqlite":
         ruta = st.text_input("Archivo .db", value="cartera_demo.db")
         params = dict(ruta=ruta)
     else:
@@ -315,7 +651,15 @@ with st.sidebar:
     if st.button(f"🔗 {t['conectar']}", use_container_width=True, type="primary"):
         try:
             with st.spinner("…"):
-                cx = ConexionBD(motor_bd, **params).conectar()
+                if motor_bd == "archivo":
+                    if archivo_subido is None:
+                        st.error(t["archivo_falta"])
+                        st.stop()
+                    ruta_db = archivo_a_sqlite(archivo_subido.name,
+                                               archivo_subido.getvalue())
+                    cx = ConexionBD("sqlite", ruta=ruta_db).conectar()
+                else:
+                    cx = ConexionBD(motor_bd, **params).conectar()
                 ss.motor = MotorMVSQL(cx, ia_cfg)
             st.success(f"✓ {len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
         except Exception as e:
@@ -384,7 +728,7 @@ if ejecutar and pregunta:
         st.stop()
     with st.spinner(t["generando"]):
         try:
-            ss.resultado = ss.motor.responder(pregunta)
+            ss.resultado = ss.motor.responder(pregunta, contexto=contexto_formato())
             ss.historial.insert(0, {"pregunta": pregunta,
                                     "sql": ss.resultado["sql"]})
         except Exception as e:
@@ -433,18 +777,34 @@ if r:
 
         st.markdown(f"##### 📊 {t['resultado']}")
         m1, m2, m3 = st.columns(3)
-        m1.metric(t["filas"], f"{len(df):,}")
+        m1.metric(t["filas"], fmt_numero(len(df), dec=0))
         m2.metric(t["columnas"], len(df.columns))
         nums = df.select_dtypes(include="number").columns.tolist()
         if nums:
-            m3.metric(f"Σ {nums[0]}", f"{df[nums[0]].sum():,.0f}")
+            tipo_c = _tipo_columna(nums[0], _prefs())
+            m3.metric(f"Σ {_titulo_eje(nums[0])}",
+                      fmt_numero(df[nums[0]].sum(), pct=(tipo_c == "pct"),
+                                 moneda=(tipo_c == "moneda")))
 
         tab1, tab2, tab3, tab4 = st.tabs([f"📋 {t['tabla']}", f"📈 {t['grafico']}",
                                           f"🧠 {t['analisis']}", f"⬇️ {t['exportar']}"])
         with tab1:
-            st.dataframe(df, use_container_width=True, height=420)
+            st.dataframe(estilizar_df(df), use_container_width=True, height=420)
         with tab2:
-            fig = graficar_auto(df)
+            TIPOS_G = {"auto": t["g_auto"], "barras": t["g_barras"],
+                       "barras_h": t["g_barras_h"], "linea": t["g_linea"],
+                       "area": t["g_area"], "torta": t["g_torta"],
+                       "dispersion": t["g_dispersion"], "histo": t["g_histo"]}
+            g1, g2, g3 = st.columns([2, 2, 2])
+            tipo_g = g1.selectbox(t["tipo_grafico"], list(TIPOS_G.keys()),
+                                  format_func=TIPOS_G.get, key="tipo_grafico")
+            gx = gy = None
+            if tipo_g != "auto":
+                gx = g2.selectbox(t["eje_x"], list(df.columns), key="graf_x")
+                if tipo_g not in ("torta", "histo"):
+                    gy = g3.multiselect(t["eje_y"], nums,
+                                        default=nums[:1], key="graf_y")
+            fig = graficar(df, tipo=tipo_g, x=gx, y=gy)
             if fig:
                 st.plotly_chart(fig, use_container_width=True)
             else:
