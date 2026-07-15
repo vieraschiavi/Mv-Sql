@@ -8,6 +8,8 @@ const PROVIDERS = {
   openai: { nombre: "OpenAI (GPT)", defaultModel: "gpt-4o-mini",
     modelos: ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"], needsKey: true,
     base: "https://api.openai.com/v1" },
+  azure: { nombre: "Microsoft Copilot (Azure OpenAI)", defaultModel: "", modelos: [],
+    needsKey: true },
   gemini: { nombre: "Google (Gemini)", defaultModel: "gemini-2.0-flash",
     modelos: ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro"], needsKey: true },
   groq: { nombre: "Groq (Llama)", defaultModel: "llama-3.3-70b-versatile",
@@ -54,6 +56,20 @@ async function complete(ai, system, user, maxTokens = 1500) {
       { model: model || PROVIDERS.anthropic.defaultModel, max_tokens: maxTokens,
         temperature: 0, system, messages: [{ role: "user", content: user }] });
     return (data.content || []).map((b) => b.text || "").join("");
+  }
+
+  if (p === "azure") {
+    // Azure OpenAI (el backend de Microsoft Copilot para empresas).
+    // baseUrl: https://<recurso>.openai.azure.com — model = nombre del deployment.
+    if (!baseUrl) throw new Error(
+      "Azure OpenAI necesita la URL del recurso (ej: https://mirecurso.openai.azure.com) " +
+      "en Base URL, y el nombre del deployment en Modelo.");
+    const data = await post(
+      `${baseUrl.replace(/\/$/, "")}/openai/deployments/${model || "gpt-4o-mini"}/chat/completions?api-version=2024-06-01`,
+      { "api-key": apiKey },
+      { max_tokens: maxTokens, temperature: 0,
+        messages: [{ role: "system", content: system }, { role: "user", content: user }] });
+    return data.choices?.[0]?.message?.content ?? "";
   }
 
   if (p === "gemini") {

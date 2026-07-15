@@ -59,10 +59,10 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
           <input value={ai.model} placeholder="gpt-4o-mini"
                  onChange={(e) => setAi({ ...ai, model: e.target.value })} />
         )}
-        {(ai.provider === "custom" || ai.provider === "ollama") && (
+        {(ai.provider === "custom" || ai.provider === "ollama" || ai.provider === "azure") && (
           <>
             <label>Base URL</label>
-            <input value={ai.baseUrl || ""} placeholder={ai.provider === "ollama" ? "http://localhost:11434" : "https://api…/v1"}
+            <input value={ai.baseUrl || ""} placeholder={ai.provider === "ollama" ? "http://localhost:11434" : ai.provider === "azure" ? "https://mirecurso.openai.azure.com" : "https://api…/v1"}
                    onChange={(e) => setAi({ ...ai, baseUrl: e.target.value })} />
           </>
         )}
