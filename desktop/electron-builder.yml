@@ -11,6 +11,13 @@ files:
   - dist/**
   - electron/**
   - package.json
+  # El proceso principal (electron/services/db.cjs) hace require() en tiempo
+  # de ejecución de mssql/mysql2/pg/better-sqlite3 — sin node_modules
+  # empaquetado, esos require() fallan apenas el usuario intenta conectar
+  # una base (o antes, según el caso). No es opcional.
+  - node_modules/**
+  - "!node_modules/**/{CHANGELOG.md,README.md,readme.md,.bin,*.map,test,tests,__tests__,example,examples,docs}"
+  - "!node_modules/**/*.{ts,map}"
 
 asarUnpack:
   - "**/node_modules/better-sqlite3/**"
