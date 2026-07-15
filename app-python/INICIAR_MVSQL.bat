@@ -2,22 +2,16 @@
 setlocal EnableDelayedExpansion
 title MV SQL NLP - Instalador y Launcher
 color 0B
-chcp 65001 >nul 2>&1
 
 echo.
-echo   ███╗   ███╗██╗   ██╗    ███████╗ ██████╗ ██╗
-echo   ████╗ ████║██║   ██║    ██╔════╝██╔═══██╗██║
-echo   ██╔████╔██║██║   ██║    ███████╗██║   ██║██║
-echo   ██║╚██╔╝██║╚██╗ ██╔╝    ╚════██║██║▄▄ ██║██║
-echo   ██║ ╚═╝ ██║ ╚████╔╝     ███████║╚██████╔╝███████╗
-echo   ╚═╝     ╚═╝  ╚═══╝      ╚══════╝ ╚══▀▀═╝ ╚══════╝
-echo               N  L  P   ·   Tu base de datos, en tu idioma
-echo   ─────────────────────────────────────────────────────────
+echo   ================================================================
+echo     MV SQL NLP  -  Tu base de datos, en tu idioma
+echo   ================================================================
 echo.
 
 cd /d "%~dp0"
 
-:: ── 1. Detectar Python ─────────────────────────────────────────
+:: -- 1. Detectar Python -----------------------------------------------
 set "PY="
 py -3 --version >nul 2>&1 && set "PY=py -3"
 if not defined PY ( python --version >nul 2>&1 && set "PY=python" )
@@ -45,7 +39,7 @@ if not defined PY (
 )
 echo   [1/5] Python detectado: %PY%
 
-:: ── 2. Entorno virtual ─────────────────────────────────────────
+:: -- 2. Entorno virtual -------------------------------------------------
 if not exist ".venv\Scripts\python.exe" (
     echo   [2/5] Creando entorno virtual aislado ^(solo la primera vez^)...
     %PY% -m venv .venv || ( color 0C & echo   [X] Fallo creando .venv & pause & exit /b 1 )
@@ -54,7 +48,7 @@ if not exist ".venv\Scripts\python.exe" (
 )
 set "VPY=.venv\Scripts\python.exe"
 
-:: ── 3. Dependencias ────────────────────────────────────────────
+:: -- 3. Dependencias ------------------------------------------------------
 "%VPY%" -c "import streamlit, plotly, sklearn, openpyxl, reportlab" >nul 2>&1
 if errorlevel 1 (
     echo   [3/5] Instalando dependencias ^(2-5 min la primera vez^)...
@@ -65,7 +59,7 @@ if errorlevel 1 (
     echo   [3/5] Dependencias OK
 )
 
-:: ── 4. Base demo ───────────────────────────────────────────────
+:: -- 4. Base demo -----------------------------------------------------------
 if not exist "cartera_demo.db" (
     echo   [4/5] Generando base de datos demo...
     "%VPY%" generar_db_demo.py || echo   [!] No se pudo generar la demo ^(podes conectar tu propia base^)
@@ -73,18 +67,21 @@ if not exist "cartera_demo.db" (
     echo   [4/5] Base demo OK
 )
 
-:: ── 5. Lanzar ──────────────────────────────────────────────────
+:: -- 5. Lanzar ----------------------------------------------------------------
 :: Puerto fijo poco comun (8791) para no chocar con otras apps que uses
 :: en tu PC (muchos programas usan el 8501 por defecto de Streamlit).
 set "MVSQL_PORT=8791"
 echo   [5/5] Iniciando MV SQL NLP en http://localhost:%MVSQL_PORT% ...
 echo.
-echo   ─────────────────────────────────────────────────────────
+echo   ================================================================
 echo    La app se abre sola en tu navegador.
 echo    Si se abre otra pagina distinta, entra manualmente a:
 echo    http://localhost:%MVSQL_PORT%
 echo    Para cerrarla: Ctrl+C o cerra esta ventana.
-echo   ─────────────────────────────────────────────────────────
+echo   ================================================================
 echo.
 "%VPY%" -m streamlit run app.py --server.port %MVSQL_PORT% --server.headless false --browser.gatherUsageStats false --theme.base dark
-pause
+
+echo.
+echo   La app se cerro. Presiona una tecla para salir...
+pause >nul
