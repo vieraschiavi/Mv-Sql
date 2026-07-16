@@ -82,6 +82,8 @@ T = {
         "eda_infl": "Influencia de variables", "eda_objetivo": "Variable objetivo",
         "eda_infl_hint": "Importancia calculada con Random Forest sobre una muestra (hasta 5.000 filas): cuánto ayuda cada variable a predecir la variable objetivo.",
         "eda_pocas": "Se necesitan al menos 2 columnas numéricas con variación para este análisis.",
+        "eda_shap_hint": "Valores SHAP sobre Random Forest (muestra de hasta 1.500 filas): el largo de la barra es cuánto influye; ▲ verde = al subir esa variable, sube {objetivo}; ▼ rojo = la reduce.",
+        "eda_shap_falta": "Instalá el paquete 'shap' (pip install shap) para ver además la dirección del efecto.",
     },
     "en": {
         "titulo": "MV SQL NLP", "sub": "Your database, in your language. Ask in plain words — AI generates optimized SQL, validates it against your schema, and returns tables, charts and analysis.",
@@ -132,6 +134,8 @@ T = {
         "eda_infl": "Variable influence", "eda_objetivo": "Target variable",
         "eda_infl_hint": "Importance computed with a Random Forest on a sample (up to 5,000 rows): how much each variable helps predict the target.",
         "eda_pocas": "At least 2 numeric columns with variation are needed for this analysis.",
+        "eda_shap_hint": "SHAP values on a Random Forest (sample of up to 1,500 rows): bar length is how much it influences; ▲ green = increasing that variable increases {objetivo}; ▼ red = it decreases it.",
+        "eda_shap_falta": "Install the 'shap' package (pip install shap) to also see the direction of the effect.",
     },
     "pt": {
         "titulo": "MV SQL NLP", "sub": "Seu banco de dados, no seu idioma. Pergunte em linguagem natural — a IA gera SQL otimizado, valida contra seu esquema e devolve tabelas, gráficos e análises.",
@@ -182,6 +186,8 @@ T = {
         "eda_infl": "Influência de variáveis", "eda_objetivo": "Variável alvo",
         "eda_infl_hint": "Importância calculada com Random Forest sobre uma amostra (até 5.000 linhas): quanto cada variável ajuda a prever a variável alvo.",
         "eda_pocas": "São necessárias pelo menos 2 colunas numéricas com variação para esta análise.",
+        "eda_shap_hint": "Valores SHAP sobre Random Forest (amostra de até 1.500 linhas): o comprimento da barra é o quanto influencia; ▲ verde = aumentar essa variável aumenta {objetivo}; ▼ vermelho = a reduz.",
+        "eda_shap_falta": "Instale o pacote 'shap' (pip install shap) para ver também a direção do efeito.",
     },
 }
 
@@ -540,13 +546,19 @@ def eda_correlacion(df_e):
     return fig
 
 
-def eda_influencia(df_e, objetivo):
-    """Qué variables influyen más sobre `objetivo` (importancia Random Forest)."""
+def eda_influencia(df_e, objetivo, t):
+    """Qué variables influyen sobre `objetivo` y en qué dirección.
+
+    Con `shap` instalado usa valores SHAP sobre un Random Forest (magnitud
+    + dirección del efecto); si no está, cae a la importancia del bosque
+    (solo magnitud). Devuelve (figura, usa_shap).
+    """
+    import numpy as np
     from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
     d = _sin_ids(df_e).dropna(subset=[objetivo])
     if len(d) < 20:
-        return None
+        return None, False
     y = d[objetivo]
     X = d.drop(columns=[objetivo])
     Xe = pd.DataFrame(index=d.index)
@@ -559,7 +571,7 @@ def eda_influencia(df_e, objetivo):
         elif col.nunique() <= 50:
             Xe[c] = pd.factorize(col.astype(str))[0]
     if Xe.shape[1] < 1:
-        return None
+        return None, False
     es_regresion = pd.api.types.is_numeric_dtype(y) and y.nunique() > 10
     if es_regresion:
         modelo = RandomForestRegressor(n_estimators=60, max_depth=8,
@@ -572,19 +584,55 @@ def eda_influencia(df_e, objetivo):
     try:
         modelo.fit(Xe, y_fit)
     except Exception:
-        return None
-    imp = (pd.Series(modelo.feature_importances_, index=Xe.columns)
-           .sort_values().tail(12))
-    fig = px.bar(x=imp.values, y=[_titulo_eje(c) for c in imp.index],
-                 orientation="h", color_discrete_sequence=["#38bdf8"])
+        return None, False
+
+    # ── SHAP: magnitud + dirección del efecto ──
+    usa_shap = False
+    try:
+        import shap
+
+        Xs = Xe.sample(min(len(Xe), 1500), random_state=0)
+        sv = shap.TreeExplainer(modelo).shap_values(Xs)
+        if isinstance(sv, list):          # clasificador (versiones viejas)
+            sv = sv[-1]
+        if getattr(sv, "ndim", 2) == 3:   # clasificador (versiones nuevas)
+            sv = sv[:, :, -1]
+        mag = np.abs(sv).mean(axis=0)
+        if mag.sum() <= 0:
+            raise ValueError("SHAP sin señal")
+        pesos = pd.Series(mag / mag.sum(), index=Xe.columns)
+        direcciones = {}
+        for j, c in enumerate(Xe.columns):
+            with np.errstate(invalid="ignore"):
+                r = np.corrcoef(Xs[c], sv[:, j])[0, 1]
+            direcciones[c] = 0.0 if pd.isna(r) else r
+        usa_shap = True
+    except Exception:
+        pesos = pd.Series(modelo.feature_importances_, index=Xe.columns)
+        direcciones = {c: 0.0 for c in Xe.columns}
+
+    pesos = pesos.sort_values().tail(12)
+    colores, textos = [], []
+    for c, v in pesos.items():
+        if usa_shap and direcciones[c] < -0.05:
+            colores.append("#f87171")             # al subir la variable, BAJA
+            textos.append(f"{v:.0%} ▼")
+        elif usa_shap and direcciones[c] > 0.05:
+            colores.append("#34d399")             # al subir la variable, SUBE
+            textos.append(f"{v:.0%} ▲")
+        else:
+            colores.append("#38bdf8")
+            textos.append(f"{v:.0%}")
+    fig = px.bar(x=pesos.values, y=[_titulo_eje(c) for c in pesos.index],
+                 orientation="h")
+    fig.update_traces(marker_color=colores, text=textos,
+                      textposition="outside", cliponaxis=False)
     fig.update_layout(plot_bgcolor="#0f172a", paper_bgcolor="#0f172a",
-                      font_color="#e2e8f0", margin=dict(t=30, r=40, b=40, l=30),
-                      xaxis_title=None, yaxis_title=None,
-                      height=max(300, 34 * len(imp) + 90))
-    fig.update_traces(texttemplate="%{x:.0%}", textposition="outside",
-                      cliponaxis=False)
+                      font_color="#e2e8f0", margin=dict(t=30, r=60, b=40, l=30),
+                      xaxis_title=None, yaxis_title=None, showlegend=False,
+                      height=max(300, 34 * len(pesos) + 90))
     fig.update_xaxes(tickformat=".0%", gridcolor="#1e293b")
-    return fig
+    return fig, usa_shap
 
 
 # ──────────────────────────────────────────────────────────────
@@ -940,10 +988,13 @@ if r:
                 objetivo = st.selectbox(t["eda_objetivo"], candidatas,
                                         index=len(candidatas) - 1 if candidatas else 0,
                                         key="eda_objetivo")
-                fig_infl = eda_influencia(df_eda, objetivo)
+                fig_infl, usa_shap = eda_influencia(df_eda, objetivo, t)
                 if fig_infl:
                     st.plotly_chart(fig_infl, use_container_width=True)
-                    st.caption(t["eda_infl_hint"])
+                    if usa_shap:
+                        st.caption(t["eda_shap_hint"].format(objetivo=objetivo))
+                    else:
+                        st.caption(f"{t['eda_infl_hint']} {t['eda_shap_falta']}")
                 else:
                     st.info(t["eda_pocas"])
             else:
