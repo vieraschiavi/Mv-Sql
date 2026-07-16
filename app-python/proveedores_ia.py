@@ -170,15 +170,23 @@ def completar(proveedor, api_key, system, user, modelo=None, max_tokens=1500,
         return data.get("text", "")
 
     if proveedor == "anthropic":
-        data = _post(
-            "https://api.anthropic.com/v1/messages",
-            {"x-api-key": api_key, "anthropic-version": "2023-06-01",
-             "content-type": "application/json"},
-            {"model": modelo or PROVEEDORES["anthropic"]["modelo_default"],
-             "max_tokens": max_tokens, "temperature": temperatura,
-             "system": system,
-             "messages": [{"role": "user", "content": user}]},
-        )
+        payload = {"model": modelo or PROVEEDORES["anthropic"]["modelo_default"],
+                   "max_tokens": max_tokens, "temperature": temperatura,
+                   "system": system,
+                   "messages": [{"role": "user", "content": user}]}
+        headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01",
+                   "content-type": "application/json"}
+        try:
+            data = _post("https://api.anthropic.com/v1/messages", headers, payload)
+        except ErrorProveedor as e:
+            # Los modelos más nuevos (ej. claude-opus-4-8) rechazan
+            # `temperature` con 400 "temperature is deprecated for this
+            # model" — reintentar sin el parámetro.
+            if "temperature" in str(e) and "temperature" in payload:
+                payload.pop("temperature")
+                data = _post("https://api.anthropic.com/v1/messages", headers, payload)
+            else:
+                raise
         return "".join(b.get("text", "") for b in data.get("content", []))
 
     if proveedor == "azure":
@@ -189,14 +197,26 @@ def completar(proveedor, api_key, system, user, modelo=None, max_tokens=1500,
                 "Azure OpenAI necesita la URL del recurso (ej: https://mirecurso.openai.azure.com) "
                 "en el campo Base URL, y el nombre del deployment en el campo Modelo.")
         deployment = modelo or "gpt-4o-mini"
-        data = _post(
-            f"{base_url.rstrip('/')}/openai/deployments/{deployment}/chat/completions"
-            "?api-version=2024-06-01",
-            {"api-key": api_key, "content-type": "application/json"},
-            {"max_tokens": max_tokens, "temperature": temperatura,
-             "messages": [{"role": "system", "content": system},
-                          {"role": "user", "content": user}]},
-        )
+        url_az = (f"{base_url.rstrip('/')}/openai/deployments/{deployment}"
+                  "/chat/completions?api-version=2024-06-01")
+        headers_az = {"api-key": api_key, "content-type": "application/json"}
+        payload_az = {"max_tokens": max_tokens, "temperature": temperatura,
+                      "messages": [{"role": "system", "content": system},
+                                   {"role": "user", "content": user}]}
+        try:
+            data = _post(url_az, headers_az, payload_az)
+        except ErrorProveedor as e:
+            msg = str(e)
+            cambiado = False
+            if "temperature" in msg and "temperature" in payload_az:
+                payload_az.pop("temperature")
+                cambiado = True
+            if "max_completion_tokens" in msg and "max_tokens" in payload_az:
+                payload_az["max_completion_tokens"] = payload_az.pop("max_tokens")
+                cambiado = True
+            if not cambiado:
+                raise
+            data = _post(url_az, headers_az, payload_az)
         try:
             return data["choices"][0]["message"]["content"]
         except (KeyError, IndexError):
@@ -232,14 +252,29 @@ def completar(proveedor, api_key, system, user, modelo=None, max_tokens=1500,
     if not base:
         raise ErrorProveedor(f"Proveedor '{proveedor}' requiere base_url (endpoint OpenAI-compatible).")
     info = PROVEEDORES.get(proveedor, {})
-    data = _post(
-        f"{base.rstrip('/')}/chat/completions",
-        {"Authorization": f"Bearer {api_key}", "content-type": "application/json"},
-        {"model": modelo or info.get("modelo_default") or "gpt-4o-mini",
-         "max_tokens": max_tokens, "temperature": temperatura,
-         "messages": [{"role": "system", "content": system},
-                      {"role": "user", "content": user}]},
-    )
+    url = f"{base.rstrip('/')}/chat/completions"
+    headers = {"Authorization": f"Bearer {api_key}", "content-type": "application/json"}
+    payload = {"model": modelo or info.get("modelo_default") or "gpt-4o-mini",
+               "max_tokens": max_tokens, "temperature": temperatura,
+               "messages": [{"role": "system", "content": system},
+                            {"role": "user", "content": user}]}
+    try:
+        data = _post(url, headers, payload)
+    except ErrorProveedor as e:
+        # Modelos nuevos de OpenAI rechazan `temperature` distinto del
+        # default y/o piden `max_completion_tokens` en vez de `max_tokens`
+        # — adaptar el payload según el mensaje y reintentar una vez.
+        msg = str(e)
+        cambiado = False
+        if "temperature" in msg and "temperature" in payload:
+            payload.pop("temperature")
+            cambiado = True
+        if "max_completion_tokens" in msg and "max_tokens" in payload:
+            payload["max_completion_tokens"] = payload.pop("max_tokens")
+            cambiado = True
+        if not cambiado:
+            raise
+        data = _post(url, headers, payload)
     try:
         return data["choices"][0]["message"]["content"]
     except (KeyError, IndexError):
