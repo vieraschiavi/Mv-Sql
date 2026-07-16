@@ -46,12 +46,34 @@ async function post(url, headers, body) {
   return r.json();
 }
 
+// Modelos nuevos rechazan `temperature` (Claude Opus 4.8+) o piden
+// `max_completion_tokens` (OpenAI GPT-5+): adaptar el payload y reintentar.
+async function postConReintento(url, headers, payload) {
+  try {
+    return await post(url, headers, payload);
+  } catch (e) {
+    const msg = String(e.message || e);
+    let cambiado = false;
+    if (msg.includes("temperature") && "temperature" in payload) {
+      delete payload.temperature;
+      cambiado = true;
+    }
+    if (msg.includes("max_completion_tokens") && "max_tokens" in payload) {
+      payload.max_completion_tokens = payload.max_tokens;
+      delete payload.max_tokens;
+      cambiado = true;
+    }
+    if (!cambiado) throw e;
+    return post(url, headers, payload);
+  }
+}
+
 async function complete(ai, system, user, maxTokens = 1500) {
   const { provider, apiKey, model, baseUrl } = ai;
   const p = provider || "anthropic";
 
   if (p === "anthropic") {
-    const data = await post("https://api.anthropic.com/v1/messages",
+    const data = await postConReintento("https://api.anthropic.com/v1/messages",
       { "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
       { model: model || PROVIDERS.anthropic.defaultModel, max_tokens: maxTokens,
         temperature: 0, system, messages: [{ role: "user", content: user }] });
@@ -64,7 +86,7 @@ async function complete(ai, system, user, maxTokens = 1500) {
     if (!baseUrl) throw new Error(
       "Azure OpenAI necesita la URL del recurso (ej: https://mirecurso.openai.azure.com) " +
       "en Base URL, y el nombre del deployment en Modelo.");
-    const data = await post(
+    const data = await postConReintento(
       `${baseUrl.replace(/\/$/, "")}/openai/deployments/${model || "gpt-4o-mini"}/chat/completions?api-version=2024-06-01`,
       { "api-key": apiKey },
       { max_tokens: maxTokens, temperature: 0,
@@ -94,7 +116,7 @@ async function complete(ai, system, user, maxTokens = 1500) {
 
   const base = baseUrl || PROVIDERS[p]?.base;
   if (!base) throw new Error(`El proveedor '${p}' necesita una Base URL (endpoint OpenAI-compatible).`);
-  const data = await post(`${base.replace(/\/$/, "")}/chat/completions`,
+  const data = await postConReintento(`${base.replace(/\/$/, "")}/chat/completions`,
     { Authorization: `Bearer ${apiKey}` },
     { model: model || PROVIDERS[p]?.defaultModel || "gpt-4o-mini",
       max_tokens: maxTokens, temperature: 0,
