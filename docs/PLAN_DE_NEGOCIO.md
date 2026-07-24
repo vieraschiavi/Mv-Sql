@@ -1,5 +1,20 @@
 # 📊 Plan de negocio — MV SQL NLP
 
+> ⚠️ **CORRECCIÓN (auditoría jul-2026).** Este documento recomienda suscripción
+> (US$ 15/29/79 por mes) pero el código publicado cobra **pago único**
+> (US$ 19/39/99) — son dos negocios distintos y el implementado es el peor.
+> A US$ 39 de pago único hacen falta **106 ventas por mes, para siempre**,
+> contra un mercado uruguayo alcanzable de ~684 empresas: es imposible.
+> El mismo ingreso se logra con **1,7 implementaciones por mes** a US$ 2.500.
+>
+> **Conclusión de la auditoría: el producto es el diferenciador, el servicio de
+> implementación es el negocio.** Modelo completo y editable en
+> [`MODELO_NEGOCIO.py`](MODELO_NEGOCIO.py) — corrélo con `python3 MODELO_NEGOCIO.py`
+> antes de tomar decisiones con plata.
+>
+> Escenarios a 18 meses (neto acumulado): pago único **-US$ 14.298** ·
+> suscripción + servicio **+US$ 114.913** · con publicidad y equipo **+US$ 207.102**.
+
 > Análisis de competencia, precios recomendados, estructura de costos y
 > escenarios de facturación neta. Cifras en USD salvo indicación. Los valores
 > de mercado son estimaciones a verificar antes de lanzar (los precios de
