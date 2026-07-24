@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>MV SQL NLP · Panel del dueño</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<style>
+:root{--navy:#081527;--hero-a:#0d2440;--hero-b:#081324;--amber:#f2b441;--amber-ink:#1c1305;
+  --ink:#eaf1fb;--muted:#9db0c8;--faint:#6c7f99;--line:#1d3149;--line2:#2a4160;--green:#00c896;--red:#f87171;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--navy);color:var(--ink);font-family:var(--sans);padding:20px;line-height:1.5}
+.wrap{max-width:1060px;margin:0 auto}
+header{display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap}
+header b{font-size:17px;font-weight:800}
+header .am{color:var(--amber)}
+header .tag{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--amber);background:rgba(242,180,65,.1);border:1px solid rgba(242,180,65,.3);
+  padding:4px 10px;border-radius:20px}
+.login{background:linear-gradient(160deg,var(--hero-a),var(--hero-b));border:1px solid var(--line);
+  border-radius:18px;padding:32px;max-width:420px;margin:60px auto}
+.login h1{font-size:22px;margin:0 0 8px}
+.login p{color:var(--muted);font-size:14px;margin:0 0 18px}
+input{width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:rgba(255,255,255,.06);
+  border:1px solid var(--line2);border-radius:10px;padding:11px 13px}
+input:focus{outline:none;border-color:var(--amber)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:750;font-size:14px;
+  border-radius:9px;padding:11px 18px;cursor:pointer;border:0;font-family:inherit;
+  background:var(--amber);color:var(--amber-ink);width:100%;margin-top:12px}
+.btn.sec{background:transparent;color:var(--muted);border:1px solid var(--line2);width:auto;margin:0;padding:8px 14px}
+.err{color:var(--red);font-size:13.5px;margin-top:12px;min-height:18px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+@media(max-width:860px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:linear-gradient(160deg,var(--hero-a),var(--hero-b));border:1px solid var(--line);
+  border-radius:14px;padding:18px}
+.kpi .l{color:var(--faint);font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.kpi .v{font-size:30px;font-weight:850;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .v.am{color:var(--amber)}
+.kpi .s{color:var(--muted);font-size:12px;margin-top:4px}
+.card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;
+  padding:20px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 14px;font-weight:800;letter-spacing:.02em}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
+  padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:9px 10px;border-bottom:1px solid rgba(29,49,73,.5);font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right}
+.bars{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:10px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;min-width:0}
+.bar .b{width:100%;background:linear-gradient(180deg,var(--amber),#e39a2e);border-radius:5px 5px 0 0;min-height:3px}
+.bar .n{font-size:10.5px;color:var(--faint);white-space:nowrap}
+.bar .v{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.vacio{color:var(--muted);font-size:14px;padding:12px 0}
+.pie{color:var(--faint);font-size:12px;margin-top:18px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+code{font-family:var(--mono);background:rgba(255,255,255,.06);padding:2px 6px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div id="login" class="login">
+  <h1>Panel del dueño</h1>
+  <p>Ventas reales de MV SQL NLP, directo desde MercadoPago.</p>
+  <input id="tok" type="password" placeholder="Token de acceso" autocomplete="current-password">
+  <button class="btn" id="entrar">Entrar</button>
+  <div class="err" id="err"></div>
+</div>
+
+<div id="panel" hidden>
+  <header>
+    <b>⚡ MV SQL <span class="am">NLP</span></b>
+    <span class="tag">Panel del dueño</span>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="btn sec" id="recargar">Actualizar</button>
+      <button class="btn sec" id="salir">Salir</button>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="l">Ingreso total</div><div class="v am" id="k-total">—</div>
+      <div class="s" id="k-total-s">últimos 12 meses</div></div>
+    <div class="kpi"><div class="l">Este mes</div><div class="v" id="k-mes">—</div>
+      <div class="s">ingreso del mes en curso</div></div>
+    <div class="kpi"><div class="l">Ventas</div><div class="v" id="k-ventas">—</div>
+      <div class="s" id="k-ticket">—</div></div>
+    <div class="kpi"><div class="l">Clientes únicos</div><div class="v" id="k-clientes">—</div>
+      <div class="s" id="k-aprob">—</div></div>
+  </div>
+
+  <div class="card">
+    <h2>Ingresos por mes</h2>
+    <div class="bars" id="grafico"></div>
+    <div class="vacio" id="grafico-vacio" hidden>Todavía no hay ventas aprobadas en el período.</div>
+  </div>
+
+  <div class="card">
+    <h2>Ventas por producto</h2>
+    <table id="t-productos"><thead><tr>
+      <th>Producto</th><th class="num">Unidades</th><th class="num">Ingreso</th>
+    </tr></thead><tbody></tbody></table>
+    <div class="vacio" id="prod-vacio" hidden>Sin ventas registradas.</div>
+  </div>
+
+  <div class="card">
+    <h2>Últimas ventas</h2>
+    <table id="t-ventas"><thead><tr>
+      <th>Fecha</th><th>Referencia</th><th>Medio</th><th class="num">Monto</th>
+    </tr></thead><tbody></tbody></table>
+    <div class="vacio" id="ventas-vacio" hidden>Sin ventas todavía.</div>
+  </div>
+
+  <div class="pie">
+    <span id="generado"></span>
+    <span>Fuente: API de MercadoPago · sin base de datos intermedia</span>
+  </div>
+</div>
+
+</div>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var LS = "mvsql_owner_token";
+
+function usd(n) {
+  return "$" + Number(n || 0).toLocaleString("es-UY", { maximumFractionDigits: 0 });
+}
+
+function pintar(d) {
+  var r = d.resumen;
+  $("k-total").textContent = usd(r.ingreso_total_usd);
+  $("k-mes").textContent = usd(r.ingreso_mes_actual_usd);
+  $("k-ventas").textContent = r.ventas_totales;
+  $("k-ticket").textContent = "ticket promedio " + usd(r.ticket_promedio_usd);
+  $("k-clientes").textContent = r.clientes_unicos;
+  $("k-aprob").textContent = r.tasa_aprobacion + "% aprobación · " +
+    r.pagos_rechazados + " rechazados";
+
+  // gráfico de barras por mes
+  var g = $("grafico"); g.innerHTML = "";
+  var serie = d.por_mes || [];
+  if (!serie.length) { g.hidden = true; $("grafico-vacio").hidden = false; }
+  else {
+    g.hidden = false; $("grafico-vacio").hidden = true;
+    var max = Math.max.apply(null, serie.map(function (s) { return s.usd; })) || 1;
+    serie.forEach(function (s) {
+      var d1 = document.createElement("div"); d1.className = "bar";
+      var v = document.createElement("div"); v.className = "v"; v.textContent = usd(s.usd);
+      var b = document.createElement("div"); b.className = "b";
+      b.style.height = Math.max(3, (s.usd / max) * 110) + "px";
+      var n = document.createElement("div"); n.className = "n"; n.textContent = s.mes;
+      d1.appendChild(v); d1.appendChild(b); d1.appendChild(n); g.appendChild(d1);
+    });
+  }
+
+  var tp = $("t-productos").querySelector("tbody"); tp.innerHTML = "";
+  (d.por_producto || []).forEach(function (p) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + p.producto + "</td><td class='num'>" + p.unidades +
+                   "</td><td class='num'>" + usd(p.usd) + "</td>";
+    tp.appendChild(tr);
+  });
+  $("prod-vacio").hidden = (d.por_producto || []).length > 0;
+
+  var tv = $("t-ventas").querySelector("tbody"); tv.innerHTML = "";
+  (d.ultimas_ventas || []).forEach(function (v) {
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + v.fecha + "</td><td><code>" + (v.referencia || "—") +
+                   "</code></td><td>" + (v.medio || "—") + "</td><td class='num'>" +
+                   usd(v.monto_usd) + "</td>";
+    tv.appendChild(tr);
+  });
+  $("ventas-vacio").hidden = (d.ultimas_ventas || []).length > 0;
+
+  $("generado").textContent = "Actualizado: " +
+    new Date(d.generado).toLocaleString("es-UY");
+}
+
+function cargar(token) {
+  $("err").textContent = "Consultando MercadoPago…";
+  return fetch("/api/owner-stats?token=" + encodeURIComponent(token))
+    .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    .then(function (res) {
+      if (!res.ok) throw new Error(res.j.error || "No se pudo cargar.");
+      try { localStorage.setItem(LS, token); } catch (e) {}
+      $("login").hidden = true; $("panel").hidden = false;
+      pintar(res.j);
+    })
+    .catch(function (e) {
+      $("err").textContent = e.message;
+      $("login").hidden = false; $("panel").hidden = true;
+    });
+}
+
+$("entrar").addEventListener("click", function () { cargar($("tok").value.trim()); });
+$("tok").addEventListener("keydown", function (e) { if (e.key === "Enter") $("entrar").click(); });
+$("recargar").addEventListener("click", function () {
+  var t = null; try { t = localStorage.getItem(LS); } catch (e) {}
+  if (t) cargar(t);
+});
+$("salir").addEventListener("click", function () {
+  try { localStorage.removeItem(LS); } catch (e) {}
+  location.reload();
+});
+(function () {
+  var t = null; try { t = localStorage.getItem(LS); } catch (e) {}
+  if (t) cargar(t);
+})();
+</script>
+</body>
+</html>
