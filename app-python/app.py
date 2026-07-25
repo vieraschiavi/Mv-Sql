@@ -27,6 +27,8 @@ from conectores import ConexionBD, MOTORES
 from exportar import a_csv, a_excel, a_pdf, a_html
 from motor import MotorMVSQL
 from proveedores_ia import PROVEEDORES, probar_conexion, cargar_licencia_creditos
+import auditoria
+import equipo
 import guardadas
 
 # ──────────────────────────────────────────────────────────────
@@ -84,6 +86,28 @@ T = {
         "eda_pocas": "Se necesitan al menos 2 columnas numéricas con variación para este análisis.",
         "eda_shap_hint": "Valores SHAP sobre Random Forest (muestra de hasta 1.500 filas): el largo de la barra es cuánto influye; ▲ verde = al subir esa variable, sube {objetivo}; ▼ rojo = la reduce.",
         "eda_shap_falta": "Instalá el paquete 'shap' (pip install shap) para ver además la dirección del efecto.",
+        "login_titulo": "Iniciar sesión", "login_usuario": "Usuario",
+        "login_pin": "PIN", "login_entrar": "Entrar", "login_salir": "Salir",
+        "login_error": "Usuario o PIN incorrecto.",
+        "login_ayuda": "Esta instalación tiene control de acceso por usuario. Cada consulta queda registrada.",
+        "sin_permiso": "No tenés permiso para consultar: {tablas}. El intento quedó registrado.",
+        "sin_exportar": "Tu rol no permite exportar datos. Pedile a un administrador que te cambie el rol.",
+        "sin_sp": "Tu rol no permite generar stored procedures.",
+        "aud_titulo": "Auditoría", "aud_total": "Consultas (30 días)",
+        "aud_rechazadas": "Rechazadas", "aud_errores": "Con error",
+        "aud_confianza": "Confianza media", "aud_por_usuario": "Consultas por usuario",
+        "aud_usuario": "Usuario", "aud_consultas": "Consultas",
+        "aud_tablas": "Tablas más consultadas", "aud_ultimas": "Últimas consultas",
+        "aud_exportar": "Exportar registro (CSV)", "aud_vacio": "Todavía no hay consultas registradas.",
+        "aud_pie": "El registro se guarda solo en esta computadora (auditoria.db). No sale de tu red.",
+        "eq_titulo": "Equipo y permisos", "eq_abierto": "Sin usuarios creados, la app funciona en modo abierto: cualquiera que la abra ve toda la base. Creá el primer usuario para activar el control de acceso.",
+        "eq_agregar": "Agregar usuario", "eq_nombre": "Nombre", "eq_rol": "Rol",
+        "eq_pin": "PIN (mínimo 4 dígitos)", "eq_crear": "Crear usuario",
+        "eq_creado": "Usuario {nombre} creado.", "eq_todas": "todas las tablas",
+        "eq_tablas": "tablas", "eq_todas_check": "Acceso a todas las tablas",
+        "eq_tablas_sel": "Tablas que puede consultar",
+        "eq_conecta_primero": "Conectá una base primero para elegir tablas.",
+        "eq_ayuda": "Los PIN se guardan cifrados. La IA solo recibe el esquema de las tablas permitidas para cada usuario.",
     },
     "en": {
         "titulo": "MV SQL NLP", "sub": "Your database, in your language. Ask in plain words — AI generates optimized SQL, validates it against your schema, and returns tables, charts and analysis.",
@@ -136,6 +160,28 @@ T = {
         "eda_pocas": "At least 2 numeric columns with variation are needed for this analysis.",
         "eda_shap_hint": "SHAP values on a Random Forest (sample of up to 1,500 rows): bar length is how much it influences; ▲ green = increasing that variable increases {objetivo}; ▼ red = it decreases it.",
         "eda_shap_falta": "Install the 'shap' package (pip install shap) to also see the direction of the effect.",
+        "login_titulo": "Sign in", "login_usuario": "User",
+        "login_pin": "PIN", "login_entrar": "Sign in", "login_salir": "Sign out",
+        "login_error": "Wrong user or PIN.",
+        "login_ayuda": "This installation has per-user access control. Every query is logged.",
+        "sin_permiso": "You don't have permission to query: {tablas}. The attempt was logged.",
+        "sin_exportar": "Your role can't export data. Ask an administrator to change your role.",
+        "sin_sp": "Your role can't generate stored procedures.",
+        "aud_titulo": "Audit", "aud_total": "Queries (30 days)",
+        "aud_rechazadas": "Blocked", "aud_errores": "With errors",
+        "aud_confianza": "Average confidence", "aud_por_usuario": "Queries per user",
+        "aud_usuario": "User", "aud_consultas": "Queries",
+        "aud_tablas": "Most queried tables", "aud_ultimas": "Latest queries",
+        "aud_exportar": "Export log (CSV)", "aud_vacio": "No queries logged yet.",
+        "aud_pie": "The log is stored only on this computer (auditoria.db). It never leaves your network.",
+        "eq_titulo": "Team and permissions", "eq_abierto": "With no users created, the app runs in open mode: anyone who opens it sees the whole database. Create the first user to turn on access control.",
+        "eq_agregar": "Add user", "eq_nombre": "Name", "eq_rol": "Role",
+        "eq_pin": "PIN (at least 4 digits)", "eq_crear": "Create user",
+        "eq_creado": "User {nombre} created.", "eq_todas": "all tables",
+        "eq_tablas": "tables", "eq_todas_check": "Access to all tables",
+        "eq_tablas_sel": "Tables this user can query",
+        "eq_conecta_primero": "Connect a database first to pick tables.",
+        "eq_ayuda": "PINs are stored hashed. The AI only receives the schema of the tables each user is allowed to see.",
     },
     "pt": {
         "titulo": "MV SQL NLP", "sub": "Seu banco de dados, no seu idioma. Pergunte em linguagem natural — a IA gera SQL otimizado, valida contra seu esquema e devolve tabelas, gráficos e análises.",
@@ -188,6 +234,28 @@ T = {
         "eda_pocas": "São necessárias pelo menos 2 colunas numéricas com variação para esta análise.",
         "eda_shap_hint": "Valores SHAP sobre Random Forest (amostra de até 1.500 linhas): o comprimento da barra é o quanto influencia; ▲ verde = aumentar essa variável aumenta {objetivo}; ▼ vermelho = a reduz.",
         "eda_shap_falta": "Instale o pacote 'shap' (pip install shap) para ver também a direção do efeito.",
+        "login_titulo": "Entrar", "login_usuario": "Usuário",
+        "login_pin": "PIN", "login_entrar": "Entrar", "login_salir": "Sair",
+        "login_error": "Usuário ou PIN incorreto.",
+        "login_ayuda": "Esta instalação tem controle de acesso por usuário. Cada consulta fica registrada.",
+        "sin_permiso": "Você não tem permissão para consultar: {tablas}. A tentativa foi registrada.",
+        "sin_exportar": "Seu perfil não permite exportar dados. Peça a um administrador para alterar seu perfil.",
+        "sin_sp": "Seu perfil não permite gerar stored procedures.",
+        "aud_titulo": "Auditoria", "aud_total": "Consultas (30 dias)",
+        "aud_rechazadas": "Bloqueadas", "aud_errores": "Com erro",
+        "aud_confianza": "Confiança média", "aud_por_usuario": "Consultas por usuário",
+        "aud_usuario": "Usuário", "aud_consultas": "Consultas",
+        "aud_tablas": "Tabelas mais consultadas", "aud_ultimas": "Últimas consultas",
+        "aud_exportar": "Exportar registro (CSV)", "aud_vacio": "Ainda não há consultas registradas.",
+        "aud_pie": "O registro fica só neste computador (auditoria.db). Não sai da sua rede.",
+        "eq_titulo": "Equipe e permissões", "eq_abierto": "Sem usuários criados, o app funciona em modo aberto: qualquer um que abrir vê todo o banco. Crie o primeiro usuário para ativar o controle de acesso.",
+        "eq_agregar": "Adicionar usuário", "eq_nombre": "Nome", "eq_rol": "Perfil",
+        "eq_pin": "PIN (mínimo 4 dígitos)", "eq_crear": "Criar usuário",
+        "eq_creado": "Usuário {nombre} criado.", "eq_todas": "todas as tabelas",
+        "eq_tablas": "tabelas", "eq_todas_check": "Acesso a todas as tabelas",
+        "eq_tablas_sel": "Tabelas que pode consultar",
+        "eq_conecta_primero": "Conecte um banco primeiro para escolher tabelas.",
+        "eq_ayuda": "Os PINs são guardados com hash. A IA só recebe o esquema das tabelas permitidas para cada usuário.",
     },
 }
 
@@ -253,6 +321,7 @@ ss.setdefault("motor", None)          # MotorMVSQL
 ss.setdefault("historial", [])
 ss.setdefault("pregunta_precargada", "")
 ss.setdefault("resultado", None)
+ss.setdefault("usuario", None)        # usuario del equipo, si hay control de acceso
 
 
 # ──────────────────────────────────────────────────────────────
@@ -710,6 +779,39 @@ with st.sidebar:
                                                   "pt": "Português"}[x])
     t = T[ss.lang]
 
+    # ── Control de acceso del equipo (si está configurado) ──
+    _cfg_equipo = equipo.cargar()
+    if _cfg_equipo["activo"] and ss.usuario is None:
+        st.divider()
+        st.subheader(f"👤 {t['login_titulo']}")
+        _nombres = [u["nombre"] for u in _cfg_equipo["usuarios"]]
+        _quien = st.selectbox(t["login_usuario"], _nombres, key="login_nombre")
+        _pin = st.text_input(t["login_pin"], type="password", key="login_pin")
+        if st.button(t["login_entrar"], use_container_width=True, type="primary"):
+            _u = equipo.autenticar(_quien, _pin)
+            if _u:
+                ss.usuario = _u
+                auditoria.registrar(usuario=_u["nombre"], rol=_u["rol"],
+                                    pregunta="(inicio de sesión)", resultado="ok")
+                st.rerun()
+            else:
+                auditoria.registrar(usuario=_quien, pregunta="(inicio de sesión)",
+                                    resultado="rechazado", detalle="PIN incorrecto")
+                st.error(t["login_error"])
+        st.caption(t["login_ayuda"])
+        st.stop()
+
+    PERM = equipo.permisos(ss.usuario)
+    if ss.usuario:
+        st.divider()
+        c_u1, c_u2 = st.columns([3, 1])
+        c_u1.markdown(f"👤 **{ss.usuario['nombre']}** · {equipo.ROLES[ss.usuario['rol']]['nombre']}")
+        if c_u2.button(t["login_salir"], key="btn_salir"):
+            ss.usuario = None
+            ss.motor = None
+            ss.resultado = None
+            st.rerun()
+
     with st.expander(f"🔢 {t['fmt_titulo']}"):
         c1, c2 = st.columns(2)
         c1.number_input(t["fmt_dec"], 0, 6, 2, key="fmt_dec")
@@ -806,6 +908,13 @@ with st.sidebar:
                 else:
                     cx = ConexionBD(motor_bd, **params).conectar()
                 ss.motor = MotorMVSQL(cx, ia_cfg)
+                # El usuario solo ve —y la IA solo conoce— las tablas de su rol.
+                if PERM.get("tablas") != "*":
+                    ss.motor.catalogo = equipo.tablas_visibles(ss.motor.catalogo, PERM)
+                    from catalogo import catalogo_a_fichas
+                    from motor import RecuperadorEsquema
+                    ss.motor.fichas = catalogo_a_fichas(ss.motor.catalogo)
+                    ss.motor.recuperador = RecuperadorEsquema(ss.motor.fichas)
             st.success(f"✓ {len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
         except Exception as e:
             st.error(str(e))
@@ -820,6 +929,50 @@ with st.sidebar:
                 st.caption(", ".join(c["columna"] for c in info["columnas"]))
     else:
         st.info(t["demo_hint"])
+
+    st.divider()
+    # ── Gestión del equipo (solo administradores) ──
+    if PERM.get("gestiona_equipo"):
+        with st.expander(f"👥 {t['eq_titulo']}"):
+            _cfg = equipo.cargar()
+            if not _cfg["activo"]:
+                st.info(t["eq_abierto"])
+            for _u in _cfg["usuarios"]:
+                _c1, _c2 = st.columns([4, 1])
+                _tab = _u.get("tablas")
+                _detalle = t["eq_todas"] if _tab == "*" else f"{len(_tab)} {t['eq_tablas']}"
+                _c1.markdown(f"**{_u['nombre']}** · {equipo.ROLES[_u['rol']]['nombre']}  \n"
+                             f"<span style='color:#94a3b8;font-size:.78rem'>{_detalle}</span>",
+                             unsafe_allow_html=True)
+                if _c2.button("🗑", key=f"del_u_{_u['nombre']}", help=t["borrar"]):
+                    try:
+                        equipo.eliminar_usuario(_u["nombre"])
+                        st.rerun()
+                    except ValueError as e:
+                        st.error(str(e))
+            st.markdown(f"**{t['eq_agregar']}**")
+            _n = st.text_input(t["eq_nombre"], key="eq_nombre")
+            _r = st.selectbox(t["eq_rol"], list(equipo.ROLES.keys()), key="eq_rol",
+                              format_func=lambda k: equipo.ROLES[k]["nombre"])
+            st.caption(equipo.ROLES[_r]["descripcion"])
+            _p = st.text_input(t["eq_pin"], type="password", key="eq_pin")
+            _todas = st.checkbox(t["eq_todas_check"], value=True, key="eq_todas_check")
+            _tablas_sel = None
+            if not _todas:
+                _disp = sorted(ss.motor.catalogo["tablas"]) if ss.motor else []
+                if _disp:
+                    _tablas_sel = st.multiselect(t["eq_tablas_sel"], _disp, key="eq_tablas")
+                else:
+                    st.caption(t["eq_conecta_primero"])
+            if st.button(t["eq_crear"], use_container_width=True, key="btn_eq_crear"):
+                try:
+                    equipo.crear_usuario(_n, _r, _p,
+                                         tablas=None if _todas else (_tablas_sel or []))
+                    st.success(t["eq_creado"].format(nombre=_n))
+                    st.rerun()
+                except ValueError as e:
+                    st.error(str(e))
+            st.caption(t["eq_ayuda"])
 
     st.divider()
     # ── Biblioteca de consultas guardadas ──
@@ -873,10 +1026,37 @@ if ejecutar and pregunta:
         st.stop()
     with st.spinner(t["generando"]):
         try:
-            ss.resultado = ss.motor.responder(pregunta, contexto=contexto_formato())
+            ss.resultado = ss.motor.responder(
+                pregunta, contexto=contexto_formato(),
+                limite=PERM.get("limite_filas", 5000))
+            r_ = ss.resultado
+            # Segunda barrera: aunque la IA solo conozca las tablas permitidas,
+            # se vuelve a chequear el SQL que realmente se generó.
+            ok_perm, prohibidas = equipo.puede_consultar_tablas(
+                r_.get("tablas_recuperadas", []), PERM)
+            if not ok_perm:
+                auditoria.registrar(
+                    usuario=PERM["nombre_usuario"] or "(sin usuario)", rol=PERM["rol"],
+                    pregunta=pregunta, sql=r_.get("sql", ""), tablas=prohibidas,
+                    resultado="rechazado",
+                    detalle="sin permiso sobre: " + ", ".join(prohibidas))
+                ss.resultado = None
+                st.error(t["sin_permiso"].format(tablas=", ".join(prohibidas)))
+                st.stop()
+            auditoria.registrar(
+                usuario=PERM["nombre_usuario"] or "(sin usuario)", rol=PERM["rol"],
+                pregunta=pregunta, sql=r_.get("sql_ejecutado") or r_.get("sql", ""),
+                tablas=r_.get("tablas_recuperadas", []),
+                filas=len(r_["filas"]) if r_.get("filas") is not None else None,
+                confianza=(r_.get("confianza") or {}).get("puntaje"),
+                resultado="error" if r_.get("error") else "ok",
+                detalle=r_.get("error") or "")
             ss.historial.insert(0, {"pregunta": pregunta,
                                     "sql": ss.resultado["sql"]})
         except Exception as e:
+            auditoria.registrar(
+                usuario=PERM["nombre_usuario"] or "(sin usuario)", rol=PERM["rol"],
+                pregunta=pregunta, resultado="error", detalle=str(e)[:500])
             st.error(str(e))
             st.stop()
     ss.pregunta_precargada = ""
@@ -931,9 +1111,14 @@ if r:
                       fmt_numero(df[nums[0]].sum(), pct=(tipo_c == "pct"),
                                  moneda=(tipo_c == "moneda")))
 
-        tab1, tab2, tab3, tab5, tab4 = st.tabs([
-            f"📋 {t['tabla']}", f"📈 {t['grafico']}", f"🧠 {t['analisis']}",
-            f"🔍 {t['explorar']}", f"⬇️ {t['exportar']}"])
+        _titulos = [f"📋 {t['tabla']}", f"📈 {t['grafico']}", f"🧠 {t['analisis']}",
+                    f"🔍 {t['explorar']}", f"⬇️ {t['exportar']}"]
+        if PERM.get("ve_auditoria"):
+            _titulos.append(f"🛡️ {t['aud_titulo']}")
+            tab1, tab2, tab3, tab5, tab4, tab6 = st.tabs(_titulos)
+        else:
+            tab1, tab2, tab3, tab5, tab4 = st.tabs(_titulos)
+            tab6 = None
         with tab1:
             st.dataframe(estilizar_df(df), use_container_width=True, height=420)
         with tab2:
@@ -1000,6 +1185,9 @@ if r:
             else:
                 st.info(t["eda_pocas"])
         with tab4:
+          if not PERM.get("puede_exportar", True):
+            st.warning(t["sin_exportar"])
+          else:
             c1, c2, c3, c4 = st.columns(4)
             c1.download_button("Excel (.xlsx)",
                                a_excel(df, sql=r["sql_ejecutado"] or r["sql"]),
@@ -1016,6 +1204,36 @@ if r:
             c4.download_button("HTML", a_html(df), "mvsql_resultado.html", "text/html",
                                use_container_width=True)
 
+        if tab6 is not None:
+            with tab6:
+                _res = auditoria.resumen(desde_dias=30)
+                m1, m2, m3, m4 = st.columns(4)
+                m1.metric(t["aud_total"], fmt_numero(_res["total"], dec=0))
+                m2.metric(t["aud_rechazadas"], fmt_numero(_res["rechazadas"], dec=0))
+                m3.metric(t["aud_errores"], fmt_numero(_res["errores"], dec=0))
+                m4.metric(t["aud_confianza"],
+                          f"{_res['confianza_media']}%" if _res["confianza_media"] else "—")
+                if _res["por_usuario"]:
+                    st.markdown(f"###### 👥 {t['aud_por_usuario']}")
+                    st.dataframe(pd.DataFrame(_res["por_usuario"],
+                                              columns=[t["aud_usuario"], t["aud_consultas"]]),
+                                 use_container_width=True, hide_index=True)
+                if _res["tablas_top"]:
+                    st.markdown(f"###### 🗄️ {t['aud_tablas']}")
+                    st.dataframe(pd.DataFrame(_res["tablas_top"],
+                                              columns=[t["tabla"], t["aud_consultas"]]),
+                                 use_container_width=True, hide_index=True)
+                st.markdown(f"###### 🕘 {t['aud_ultimas']}")
+                _cols_a, _filas_a = auditoria.listar(limite=200)
+                if _filas_a:
+                    st.dataframe(pd.DataFrame(_filas_a, columns=_cols_a),
+                                 use_container_width=True, height=320, hide_index=True)
+                    st.download_button(f"⬇️ {t['aud_exportar']}", auditoria.a_csv(),
+                                       "auditoria_mvsql.csv", "text/csv")
+                else:
+                    st.info(t["aud_vacio"])
+                st.caption(t["aud_pie"])
+
         # ── acciones sobre la consulta ──
         st.divider()
         a1, a2, a3 = st.columns(3)
@@ -1028,6 +1246,9 @@ if r:
                                       dialecto=ss.motor.cx.dialecto)
                     st.success(t["guardada"])
         with a2:
+          if not PERM.get("puede_sp", True):
+            st.button(f"🧱 {t['sp']}", disabled=True, help=t["sin_sp"])
+          else:
             with st.popover(f"🧱 {t['sp']}"):
                 sp_nombre = st.text_input(t["sp_nombre"], value="sp_mvsql_reporte",
                                           key="sp_nombre")
