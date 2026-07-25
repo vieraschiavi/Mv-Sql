@@ -13,7 +13,7 @@ gráficos y análisis exportables a Excel, CSV, PDF y HTML.
 | [`web/`](web/) | Landing comercial (estilo SaaS dark) lista para **Vercel** — 3 idiomas (ES/EN/PT), demo animada, precios con MercadoPago |
 | [`desktop/`](desktop/) | **Programa de PC profesional** (Electron + React) con instalador NSIS `.exe` para Windows |
 | [`app-python/`](app-python/) | **Versión autoinstalable** (`INICIAR_MVSQL.bat`): un doble clic instala todo y abre la app (Streamlit) |
-| [`docs/`](docs/) | Plan de negocio, análisis de competencia, guion del video demo, integración MercadoPago |
+| [`docs/`](docs/) | Plan de negocio y modelo financiero, material de venta (guion de demo, propuesta, one-pager), checklist de despliegue, integración MercadoPago |
 
 ## ✨ Funciones principales
 
@@ -27,6 +27,8 @@ gráficos y análisis exportables a Excel, CSV, PDF y HTML.
 - 📐 **Intervalo de confianza** en cada respuesta (ej. 92% ±5), combinando autoevaluación del modelo, señal RAG y validación estructural
 - 🛡️ **Anti-alucinación**: el SQL se valida contra el catálogo real; si algo no existe se rechaza y se auto-corrige (self-repair)
 - 🔒 **Seguridad**: conexión read-only, solo `SELECT`/`WITH`; el RAG es local — los datos nunca salen de tu red, solo viaja el esquema
+- 👥 **Equipo y permisos**: cada usuario entra con su PIN y ve **solo las tablas de su rol** — la IA ni se entera de que existen las demás
+- 🛡️ **Auditoría**: quién consultó qué, cuándo, con qué SQL y con qué resultado — exportable a CSV para cumplimiento
 - ⭐ **Consultas guardadas** con nombre + conversión a **stored procedures** de producción
 - 🔍 **Panel Explorar (EDA)**: mapa de correlaciones entre variables + **influencia de variables** (Random Forest) para ver qué pesa sobre qué — sobre el resultado o sobre cualquier tabla completa
 - 📊 **Gráficos profesionales**: ejes con etiquetas, valores formateados sin solaparse, tipo automático según los datos o a elección (barras, barras horizontales, línea, área, torta, dispersión, histograma) + análisis en lenguaje natural
