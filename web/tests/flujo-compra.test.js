@@ -76,22 +76,32 @@ async function test(nombre, fn) {
 (async () => {
   console.log("\n== 1. Creación de preferencia de pago ==");
 
-  await test("crea preferencia con el precio del catálogo del servidor", async () => {
+  await test("cobra la implementación al precio del catálogo del servidor", async () => {
     const r = await llamar(crearPreferencia, {
-      body: { plan: "profesional", mode: "own_ai", email: "cliente@test.com" },
+      body: { plan: "implementacion", mode: "servicio", email: "cliente@test.com" },
     });
     assert.strictEqual(r.statusCode, 200);
     assert.ok(r.body.init_point, "debe devolver init_point");
     assert.strictEqual(mockMP.ultimaPreferencia.items[0].unit_price,
-      PRODUCTS["profesional:own_ai"].price);
+      PRODUCTS["implementacion:servicio"].price);
+    assert.strictEqual(mockMP.ultimaPreferencia.items[0].unit_price, 2500);
   });
 
   await test("ignora un precio inyectado desde el cliente", async () => {
     await llamar(crearPreferencia, {
-      body: { plan: "empresa", mode: "own_ai", email: "a@b.com", price: 1, unit_price: 1 },
+      body: { plan: "implementacion", mode: "servicio", email: "a@b.com",
+              price: 1, unit_price: 1 },
     });
-    assert.strictEqual(mockMP.ultimaPreferencia.items[0].unit_price, 99,
+    assert.strictEqual(mockMP.ultimaPreferencia.items[0].unit_price, 2500,
       "el precio debe venir del catálogo del servidor, no del cliente");
+  });
+
+  await test("NO deja cobrar una suscripción como pago único", async () => {
+    const r = await llamar(crearPreferencia, {
+      body: { plan: "profesional", mode: "suscripcion", email: "a@b.com" },
+    });
+    assert.strictEqual(r.statusCode, 400,
+      "cobrar una suscripción una sola vez es el bug que arruina el negocio");
   });
 
   await test("rechaza plan inexistente", async () => {
@@ -103,7 +113,7 @@ async function test(nombre, fn) {
 
   await test("rechaza email inválido", async () => {
     const r = await llamar(crearPreferencia, {
-      body: { plan: "personal", mode: "own_ai", email: "no-es-email" },
+      body: { plan: "personal", mode: "credits", email: "no-es-email" },
     });
     assert.strictEqual(r.statusCode, 400);
   });
@@ -150,11 +160,11 @@ async function test(nombre, fn) {
     assert.strictEqual(datos.email, "e@t.com");
   });
 
-  await test("el modo own_ai no otorga créditos de IA nuestra", async () => {
-    pagoSimulado = { status: "approved", id: 559, external_reference: "empresa:own_ai:o@t.com" };
+  await test("un servicio no otorga créditos de IA nuestra", async () => {
+    pagoSimulado = { status: "approved", id: 559, external_reference: "implementacion:servicio:o@t.com" };
     const r = await llamar(verificarYEmitir, { method: "GET", query: { payment_id: 559 } });
     assert.strictEqual(verifyLicense(r.body.token).credits, 0,
-      "con API key propia no se regalan créditos nuestros");
+      "una implementación no otorga créditos de IA nuestra");
   });
 
   await test("rechaza pago con external_reference corrupto", async () => {

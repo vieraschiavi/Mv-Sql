@@ -12,6 +12,6 @@
     "@vercel/kv": "^2.0.0"
   },
   "scripts": {
-    "test": "node tests/flujo-compra.test.js && node tests/owner.test.js"
+    "test": "node tests/flujo-compra.test.js && node tests/owner.test.js && node tests/suscripcion.test.js"
   }
 }

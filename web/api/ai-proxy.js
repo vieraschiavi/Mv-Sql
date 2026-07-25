@@ -3,11 +3,13 @@
 // el modo "créditos embebidos": nosotros ponemos la IA, autenticada por el
 // token de licencia, y descontamos consumo.
 //
-// El descuento real de créditos requiere estado persistente entre llamadas.
-// Si el proyecto tiene conectado Vercel KV (Storage → KV en el dashboard),
-// se usa para llevar la cuenta real. Sin KV configurado, el proxy funciona
-// igual pero SIN tope server-side (documentado abajo) — conectar KV antes
-// de vender en volumen.
+// El descuento de créditos requiere estado persistente entre llamadas: se usa
+// Vercel KV (Storage → KV en el dashboard del proyecto).
+//
+// SIN KV el endpoint responde 503 y NO llama a la IA. Es a propósito: sin
+// contador no hay tope, y sin tope una sola licencia de 100 créditos puede
+// consumir la API key del dueño sin límite. Ante la duda, se corta el
+// servicio, nunca la billetera.
 const { verifyLicense } = require("./_license.js");
 
 async function getKv() {
@@ -33,16 +35,33 @@ module.exports = async (req, res) => {
     }
 
     const kv = await getKv();
-    let remaining = null;
-    if (kv) {
-      const key = `mvsql:credits:${token.slice(-24)}`;
-      const used = Number((await kv.get(key)) || 0);
-      remaining = license.credits - used;
-      if (remaining <= 0) {
-        return res.status(402).json({ error: "Sin créditos restantes. Comprá otro paquete en mvsqlnlp.com." });
-      }
-      await kv.incr(key);
+    if (!kv) {
+      // Fail-closed: sin contador de créditos no se sirve IA. Cambiar esto
+      // por "seguir sin tope" reabre un agujero por el que se va la plata.
+      console.error("[ai-proxy] Vercel KV no configurado: se rechaza el pedido " +
+                    "para no servir IA sin tope de créditos.");
+      return res.status(503).json({
+        error: "El servicio de créditos no está disponible en este momento. " +
+               "Escribinos a vieraschiavi@gmail.com o usá tu propia API key " +
+               "desde el menú de proveedor de IA.",
+      });
     }
+
+    // Contador por licencia. La clave usa el jti (id del pago que originó la
+    // licencia): es estable y único aunque se re-emita el mismo token.
+    const idLicencia = license.jti || token.slice(-24);
+    const key = `mvsql:credits:${idLicencia}`;
+    const used = Number((await kv.get(key)) || 0);
+    const remaining = license.credits - used;
+    if (remaining <= 0) {
+      return res.status(402).json({
+        error: "Sin créditos restantes. Comprá otro paquete en mvsqlnlp.com.",
+      });
+    }
+    // Se descuenta ANTES de llamar a la IA: si la llamada falla el cliente
+    // pierde un crédito, pero nunca se puede consumir de más lanzando
+    // pedidos en paralelo.
+    await kv.incr(key);
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "Falta configurar ANTHROPIC_API_KEY en el servidor (Vercel)." });
@@ -62,7 +81,7 @@ module.exports = async (req, res) => {
       return res.status(r.status).json({ error: data?.error?.message || "Error del proveedor de IA." });
     }
     const text = (data.content || []).map((b) => b.text || "").join("");
-    res.status(200).json({ text, remaining: kv ? remaining - 1 : null });
+    res.status(200).json({ text, remaining: remaining - 1 });
   } catch (e) {
     res.status(401).json({ error: e.message });
   }

@@ -1,15 +1,59 @@
-// MV SQL NLP — catálogo de productos comprables (pago único → descarga)
-// mode "own_ai": el cliente trae su propia API key de IA (más barato).
-// mode "credits": el zip descargado trae una licencia con créditos embebidos
-//                 que consumen nuestra IA a través de /api/ai-proxy — no
-//                 requiere que el cliente configure nada.
-const PRODUCTS = {
-  "personal:own_ai":     { title: "MV SQL NLP — Plan Personal (IA propia)",      price: 19  },
-  "profesional:own_ai":  { title: "MV SQL NLP — Plan Profesional (IA propia)",   price: 39  },
-  "empresa:own_ai":      { title: "MV SQL NLP — Plan Empresa (IA propia)",       price: 99  },
-  "personal:credits":    { title: "MV SQL NLP — 100 créditos IA embebidos",      price: 9   },
-  "profesional:credits": { title: "MV SQL NLP — 500 créditos IA embebidos",      price: 35  },
-  "empresa:credits":     { title: "MV SQL NLP — 2000 créditos IA embebidos",     price: 110 },
+// MV SQL NLP — catálogo comercial.
+//
+// Modelo (corregido tras la auditoría de jul-2026): el producto es el
+// diferenciador, el servicio de implementación es el negocio.
+//   - "suscripcion": licencia mensual recurrente (MercadoPago preapproval).
+//     El cliente pone su propia API key de IA, así que nuestro costo de IA es 0.
+//   - "servicio": pago único de implementación sobre la BD/ERP del cliente,
+//     y retainer mensual de soporte.
+//   - "credits": paquete de créditos con nuestra IA embebida (pago único).
+//
+// Los precios SIEMPRE salen de acá, nunca del cliente: create-preference y
+// create-subscription los leen de este catálogo (hay tests que lo verifican).
+
+// Recurrentes — se cobran todos los meses hasta que el cliente cancele.
+const SUSCRIPCIONES = {
+  "personal:suscripcion": {
+    title: "MV SQL NLP — Personal", price: 15, frequency: 1, frequency_type: "months",
+    descripcion: "1 usuario · todas las bases · con tu propia API key",
+  },
+  "profesional:suscripcion": {
+    title: "MV SQL NLP — Profesional", price: 29, frequency: 1, frequency_type: "months",
+    descripcion: "1 usuario · stored procedures · optimizador CTE · conector MCP",
+  },
+  "empresa:suscripcion": {
+    title: "MV SQL NLP — Empresa", price: 79, frequency: 1, frequency_type: "months",
+    descripcion: "hasta 5 puestos · soporte prioritario · factura a la empresa",
+  },
+  "soporte:suscripcion": {
+    title: "MV SQL NLP — Soporte y mantenimiento", price: 150, frequency: 1, frequency_type: "months",
+    descripcion: "post-implementación: cambios de esquema, consultas nuevas, prioridad",
+  },
 };
 
-module.exports = { PRODUCTS };
+// Pago único.
+const UNICOS = {
+  // El producto principal del negocio: conectar MV SQL NLP a la base/ERP real
+  // del cliente, mapear su esquema y dejar las consultas de negocio andando.
+  "implementacion:servicio": {
+    title: "MV SQL NLP — Implementación sobre tu base de datos / ERP", price: 2500,
+    descripcion: "relevamiento, conexión, mapeo del esquema, consultas de negocio y capacitación",
+  },
+  "implementacion_express:servicio": {
+    title: "MV SQL NLP — Implementación Express (1 base, sin ERP)", price: 900,
+    descripcion: "una sola base, esquema acotado, hasta 10 consultas de negocio",
+  },
+  // Créditos: solo para quien no quiere gestionar una API key propia.
+  "personal:credits":    { title: "MV SQL NLP — 100 créditos IA embebidos",  price: 9   },
+  "profesional:credits": { title: "MV SQL NLP — 500 créditos IA embebidos",  price: 35  },
+  "empresa:credits":     { title: "MV SQL NLP — 2000 créditos IA embebidos", price: 110 },
+};
+
+const PRODUCTS = { ...UNICOS, ...SUSCRIPCIONES };
+
+/** true si la clave plan:modo se cobra de forma recurrente. */
+function esRecurrente(clave) {
+  return Object.prototype.hasOwnProperty.call(SUSCRIPCIONES, clave);
+}
+
+module.exports = { PRODUCTS, SUSCRIPCIONES, UNICOS, esRecurrente };

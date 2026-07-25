@@ -153,6 +153,26 @@ nav .wrap{display:flex;align-items:center;gap:16px;height:60px}
 .paynote{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:20px;color:var(--muted-d);font-size:13px}
 .paybadge{background:var(--tint);border:1px solid var(--line-d);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--ink-d)}
 
+/* servicio destacado */
+.servicio{display:grid;grid-template-columns:1.6fr 1fr;gap:26px;background:var(--tint);
+  border:1px solid var(--amber);border-radius:18px;padding:28px;margin-bottom:34px;
+  box-shadow:0 20px 46px rgba(242,180,65,.14)}
+@media(max-width:820px){.servicio{grid-template-columns:1fr}}
+.servicio-tag{display:inline-block;background:var(--amber);color:var(--amber-ink);font-size:11px;
+  font-weight:800;padding:4px 12px;border-radius:20px;letter-spacing:.02em;margin-bottom:12px}
+.servicio h3{font-size:23px;color:var(--ink-d);margin-bottom:10px}
+.servicio p{color:var(--muted-d);font-size:15px;margin:0 0 14px}
+.servicio ul{list-style:none;padding:0;margin:0}
+.servicio li{color:var(--muted-d);font-size:13.5px;padding:5px 0 5px 20px;position:relative}
+.servicio li::before{content:"✓";position:absolute;left:0;color:var(--green);font-weight:800}
+.servicio-precio{display:flex;flex-direction:column;justify-content:center;
+  border-left:1px solid var(--line-d);padding-left:26px}
+@media(max-width:820px){.servicio-precio{border-left:0;padding-left:0;border-top:1px solid var(--line-d);padding-top:20px}}
+.servicio-precio .amt{font-size:40px;font-weight:850;color:var(--ink-d);line-height:1}
+.servicio-precio .per{color:var(--muted-d);font-size:12.5px;margin:6px 0 16px}
+.servicio-nota{color:var(--faint);font-size:12px;margin-top:12px;line-height:1.45}
+.sub-h{font-size:20px;color:var(--ink-d);margin:0 0 14px}
+
 /* downloads */
 .dl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 @media(max-width:860px){.dl-grid{grid-template-columns:1fr}}
@@ -308,45 +328,69 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
 <!-- PRECIOS -->
 <section id="precios" class="panel"><div class="wrap">
   <div class="eyebrow" data-i="ey3">Planes</div>
-  <h2 class="h2" data-i="st3">Elegí tu plan y descargalo hoy</h2>
-  <p class="lead-d" data-i="sl3">Pago único por licencia — no es suscripción. Precio de referencia en dólares; se cobra
-  vía MercadoPago al tipo de cambio del día. Al confirmarse el pago descargás el programa al instante, con la licencia
-  incluida. Antes podés probar todo gratis por 3 días.</p>
+  <h2 class="h2" data-i="st3">Empezá con la implementación, seguí con la licencia</h2>
+  <p class="lead-d" data-i="sl3">La mayoría arranca por la implementación: conectamos MV SQL NLP a tu base o
+  ERP real, mapeamos tu esquema y dejamos andando las consultas que tu equipo pide todas las semanas.
+  Después, la licencia mensual mantiene el programa actualizado. Precios de referencia en dólares; se cobra
+  vía MercadoPago. Antes de todo, podés probarlo gratis 3 días.</p>
 
+  <div class="servicio">
+    <div class="servicio-txt">
+      <div class="servicio-tag" data-i="svtag">El más pedido</div>
+      <h3 data-i="svt">Implementación sobre tu base de datos o ERP</h3>
+      <p data-i="svp">Relevamiento de tu esquema, conexión de solo lectura, mapeo de las tablas que
+      importan, las consultas de negocio que tu equipo usa cada semana ya cargadas, y capacitación al
+      equipo. Salís andando, no con un instalador.</p>
+      <ul>
+        <li data-i="sva">SQL Server, MySQL, PostgreSQL, SQLite o archivos</li>
+        <li data-i="svb">Consultas de tu negocio, con tu vocabulario</li>
+        <li data-i="svc">Incluye 3 meses de licencia Profesional</li>
+      </ul>
+    </div>
+    <div class="servicio-precio">
+      <div class="amt price" data-usd="2500">US$2.500</div>
+      <div class="per"><span data-i="svper">pago único · </span><span class="price-uyu"></span></div>
+      <button class="btn btn-a" onclick="mvsqlComprar('implementacion','servicio')" data-i="svcta">Contratar implementación</button>
+      <button class="btn btn-od" style="margin-top:8px" onclick="mvsqlComprar('implementacion_express','servicio')" data-i="svcta2">Express · US$900</button>
+      <div class="servicio-nota" data-i="svnota">¿Base compleja o varios sistemas? Escribinos y lo cotizamos.</div>
+    </div>
+  </div>
+
+  <h3 class="sub-h" data-i="lich">Licencia del programa</h3>
   <div class="buy-toggle" role="group">
-    <button data-buymode="own_ai" class="active" data-i="tg1">🔑 Con tu API key</button>
+    <button data-buymode="suscripcion" class="active" data-i="tg1">🔑 Suscripción mensual</button>
     <button data-buymode="credits" data-i="tg2">⚡ Créditos incluidos</button>
   </div>
-  <p class="buy-desc" id="buy-mode-desc" data-i="byok_desc">Traés tu propia clave de IA (Claude, ChatGPT, Gemini, Copilot…) y pagás solo la licencia del programa. Ideal si ya usás IA.</p>
+  <p class="buy-desc" id="buy-mode-desc" data-i="susc_desc">Licencia mensual con tu propia clave de IA (Claude, ChatGPT, Gemini, Copilot…). Se cobra todos los meses, cancelás cuando quieras.</p>
 
-  <div class="pgrid" id="plans-own_ai">
+  <div class="pgrid" id="plans-suscripcion">
     <div class="plan">
       <h3 data-i="p1t">Personal</h3>
       <div class="who" data-i="p1w">Para un usuario y sus bases.</div>
-      <div class="amt price" data-usd="19">US$19</div><div class="per"><span data-i="p1per">pago único · </span><span class="price-uyu"></span></div>
-      <div class="pais-precio" data-pais-precio="19"></div>
+      <div class="amt price" data-usd="15">US$15<small>/mes</small></div><div class="per"><span data-i="p1per">por mes · cancelás cuando quieras · </span><span class="price-uyu"></span></div>
+      <div class="pais-precio" data-pais-precio="15"></div>
       <ul><li data-i="p1a">Programa completo (PC + autoinstalable)</li><li data-i="p1b">Todas las IAs y bases</li>
         <li data-i="p1c">Gráficos, exportación, consultas guardadas</li><li data-i="p1d">Actualizaciones menores incluidas</li></ul>
-      <button class="btn btn-od" onclick="mvsqlComprar('personal','own_ai')" data-i="p1cta">Comprar Personal</button>
+      <button class="btn btn-od" onclick="mvsqlComprar('personal','suscripcion')" data-i="p1cta">Suscribirme a Personal</button>
     </div>
     <div class="plan pop">
       <span class="tag" data-i="poptag">Recomendado</span>
       <h3 data-i="p2t">Profesional</h3>
       <div class="who" data-i="p2w">Para analistas y consultores.</div>
-      <div class="amt price" data-usd="39">US$39</div><div class="per"><span data-i="p2per">pago único · </span><span class="price-uyu"></span></div>
-      <div class="pais-precio" data-pais-precio="39"></div>
+      <div class="amt price" data-usd="29">US$29<small>/mes</small></div><div class="per"><span data-i="p2per">por mes · cancelás cuando quieras · </span><span class="price-uyu"></span></div>
+      <div class="pais-precio" data-pais-precio="29"></div>
       <ul><li data-i="p2a">Todo lo de Personal</li><li data-i="p2b">Stored procedures + optimizador CTE</li>
         <li data-i="p2c">Conector MCP para Claude Desktop</li><li data-i="p2d">Soporte por email prioritario</li></ul>
-      <button class="btn btn-a" onclick="mvsqlComprar('profesional','own_ai')" data-i="p2cta">Comprar Profesional</button>
+      <button class="btn btn-a" onclick="mvsqlComprar('profesional','suscripcion')" data-i="p2cta">Suscribirme a Profesional</button>
     </div>
     <div class="plan">
       <h3 data-i="p3t">Empresa</h3>
       <div class="who" data-i="p3w">Para equipos (hasta 5 puestos).</div>
-      <div class="amt price" data-usd="99">US$99</div><div class="per"><span data-i="p3per">pago único · </span><span class="price-uyu"></span></div>
-      <div class="pais-precio" data-pais-precio="99"></div>
+      <div class="amt price" data-usd="79">US$79<small>/mes</small></div><div class="per"><span data-i="p3per">por mes · cancelás cuando quieras · </span><span class="price-uyu"></span></div>
+      <div class="pais-precio" data-pais-precio="79"></div>
       <ul><li data-i="p3a">Todo lo de Profesional × 5 puestos</li><li data-i="p3b">Onboarding remoto (1 sesión)</li>
         <li data-i="p3c">Soporte prioritario 6 meses</li><li data-i="p3d">Factura a nombre de tu empresa</li></ul>
-      <button class="btn btn-od" onclick="mvsqlComprar('empresa','own_ai')" data-i="p3cta">Comprar Empresa</button>
+      <button class="btn btn-od" onclick="mvsqlComprar('empresa','suscripcion')" data-i="p3cta">Suscribirme a Empresa</button>
     </div>
   </div>
 
@@ -506,14 +550,21 @@ var I18N={
     f4t:"Resultados prontos para apresentar",f4p:"Gráficos profissionais com eixos rotulados e valores legíveis; formato sob medida: decimais, separador de milhares, porcentagens e moeda ($U, US$, R$…). Painel <b>Explorar</b>: correlação entre variáveis e quais influenciam qual. Exporte para Excel, CSV, PDF e HTML.",
     f5t:"Seus dados não viajam",f5p:"RAG local: para a IA vai só o esquema (nomes de tabelas e colunas), nunca seus dados. Conexão somente leitura: apenas SELECT.",
     f6t:"Bônus: Claude Desktop direto no seu banco (MCP)",f6p:"Inclui um instalador de um clique que conecta seu Claude Desktop ao seu banco via MCP: você pergunta ao Claude e ele consulta o banco sozinho, do chat.",
-    ey3:"Planos",st3:"Escolha seu plano e baixe hoje",
-    sl3:"Pagamento único por licença — não é assinatura. Preço de referência em dólares; cobrado via MercadoPago na cotação do dia. Com o pagamento confirmado, você baixa o programa na hora, com a licença incluída. Antes, pode testar tudo grátis por 3 dias.",
-    tg1:"🔑 Com sua API key",tg2:"⚡ Créditos incluídos",
+    svtag:"O mais pedido",svt:"Implementação no seu banco de dados ou ERP",
+    svp:"Levantamento do seu esquema, conexão somente leitura, mapeamento das tabelas que importam, as consultas de negócio que sua equipe usa toda semana já carregadas, e treinamento da equipe. Você sai rodando, não com um instalador.",
+    sva:"SQL Server, MySQL, PostgreSQL, SQLite ou arquivos",svb:"Consultas do seu negócio, com o seu vocabulário",svc:"Inclui 3 meses de licença Profissional",
+    svper:"pagamento único · ",svcta:"Contratar implementação",svcta2:"Express · US$900",
+    svnota:"Banco complexo ou vários sistemas? Fale conosco e orçamos.",
+    lich:"Licença do programa",
+    susc_desc:"Licença mensal com sua própria chave de IA (Claude, ChatGPT, Gemini, Copilot…). Cobrada todo mês, cancele quando quiser.",
+    ey3:"Planos",st3:"Comece pela implementação, siga com a licença",
+    sl3:"A maioria começa pela implementação: conectamos o MV SQL NLP ao seu banco ou ERP real, mapeamos seu esquema e deixamos rodando as consultas que sua equipe pede toda semana. Depois, a licença mensal mantém o programa atualizado. Preços de referência em dólares; cobrado via MercadoPago. Antes de tudo, teste grátis por 3 dias.",
+    tg1:"🔑 Assinatura mensal",tg2:"⚡ Créditos incluídos",
     byok_desc:"Você traz sua própria chave de IA (Claude, ChatGPT, Gemini, Copilot…) e paga só a licença do programa. Ideal se você já usa IA.",
     credits_desc:"A IA já vem incluída e medida por créditos — zero configuração. Nós faturamos a IA por você.",
-    p1t:"Pessoal",p1w:"Para um usuário e seus bancos.",p1per:"pagamento único · ",p1a:"Programa completo (PC + autoinstalável)",p1b:"Todas as IAs e bancos",p1c:"Gráficos, exportação, consultas salvas",p1d:"Atualizações menores incluídas",p1cta:"Comprar Pessoal",
-    poptag:"Recomendado",p2t:"Profissional",p2w:"Para analistas e consultores.",p2per:"pagamento único · ",p2a:"Tudo do Pessoal",p2b:"Stored procedures + otimizador CTE",p2c:"Conector MCP para Claude Desktop",p2d:"Suporte por email prioritário",p2cta:"Comprar Profissional",
-    p3t:"Empresa",p3w:"Para equipes (até 5 postos).",p3per:"pagamento único · ",p3a:"Tudo do Profissional × 5 postos",p3b:"Onboarding remoto (1 sessão)",p3c:"Suporte prioritário 6 meses",p3d:"Nota fiscal para sua empresa",p3cta:"Comprar Empresa",
+    p1t:"Pessoal",p1w:"Para um usuário e seus bancos.",p1per:"por mês · cancele quando quiser · ",p1a:"Programa completo (PC + autoinstalável)",p1b:"Todas as IAs e bancos",p1c:"Gráficos, exportação, consultas salvas",p1d:"Atualizações menores incluídas",p1cta:"Assinar Pessoal",
+    poptag:"Recomendado",p2t:"Profissional",p2w:"Para analistas e consultores.",p2per:"por mês · cancele quando quiser · ",p2a:"Tudo do Pessoal",p2b:"Stored procedures + otimizador CTE",p2c:"Conector MCP para Claude Desktop",p2d:"Suporte por email prioritário",p2cta:"Assinar Profissional",
+    p3t:"Empresa",p3w:"Para equipes (até 5 postos).",p3per:"por mês · cancele quando quiser · ",p3a:"Tudo do Profissional × 5 postos",p3b:"Onboarding remoto (1 sessão)",p3c:"Suporte prioritário 6 meses",p3d:"Nota fiscal para sua empresa",p3cta:"Assinar Empresa",
     c1t:"100 créditos",c1w:"Teste com IA incluída, sem API key.",c1per:"pagamento único · ",c1a:"Programa completo + nossa IA",c1b:"≈ 100 consultas com análise",c1c:"Sem configurar nada técnico",c1d:"Licença embutida no seu download",c1cta:"Comprar 100 créditos",
     poptag2:"Recomendado",c2t:"500 créditos",c2w:"Uso regular sem se preocupar com chaves.",c2per:"pagamento único · ",c2a:"Tudo incluído, zero configuração",c2b:"≈ 500 consultas com análise",c2c:"Melhor preço por consulta",c2d:"Recarregue quando quiser",c2cta:"Comprar 500 créditos",
     c3t:"2000 créditos",c3w:"Equipes e uso intensivo.",c3per:"pagamento único · ",c3a:"≈ 2000 consultas com análise",c3b:"Nós faturamos a IA",c3c:"Ideal para vários usuários",c3d:"Suporte prioritário",c3cta:"Comprar 2000 créditos",
@@ -558,14 +609,21 @@ var I18N={
     f4t:"Presentation-ready results",f4p:"Professional charts with labeled axes and readable values; formatting your way: decimals, thousands separator, percentages and currency ($U, US$, R$…). <b>Explore</b> panel: correlation between variables and which drives which. Export to Excel, CSV, PDF and HTML.",
     f5t:"Your data never travels",f5p:"Local RAG: only the schema (table and column names) goes to the AI — never your data. Read-only connection: SELECT only.",
     f6t:"Bonus: Claude Desktop straight to your database (MCP)",f6p:"Includes a one-click installer that connects your Claude Desktop to your database via MCP: you ask Claude and it queries the database itself, from chat.",
-    ey3:"Plans",st3:"Pick your plan and download today",
-    sl3:"One-time payment per license — not a subscription. Reference price in US dollars; charged via MercadoPago at the day's exchange rate. Once payment clears you download the program instantly, license included. You can try everything free for 3 days first.",
-    tg1:"🔑 With your API key",tg2:"⚡ Credits included",
+    svtag:"Most requested",svt:"Implementation on your database or ERP",
+    svp:"We survey your schema, set up the read-only connection, map the tables that matter, load the business questions your team asks every week, and train the team. You end up running, not with an installer.",
+    sva:"SQL Server, MySQL, PostgreSQL, SQLite or files",svb:"Your business questions, in your own vocabulary",svc:"Includes 3 months of the Professional license",
+    svper:"one-time · ",svcta:"Book the implementation",svcta2:"Express · US$900",
+    svnota:"Complex database or several systems? Write to us and we'll quote it.",
+    lich:"Program license",
+    susc_desc:"Monthly license with your own AI key (Claude, ChatGPT, Gemini, Copilot…). Billed every month, cancel whenever you want.",
+    ey3:"Plans",st3:"Start with the implementation, continue with the license",
+    sl3:"Most people start with the implementation: we connect MV SQL NLP to your real database or ERP, map your schema, and leave the questions your team asks every week already working. After that, the monthly license keeps the program up to date. Reference prices in US dollars, charged via MercadoPago. Before any of it, try it free for 3 days.",
+    tg1:"🔑 Monthly subscription",tg2:"⚡ Credits included",
     byok_desc:"Bring your own AI key (Claude, ChatGPT, Gemini, Copilot…) and pay only for the program license. Ideal if you already use AI.",
     credits_desc:"AI comes included and metered by credits — zero setup. We bill the AI for you.",
-    p1t:"Personal",p1w:"For one user and their databases.",p1per:"one-time · ",p1a:"Full program (PC + self-installing)",p1b:"All AIs and databases",p1c:"Charts, export, saved queries",p1d:"Minor updates included",p1cta:"Buy Personal",
-    poptag:"Recommended",p2t:"Professional",p2w:"For analysts and consultants.",p2per:"one-time · ",p2a:"Everything in Personal",p2b:"Stored procedures + CTE optimizer",p2c:"MCP connector for Claude Desktop",p2d:"Priority email support",p2cta:"Buy Professional",
-    p3t:"Business",p3w:"For teams (up to 5 seats).",p3per:"one-time · ",p3a:"Everything in Professional × 5 seats",p3b:"Remote onboarding (1 session)",p3c:"6 months priority support",p3d:"Invoice for your company",p3cta:"Buy Business",
+    p1t:"Personal",p1w:"For one user and their databases.",p1per:"per month · cancel anytime · ",p1a:"Full program (PC + self-installing)",p1b:"All AIs and databases",p1c:"Charts, export, saved queries",p1d:"Minor updates included",p1cta:"Subscribe to Personal",
+    poptag:"Recommended",p2t:"Professional",p2w:"For analysts and consultants.",p2per:"per month · cancel anytime · ",p2a:"Everything in Personal",p2b:"Stored procedures + CTE optimizer",p2c:"MCP connector for Claude Desktop",p2d:"Priority email support",p2cta:"Subscribe to Professional",
+    p3t:"Business",p3w:"For teams (up to 5 seats).",p3per:"per month · cancel anytime · ",p3a:"Everything in Professional × 5 seats",p3b:"Remote onboarding (1 session)",p3c:"6 months priority support",p3d:"Invoice for your company",p3cta:"Subscribe to Business",
     c1t:"100 credits",c1w:"Try with AI included, no API key.",c1per:"one-time · ",c1a:"Full program + our AI",c1b:"≈ 100 queries with analysis",c1c:"No technical setup",c1d:"License embedded in your download",c1cta:"Buy 100 credits",
     poptag2:"Recommended",c2t:"500 credits",c2w:"Regular use without worrying about keys.",c2per:"one-time · ",c2a:"All included, zero setup",c2b:"≈ 500 queries with analysis",c2c:"Best price per query",c2d:"Top up whenever you want",c2cta:"Buy 500 credits",
     c3t:"2000 credits",c3w:"Teams and heavy use.",c3per:"one-time · ",c3a:"≈ 2000 queries with analysis",c3b:"We bill the AI for you",c3c:"Ideal for multiple users",c3d:"Priority support",c3cta:"Buy 2000 credits",
