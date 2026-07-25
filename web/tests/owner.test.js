@@ -19,15 +19,15 @@ const llamar = async (h, query) => { const res = resFalsa(); await h({ query }, 
 const hoy = new Date().toISOString();
 const PAGOS = [
   { status: "approved", transaction_amount: 39, date_approved: hoy,
-    external_reference: "profesional:own_ai:ana@empresa.com", payment_method_id: "visa" },
-  { status: "approved", transaction_amount: 99, date_approved: hoy,
-    external_reference: "empresa:own_ai:cto@banco.com", payment_method_id: "master" },
+    external_reference: "profesional:suscripcion:ana@empresa.com", payment_method_id: "visa" },
+  { status: "approved", transaction_amount: 2500, date_approved: hoy,
+    external_reference: "implementacion:servicio:cto@banco.com", payment_method_id: "master" },
   { status: "approved", transaction_amount: 35, date_approved: hoy,
     external_reference: "profesional:credits:ana@empresa.com", payment_method_id: "visa" },
   { status: "rejected", transaction_amount: 39, date_created: hoy,
-    external_reference: "profesional:own_ai:x@y.com" },
+    external_reference: "profesional:suscripcion:x@y.com" },
   { status: "pending", transaction_amount: 19, date_created: hoy,
-    external_reference: "personal:own_ai:z@y.com" },
+    external_reference: "personal:credits:z@y.com" },
 ];
 global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ results: PAGOS }) });
 
@@ -66,7 +66,7 @@ const ownerStats = require(path.join(__dirname, "..", "api", "owner-stats.js"));
 
   await test("suma solo los pagos aprobados", async () => {
     assert.strictEqual(datos.resumen.ventas_totales, 3, "3 aprobados de 5 pagos");
-    assert.strictEqual(datos.resumen.ingreso_total_usd, 39 + 99 + 35);
+    assert.strictEqual(datos.resumen.ingreso_total_usd, 39 + 2500 + 35);
   });
 
   await test("cuenta rechazados y pendientes por separado", async () => {
@@ -80,15 +80,22 @@ const ownerStats = require(path.join(__dirname, "..", "api", "owner-stats.js"));
       "ana compró 2 veces: es 1 cliente");
   });
 
+  await test("el servicio de implementación domina el ingreso", async () => {
+    const total = datos.resumen.ingreso_total_usd;
+    const impl = datos.por_producto.find((p) => p.clave === "implementacion:servicio");
+    assert.ok(impl.usd / total > 0.9,
+      "es el hallazgo del modelo: una implementación pesa más que decenas de licencias");
+  });
+
   await test("desglosa por producto con el título del catálogo", async () => {
-    const emp = datos.por_producto.find((p) => p.clave === "empresa:own_ai");
-    assert.ok(emp, "debe aparecer el plan empresa");
-    assert.strictEqual(emp.usd, 99);
-    assert.ok(/Empresa/.test(emp.producto), "usa el título del catálogo");
+    const impl = datos.por_producto.find((p) => p.clave === "implementacion:servicio");
+    assert.ok(impl, "debe aparecer el servicio de implementación");
+    assert.strictEqual(impl.usd, 2500);
+    assert.ok(/Implementación/.test(impl.producto), "usa el título del catálogo");
   });
 
   await test("calcula el ticket promedio", async () => {
-    assert.strictEqual(datos.resumen.ticket_promedio_usd, Math.round((39 + 99 + 35) / 3));
+    assert.strictEqual(datos.resumen.ticket_promedio_usd, Math.round((39 + 2500 + 35) / 3));
   });
 
   console.log(`\n  ${pasadas} pasadas · ${falladas} falladas\n`);

@@ -15,25 +15,27 @@ function pintarPreciosUyu() {
   });
 }
 
-let BUY_MODE = "own_ai";
+let BUY_MODE = "suscripcion";
 
 // Descripciones del modo de compra (es = default; en/pt vienen del I18N de la página)
 const BUY_DESC_ES = {
-  byok_desc: "Traés tu propia clave de IA (Claude, ChatGPT, Gemini, Copilot…) y pagás " +
-             "solo la licencia del programa. Ideal si ya usás IA.",
+  susc_desc: "Licencia mensual con tu propia clave de IA (Claude, ChatGPT, Gemini, " +
+             "Copilot…). Se cobra todos los meses, cancelás cuando quieras.",
   credits_desc: "La IA ya viene incluida y medida por créditos — cero configuración. " +
-                "Nosotros facturamos la IA por vos.",
+                "Pago único, sin suscripción.",
 };
 
 function setBuyMode(mode) {
   BUY_MODE = mode;
-  document.getElementById("plans-own_ai").style.display = mode === "own_ai" ? "grid" : "none";
-  document.getElementById("plans-credits").style.display = mode === "credits" ? "grid" : "none";
+  const susc = document.getElementById("plans-suscripcion");
+  const cred = document.getElementById("plans-credits");
+  if (susc) susc.style.display = mode === "suscripcion" ? "grid" : "none";
+  if (cred) cred.style.display = mode === "credits" ? "grid" : "none";
   document.querySelectorAll("[data-buymode]").forEach((b) =>
     b.classList.toggle("active", b.dataset.buymode === mode));
   const desc = document.getElementById("buy-mode-desc");
   if (desc) {
-    const key = mode === "own_ai" ? "byok_desc" : "credits_desc";
+    const key = mode === "suscripcion" ? "susc_desc" : "credits_desc";
     const dict = (window.I18N && window.I18N[window.LANG]) || null;
     desc.innerHTML = (dict && dict[key]) || BUY_DESC_ES[key];
   }
@@ -56,10 +58,14 @@ async function mvsqlComprar(plan, mode) {
   status.textContent = dict.redirecting || "Te llevamos a MercadoPago…";
 
   try {
-    const r = await fetch("/api/create-preference", {
+    // Las suscripciones van por preapproval (cobro mensual); el resto por
+    // preferencia (pago único).
+    const esSuscripcion = mode === "suscripcion";
+    const r = await fetch(
+      esSuscripcion ? "/api/create-subscription" : "/api/create-preference", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ plan, mode, email }),
+      body: JSON.stringify(esSuscripcion ? { plan, email } : { plan, mode, email }),
     });
     const data = await r.json();
     if (!r.ok || !data.init_point) {

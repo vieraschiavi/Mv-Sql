@@ -55,7 +55,16 @@ npm run dist                                   # instalador .exe (Windows)
 
 ## 💰 Modelo comercial
 
-Suscripción (US$ 15/29/79 por mes con API key propia) **o** paquetes de
-créditos (US$ 9/35/110) donde nosotros ponemos la IA y la facturamos.
-Prueba completa de 3 días sin tarjeta. Pagos por MercadoPago.
-Detalle completo en [`docs/PLAN_DE_NEGOCIO.md`](docs/PLAN_DE_NEGOCIO.md).
+**El servicio es el negocio; el producto es el diferenciador.**
+
+| Qué | Precio | Cómo se cobra |
+|---|---|---|
+| **Implementación** sobre tu BD/ERP | US$ 2.500 (Express US$ 900) | pago único |
+| Licencia mensual | US$ 15 / 29 / 79 | suscripción (MercadoPago preapproval) |
+| Soporte y mantenimiento | US$ 150/mes | suscripción |
+| Créditos de IA embebidos | US$ 9 / 35 / 110 | pago único |
+
+Prueba completa de 3 días sin tarjeta. Análisis de mercado, competencia y
+escenarios de rentabilidad en [`docs/PLAN_DE_NEGOCIO.md`](docs/PLAN_DE_NEGOCIO.md);
+modelo financiero ejecutable en [`docs/MODELO_NEGOCIO.py`](docs/MODELO_NEGOCIO.py).
+Checklist de puesta en producción en [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
