@@ -112,3 +112,14 @@ tr:nth-child(even) td{{background:#f8fafc}}
 </style></head><body><h1>{titulo}</h1>{tabla}
 <p style="color:#64748b;font-size:.8rem">Generado por MV SQL NLP</p></body></html>"""
     return html.encode("utf-8")
+
+
+def a_json(df, orient="records", indent=2):
+    """JSON del resultado, listo para consumir desde otro sistema.
+
+    `orient="records"` produce una lista de objetos ({columna: valor}),
+    que es lo que espera casi cualquier API o script. Las fechas salen
+    en formato ISO para que no haya ambigüedad entre locales.
+    """
+    return df.to_json(orient=orient, indent=indent, force_ascii=False,
+                      date_format="iso").encode("utf-8")

@@ -33,16 +33,63 @@ class ConexionBD:
     """Conexión + catálogo + ejecución segura, para cualquier motor soportado."""
 
     def __init__(self, motor, ruta=None, servidor=None, puerto=None,
-                 base=None, usuario=None, password=None, driver=None):
+                 base=None, usuario=None, password=None, driver=None,
+                 ssh=None):
+        """ssh: dict opcional para conectarse a través de un túnel SSH
+        {host, puerto, usuario, password | clave_privada}. Sirve cuando la
+        base no está expuesta a internet y solo se llega por el servidor
+        de la empresa — que es como debería estar siempre."""
         self.motor = motor
         self.dialecto = MOTORES[motor]["dialecto"]
         self.ruta = ruta
         self.params = dict(servidor=servidor, puerto=puerto, base=base,
                            usuario=usuario, password=password, driver=driver)
+        self.ssh = ssh or None
+        self._tunel = None
         self._con = None
+
+    # ── túnel SSH (opcional) ──────────────────────────────────
+    def _abrir_tunel(self):
+        """Levanta el túnel y reapunta host/puerto al extremo local.
+
+        Requiere `pip install sshtunnel`. Si no está instalado se avisa
+        con un mensaje accionable en vez de un ImportError críptico.
+        """
+        try:
+            from sshtunnel import SSHTunnelForwarder
+        except ImportError:
+            raise RuntimeError(
+                "Para usar túnel SSH instalá el paquete: pip install sshtunnel")
+
+        s = self.ssh
+        destino_host = self.params["servidor"] or "127.0.0.1"
+        destino_puerto = int(self.params["puerto"] or
+                             MOTORES[self.motor].get("puerto_default") or 0)
+        if not destino_puerto:
+            raise RuntimeError("Indicá el puerto de la base para usar túnel SSH.")
+
+        kwargs = dict(
+            ssh_username=s.get("usuario"),
+            remote_bind_address=(destino_host, destino_puerto),
+        )
+        if s.get("clave_privada"):
+            kwargs["ssh_pkey"] = s["clave_privada"]
+            if s.get("passphrase"):
+                kwargs["ssh_private_key_password"] = s["passphrase"]
+        else:
+            kwargs["ssh_password"] = s.get("password")
+
+        self._tunel = SSHTunnelForwarder(
+            (s.get("host"), int(s.get("puerto") or 22)), **kwargs)
+        self._tunel.start()
+        # a partir de acá la base se ve en localhost:<puerto_local>
+        self.params["servidor"] = "127.0.0.1"
+        self.params["puerto"] = self._tunel.local_bind_port
 
     # ── conexión ──────────────────────────────────────────────
     def conectar(self):
+        if self.ssh and self.motor != "sqlite":
+            self._abrir_tunel()
         p = self.params
         if self.motor == "sqlite":
             self._con = sqlite3.connect(self.ruta, check_same_thread=False)
@@ -77,6 +124,13 @@ class ConexionBD:
                 self._con.close()
             finally:
                 self._con = None
+        # el túnel se cierra siempre, aunque la conexión ya estuviera caída:
+        # dejarlo abierto deja un puerto escuchando en la máquina del cliente
+        if self._tunel is not None:
+            try:
+                self._tunel.stop()
+            finally:
+                self._tunel = None
 
     # ── catálogo ──────────────────────────────────────────────
     def extraer_catalogo(self):
@@ -90,14 +144,24 @@ class ConexionBD:
         raise ValueError(self.motor)
 
     # ── ejecución segura ──────────────────────────────────────
-    def ejecutar(self, sql, limite=5000):
-        """Ejecuta un SELECT y devuelve (columnas, filas, sql_ejecutado)."""
+    @property
+    def marcador_param(self):
+        """Marcador de parámetros del driver: '?' o '%s' según el motor."""
+        return "%s" if self.motor in ("mysql", "postgres") else "?"
+
+    def ejecutar(self, sql, limite=5000, params=None):
+        """Ejecuta un SELECT y devuelve (columnas, filas, sql_ejecutado).
+
+        `params` permite consultas parametrizadas (las variables de los
+        cuadernos): el valor viaja aparte del SQL, así que su contenido
+        nunca se interpreta como código.
+        """
         sql = _aplicar_limite(sql, self.dialecto, limite)
-        if self.motor == "sqlite":
-            cur = self._con.cursor()
+        cur = self._con.cursor()
+        if params:
+            cur.execute(sql, tuple(params))
         else:
-            cur = self._con.cursor()
-        cur.execute(sql)
+            cur.execute(sql)
         cols = [d[0] for d in cur.description]
         filas = [tuple(r) for r in cur.fetchall()]
         if self.motor == "postgres":
