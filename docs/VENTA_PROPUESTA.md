@@ -3,6 +3,8 @@
 Copiar, reemplazar lo que está `[entre corchetes]` y mandar como PDF el mismo día
 de la demo.
 
+🌎 Idiomas: **Español** · [English](VENTA_PROPUESTA_EN.md) · [Português](VENTA_PROPUESTA_PT.md)
+
 **Lo más importante de este documento no es el precio: es la sección "Qué NO
 incluye".** Es lo único que impide que la implementación se convierta en
 desarrollo a medida gratis — el error que, según el pre-mortem, quema tres meses.

@@ -3,6 +3,8 @@
 Para la reunión con un gerente de datos, cobranzas o administración. No es una
 demo de producto: es una demo de **su** problema.
 
+🌎 Idiomas: **Español** · [English](VENTA_GUION_DEMO_EN.md) · [Português](VENTA_GUION_DEMO_PT.md)
+
 **Regla de oro:** si en el minuto 5 no estás mostrando **su** base de datos, la
 reunión ya se perdió. La demo con `cartera_demo.db` es el plan B, no el A.
 
