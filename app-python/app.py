@@ -24,11 +24,13 @@ import plotly.express as px
 import streamlit as st
 
 from conectores import ConexionBD, MOTORES
-from exportar import a_csv, a_excel, a_pdf, a_html
+from exportar import a_csv, a_excel, a_pdf, a_html, a_json
 from motor import MotorMVSQL
 from proveedores_ia import PROVEEDORES, probar_conexion, cargar_licencia_creditos
 import auditoria
+import cuadernos
 import equipo
+import esquema_visual
 import guardadas
 
 # ──────────────────────────────────────────────────────────────
@@ -108,6 +110,27 @@ T = {
         "eq_tablas_sel": "Tablas que puede consultar",
         "eq_conecta_primero": "Conectá una base primero para elegir tablas.",
         "eq_ayuda": "Los PIN se guardan cifrados. La IA solo recibe el esquema de las tablas permitidas para cada usuario.",
+        "json_hint": "JSON listo para consumir desde otro sistema o API.",
+        "plan_titulo": "Plan de ejecución (por qué tarda lo que tarda)",
+        "plan_costo": "Costo estimado", "plan_liviano": "liviano",
+        "plan_medio": "medio", "plan_pesado": "pesado",
+        "plan_sin_problemas": "El motor resuelve esta consulta sin escaneos completos.",
+        "plan_no_disponible": "Este motor no expone el plan de ejecución desde acá.",
+        "plan_pie": "Lectura del plan que devuelve tu motor de base de datos. No se ejecutó la consulta de nuevo.",
+        "diagrama": "Diagrama de relaciones", "diagrama_tablas": "Tablas a mostrar",
+        "diagrama_pie": "Cada línea es una relación real entre tablas (clave foránea).",
+        "diagrama_rel": "Relaciones detectadas", "diagrama_desde": "Desde",
+        "diagrama_col": "Columna", "diagrama_hacia": "Hacia", "diagrama_col_dest": "Columna destino",
+        "diagrama_sin_rel": "No se detectaron claves foráneas declaradas en esta base.",
+        "diagrama_sueltas": "Sin relaciones: {tablas}",
+        "cua_titulo": "Cuadernos", "cua_vacio": "Todavía no creaste cuadernos. Un cuaderno es un informe reutilizable: texto, preguntas y SQL con variables que cambiás cada mes.",
+        "cua_nuevo": "Nuevo cuaderno", "cua_nombre": "Nombre del cuaderno",
+        "cua_desc": "Descripción (opcional)", "cua_crear": "Crear",
+        "cua_creado": "Cuaderno creado.", "cua_abrir": "Abrir",
+        "cua_cerrar": "Cerrar", "cua_exportar": "Exportar cuaderno (Markdown)",
+        "cua_faltan": "Faltan valores para: {vars}",
+        "cua_error_celda": "Error en la celda {n}",
+        "cua_ayuda": "Si tenés una consulta hecha, el cuaderno arranca con ella. Escribí {{mes}} o {{sucursal}} en el SQL para convertirlo en variable.",
     },
     "en": {
         "titulo": "MV SQL NLP", "sub": "Your database, in your language. Ask in plain words — AI generates optimized SQL, validates it against your schema, and returns tables, charts and analysis.",
@@ -182,6 +205,27 @@ T = {
         "eq_tablas_sel": "Tables this user can query",
         "eq_conecta_primero": "Connect a database first to pick tables.",
         "eq_ayuda": "PINs are stored hashed. The AI only receives the schema of the tables each user is allowed to see.",
+        "json_hint": "JSON ready to consume from another system or API.",
+        "plan_titulo": "Execution plan (why it takes what it takes)",
+        "plan_costo": "Estimated cost", "plan_liviano": "light",
+        "plan_medio": "medium", "plan_pesado": "heavy",
+        "plan_sin_problemas": "The engine resolves this query without full scans.",
+        "plan_no_disponible": "This engine doesn't expose the execution plan from here.",
+        "plan_pie": "Reading of the plan your database engine returned. The query was not run again.",
+        "diagrama": "Relationship diagram", "diagrama_tablas": "Tables to show",
+        "diagrama_pie": "Each line is a real relationship between tables (foreign key).",
+        "diagrama_rel": "Relationships found", "diagrama_desde": "From",
+        "diagrama_col": "Column", "diagrama_hacia": "To", "diagrama_col_dest": "Target column",
+        "diagrama_sin_rel": "No declared foreign keys were found in this database.",
+        "diagrama_sueltas": "No relationships: {tablas}",
+        "cua_titulo": "Notebooks", "cua_vacio": "No notebooks yet. A notebook is a reusable report: text, questions and SQL with variables you change every month.",
+        "cua_nuevo": "New notebook", "cua_nombre": "Notebook name",
+        "cua_desc": "Description (optional)", "cua_crear": "Create",
+        "cua_creado": "Notebook created.", "cua_abrir": "Open",
+        "cua_cerrar": "Close", "cua_exportar": "Export notebook (Markdown)",
+        "cua_faltan": "Missing values for: {vars}",
+        "cua_error_celda": "Error in cell {n}",
+        "cua_ayuda": "If you already ran a query, the notebook starts with it. Write {{month}} or {{branch}} in the SQL to turn it into a variable.",
     },
     "pt": {
         "titulo": "MV SQL NLP", "sub": "Seu banco de dados, no seu idioma. Pergunte em linguagem natural — a IA gera SQL otimizado, valida contra seu esquema e devolve tabelas, gráficos e análises.",
@@ -256,6 +300,27 @@ T = {
         "eq_tablas_sel": "Tabelas que pode consultar",
         "eq_conecta_primero": "Conecte um banco primeiro para escolher tabelas.",
         "eq_ayuda": "Os PINs são guardados com hash. A IA só recebe o esquema das tabelas permitidas para cada usuário.",
+        "json_hint": "JSON pronto para consumir de outro sistema ou API.",
+        "plan_titulo": "Plano de execução (por que demora o que demora)",
+        "plan_costo": "Custo estimado", "plan_liviano": "leve",
+        "plan_medio": "médio", "plan_pesado": "pesado",
+        "plan_sin_problemas": "O motor resolve esta consulta sem varreduras completas.",
+        "plan_no_disponible": "Este motor não expõe o plano de execução daqui.",
+        "plan_pie": "Leitura do plano que seu motor de banco devolveu. A consulta não foi executada de novo.",
+        "diagrama": "Diagrama de relações", "diagrama_tablas": "Tabelas a mostrar",
+        "diagrama_pie": "Cada linha é uma relação real entre tabelas (chave estrangeira).",
+        "diagrama_rel": "Relações encontradas", "diagrama_desde": "De",
+        "diagrama_col": "Coluna", "diagrama_hacia": "Para", "diagrama_col_dest": "Coluna destino",
+        "diagrama_sin_rel": "Não foram encontradas chaves estrangeiras declaradas neste banco.",
+        "diagrama_sueltas": "Sem relações: {tablas}",
+        "cua_titulo": "Cadernos", "cua_vacio": "Você ainda não criou cadernos. Um caderno é um relatório reutilizável: texto, perguntas e SQL com variáveis que você troca todo mês.",
+        "cua_nuevo": "Novo caderno", "cua_nombre": "Nome do caderno",
+        "cua_desc": "Descrição (opcional)", "cua_crear": "Criar",
+        "cua_creado": "Caderno criado.", "cua_abrir": "Abrir",
+        "cua_cerrar": "Fechar", "cua_exportar": "Exportar caderno (Markdown)",
+        "cua_faltan": "Faltam valores para: {vars}",
+        "cua_error_celda": "Erro na célula {n}",
+        "cua_ayuda": "Se já fez uma consulta, o caderno começa com ela. Escreva {{mes}} ou {{filial}} no SQL para virar variável.",
     },
 }
 
@@ -321,7 +386,9 @@ ss.setdefault("motor", None)          # MotorMVSQL
 ss.setdefault("historial", [])
 ss.setdefault("pregunta_precargada", "")
 ss.setdefault("resultado", None)
-ss.setdefault("usuario", None)        # usuario del equipo, si hay control de acceso
+ss.setdefault("usuario", None)
+ss.setdefault("cuaderno_activo", None)
+ss.setdefault("cuaderno_valores", {})        # usuario del equipo, si hay control de acceso
 
 
 # ──────────────────────────────────────────────────────────────
@@ -922,6 +989,27 @@ with st.sidebar:
     if ss.motor:
         ss.motor.ia = ia_cfg  # refrescar credenciales sin reconectar
         st.success(f"✓ {len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
+        with st.expander(f"🕸️ {t['diagrama']}"):
+            _cat = ss.motor.catalogo
+            _rels = esquema_visual.resumen_relaciones(_cat)
+            _sueltas = esquema_visual.tablas_sin_relacion(_cat)
+            _sel = st.multiselect(t["diagrama_tablas"], sorted(_cat["tablas"]),
+                                  default=sorted(_cat["tablas"])[:8], key="diag_tablas")
+            _dot = esquema_visual.diagrama_dot(_cat, tablas=_sel or None)
+            if _dot:
+                st.graphviz_chart(_dot, use_container_width=True)
+                st.caption(t["diagrama_pie"])
+            if _rels:
+                st.markdown(f"**{t['diagrama_rel']}** ({len(_rels)})")
+                st.dataframe(pd.DataFrame(_rels, columns=[
+                    t["diagrama_desde"], t["diagrama_col"],
+                    t["diagrama_hacia"], t["diagrama_col_dest"]]),
+                    use_container_width=True, hide_index=True, height=180)
+            else:
+                st.caption(t["diagrama_sin_rel"])
+            if _sueltas:
+                st.caption(t["diagrama_sueltas"].format(tablas=", ".join(_sueltas)))
+
         with st.expander(f"📚 {t['ver_esquema']}"):
             for tb, info in ss.motor.catalogo["tablas"].items():
                 n = info.get("n_filas")
@@ -929,6 +1017,54 @@ with st.sidebar:
                 st.caption(", ".join(c["columna"] for c in info["columnas"]))
     else:
         st.info(t["demo_hint"])
+
+    st.divider()
+    # ── Cuadernos: informes reutilizables con variables ──
+    st.subheader(f"📓 {t['cua_titulo']}")
+    _cuads = cuadernos.listar()
+    if not _cuads:
+        st.caption(t["cua_vacio"])
+    for _c in _cuads:
+        with st.expander(f"📓 {_c['nombre']}"):
+            if _c.get("descripcion"):
+                st.caption(_c["descripcion"])
+            _vars = cuadernos.variables_del_cuaderno(_c)
+            _vals = dict(_c.get("valores", {}))
+            for _v in _vars:
+                _vals[_v] = st.text_input(_v, value=_vals.get(_v, ""),
+                                          key=f"var_{_c['nombre']}_{_v}")
+            _faltan = cuadernos.faltan_variables(_c, _vals)
+            if _faltan:
+                st.caption(t["cua_faltan"].format(vars=", ".join(_faltan)))
+            _b1, _b2 = st.columns(2)
+            if _b1.button(f"▶ {t['cua_abrir']}", key=f"abrir_{_c['nombre']}",
+                          disabled=bool(_faltan)):
+                ss.cuaderno_activo = _c["nombre"]
+                ss.cuaderno_valores = _vals
+                cuadernos.guardar(_c["nombre"], _c["celdas"],
+                                  _c.get("descripcion", ""), _vals)
+                st.rerun()
+            if _b2.button(f"🗑 {t['borrar']}", key=f"delc_{_c['nombre']}"):
+                cuadernos.eliminar(_c["nombre"])
+                st.rerun()
+
+    with st.popover(f"➕ {t['cua_nuevo']}"):
+        _nc = st.text_input(t["cua_nombre"], key="cua_nombre")
+        _dc = st.text_input(t["cua_desc"], key="cua_desc")
+        st.caption(t["cua_ayuda"])
+        if st.button(t["cua_crear"], key="btn_cua_crear") and _nc:
+            try:
+                _celdas = [cuadernos.nueva_celda("markdown", f"# {_nc}\n")]
+                if ss.resultado and ss.resultado.get("sql"):
+                    _celdas.append(cuadernos.nueva_celda(
+                        "pregunta", ss.resultado.get("pregunta", "")))
+                    _celdas.append(cuadernos.nueva_celda(
+                        "sql", ss.resultado["sql"]))
+                cuadernos.guardar(_nc, _celdas, _dc)
+                st.success(t["cua_creado"])
+                st.rerun()
+            except ValueError as e:
+                st.error(str(e))
 
     st.divider()
     # ── Gestión del equipo (solo administradores) ──
@@ -1013,6 +1149,64 @@ for i, ej in enumerate(EJEMPLOS[ss.lang]):
     if cols_ej[i % 4].button(ej, key=f"ej{i}", use_container_width=True):
         ss.pregunta_precargada = ej
 
+# ── Cuaderno abierto: se corre entero, celda por celda ──
+if ss.cuaderno_activo:
+    _cua = cuadernos.obtener(ss.cuaderno_activo)
+    if _cua:
+        _vals = ss.cuaderno_valores or _cua.get("valores", {})
+        _cc1, _cc2 = st.columns([4, 1])
+        _cc1.markdown(f"### 📓 {cuadernos.sustituir_texto(_cua['nombre'], _vals)}")
+        if _cc2.button(f"✕ {t['cua_cerrar']}"):
+            ss.cuaderno_activo = None
+            st.rerun()
+        if _vals:
+            st.caption(" · ".join(f"**{k}**: {v}" for k, v in _vals.items()))
+
+        _resultados = {}
+        for _i, _celda in enumerate(_cua.get("celdas", [])):
+            _cont = _celda.get("contenido", "")
+            if _celda["tipo"] == "markdown":
+                st.markdown(cuadernos.sustituir_texto(_cont, _vals))
+                continue
+            if _celda["tipo"] == "pregunta":
+                st.markdown(f"**❓ {cuadernos.sustituir_texto(_cont, _vals)}**")
+                continue
+            # celda SQL: las variables van SIEMPRE como parámetros
+            _sqlp, _params = cuadernos.preparar_sql(
+                _cont, _vals, marcador=ss.motor.cx.marcador_param
+                if ss.motor and hasattr(ss.motor.cx, "marcador_param") else "?")
+            st.code(cuadernos.sustituir_texto(_cont, _vals), language="sql")
+            if not ss.motor:
+                st.caption(t["falta_bd"])
+                continue
+            try:
+                _cols_c, _filas_c, _ = ss.motor.cx.ejecutar(
+                    _sqlp, limite=PERM.get("limite_filas", 5000), params=_params)
+                _dfc = pd.DataFrame(_filas_c, columns=_cols_c)
+                _resultados[_i] = _dfc
+                st.dataframe(estilizar_df(_dfc), use_container_width=True, height=260)
+                _figc = graficar(_dfc, "auto")
+                if _figc:
+                    st.plotly_chart(_figc, use_container_width=True,
+                                    key=f"cua_fig_{_i}")
+                auditoria.registrar(
+                    usuario=PERM["nombre_usuario"] or "(sin usuario)", rol=PERM["rol"],
+                    pregunta=f"[cuaderno] {_cua['nombre']}", sql=_sqlp,
+                    filas=len(_dfc), resultado="ok")
+            except Exception as e:
+                st.error(f"{t['cua_error_celda'].format(n=_i + 1)}: {e}")
+                auditoria.registrar(
+                    usuario=PERM["nombre_usuario"] or "(sin usuario)", rol=PERM["rol"],
+                    pregunta=f"[cuaderno] {_cua['nombre']}", sql=_sqlp,
+                    resultado="error", detalle=str(e)[:400])
+
+        if PERM.get("puede_exportar", True):
+            st.download_button(
+                f"⬇️ {t['cua_exportar']}",
+                cuadernos.a_markdown(_cua, _vals, _resultados).encode("utf-8"),
+                f"{_cua['nombre']}.md", "text/markdown")
+        st.divider()
+
 pregunta = st.text_input(t["tu_pregunta"], value=ss.pregunta_precargada,
                          placeholder=t["pregunta_ph"])
 ejecutar = st.button(f"⚡ {t['consultar']}", type="primary")
@@ -1087,6 +1281,25 @@ if r:
             barra_confianza(r["confianza"], t)
         if r["supuestos"] and r["supuestos"].lower() not in ("ninguno", "none", "nenhum"):
             st.caption(f"💭 {t['supuestos']}: {r['supuestos']}")
+
+    with st.expander(f"⚙️ {t['plan_titulo']}"):
+        _sql_plan = r.get("sql_ejecutado") or r.get("sql") or ""
+        _filas_plan, _hallazgos = (
+            esquema_visual.plan_de_ejecucion(ss.motor.cx, _sql_plan)
+            if ss.motor else ([], []))
+        if not _filas_plan:
+            st.caption(t["plan_no_disponible"])
+        else:
+            _costo = esquema_visual.costo_estimado(_filas_plan)
+            _icono = {"liviano": "🟢", "medio": "🟡", "pesado": "🔴"}.get(_costo, "⚪")
+            st.markdown(f"{_icono} **{t['plan_costo']}: {t['plan_' + _costo]}**")
+            for _h in _hallazgos:
+                st.warning(f"**{_h['titulo']}** — {_h['que_pasa']}  \n💡 {_h['que_hacer']}")
+            if not _hallazgos:
+                st.success(t["plan_sin_problemas"])
+            st.dataframe(pd.DataFrame(_filas_plan), use_container_width=True,
+                         hide_index=True)
+            st.caption(t["plan_pie"])
 
     if r["error"]:
         st.error(r["error"])
@@ -1203,6 +1416,8 @@ if r:
                                use_container_width=True)
             c4.download_button("HTML", a_html(df), "mvsql_resultado.html", "text/html",
                                use_container_width=True)
+            st.download_button("JSON", a_json(df), "mvsql_resultado.json",
+                               "application/json", help=t["json_hint"])
 
         if tab6 is not None:
             with tab6:

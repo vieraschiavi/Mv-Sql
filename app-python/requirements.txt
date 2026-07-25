@@ -15,3 +15,6 @@ shap>=0.45         # panel Explorar: dirección del efecto de cada variable
 # pymysql>=1.1       # MySQL / MariaDB
 # psycopg2-binary>=2.9  # PostgreSQL
 faker>=24
+
+# Opcional — la app avisa si falta cuando se usa
+# sshtunnel>=0.4     # conectar a bases detras de un servidor SSH

@@ -30,9 +30,13 @@ gráficos y análisis exportables a Excel, CSV, PDF y HTML.
 - 👥 **Equipo y permisos**: cada usuario entra con su PIN y ve **solo las tablas de su rol** — la IA ni se entera de que existen las demás
 - 🛡️ **Auditoría**: quién consultó qué, cuándo, con qué SQL y con qué resultado — exportable a CSV para cumplimiento
 - ⭐ **Consultas guardadas** con nombre + conversión a **stored procedures** de producción
+- 📓 **Cuadernos**: informes reutilizables que mezclan Markdown, preguntas y SQL con **variables compartidas** (`{{mes}}`, `{{sucursal}}`) — se corren enteros cambiando un valor, y se exportan a Markdown
+- 🕸️ **Diagrama de relaciones**: el mapa de tus tablas y sus claves foráneas, más las tablas que quedaron sueltas
+- ⚙️ **Plan de ejecución interpretado**: por qué una consulta tarda, en castellano, con la recomendación concreta
 - 🔍 **Panel Explorar (EDA)**: mapa de correlaciones entre variables + **influencia de variables** (Random Forest) para ver qué pesa sobre qué — sobre el resultado o sobre cualquier tabla completa
 - 📊 **Gráficos profesionales**: ejes con etiquetas, valores formateados sin solaparse, tipo automático según los datos o a elección (barras, barras horizontales, línea, área, torta, dispersión, histograma) + análisis en lenguaje natural
-- ⬇️ **Exportación** a Excel (con formato), CSV, PDF y HTML
+- ⬇️ **Exportación** a Excel (con formato), CSV, **JSON**, PDF y HTML
+- 🔐 **Túnel SSH** opcional para bases que no están expuestas a internet
 
 ## 🚀 Inicio rápido
 
