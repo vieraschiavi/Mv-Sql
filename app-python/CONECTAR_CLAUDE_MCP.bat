@@ -28,13 +28,156 @@ REM ============================================================
 title MV SQL NLP - Conector MCP para Claude Desktop
 color 0B
 
+REM =========================================================
+REM  0) Idioma. Si el launcher ya lo pregunto, se reusa.
+REM     Los textos que se muestran DENTRO de un bloque if(...)
+REM     no llevan parentesis a proposito: sin expansion
+REM     retardada, un ')' del valor cerraria el bloque.
+REM     No se activa EnableDelayedExpansion para que un password
+REM     con '!' siga funcionando.
+REM =========================================================
+set "MVSQL_LANG="
+if exist "%~dp0.idioma" set /p MVSQL_LANG=<"%~dp0.idioma"
+if "%MVSQL_LANG%"=="es" goto LANG_OK
+if "%MVSQL_LANG%"=="en" goto LANG_OK
+if "%MVSQL_LANG%"=="pt" goto LANG_OK
+echo.
+echo    [1] Espanol     [2] English     [3] Portugues
+echo.
+choice /c 123 /n /m "  Idioma / Language / Idioma: "
+if errorlevel 3 goto LANG_PT
+if errorlevel 2 goto LANG_EN
+set "MVSQL_LANG=es"
+goto LANG_SAVE
+:LANG_PT
+set "MVSQL_LANG=pt"
+goto LANG_SAVE
+:LANG_EN
+set "MVSQL_LANG=en"
+:LANG_SAVE
+echo %MVSQL_LANG%> "%~dp0.idioma"
+
+:LANG_OK
+if "%MVSQL_LANG%"=="en" goto TXT_EN
+if "%MVSQL_LANG%"=="pt" goto TXT_PT
+
+:TXT_ES
+set "C_TIT=MV SQL NLP - Conectar Claude Desktop a tu base (MCP)"
+set "C_SUB1=Claude va a poder consultar tu base directamente (solo"
+set "C_SUB2=lectura recomendada: crea un usuario de BD de solo SELECT)."
+set "C_MOTOR=Que motor de base de datos usas?"
+set "C_OPCION=  Opcion (1-4):"
+set "C_INVALIDA= Opcion invalida. Corre el script de nuevo."
+set "C_NOMBRE=  Nombre para esta conexion, por ejemplo ventas_sql:"
+set "C_RUTA=  Ruta completa del archivo .db, por ejemplo C:\datos\ventas.db:"
+set "C_HOST=  Servidor / host, por ejemplo 10.0.0.5 o localhost:"
+set "C_PUERTO=  Puerto, Enter para el valor por defecto:"
+set "C_BASE=  Nombre de la base:"
+set "C_USUARIO=  Usuario:"
+set "C_PASS=  Password:"
+set "C_P1=[1/5] Creando estructura"
+set "C_E_DIR= ERROR: No se pudo crear"
+set "C_P2=[2/5] Verificando Node.js ..."
+set "C_BAJANDO= Descargando Node.js"
+set "C_UNAVEZ=una sola vez ..."
+set "C_E_NODE= ERROR: No se pudo descargar Node. Revisa tu conexion a internet."
+set "C_E_NODE2= ERROR: node.exe no responde"
+set "C_P3=[3/5] Instalando servidor MCP para"
+set "C_REINTENTO= Reintento..."
+set "C_INSTALADO=instalado"
+set "C_P4=[4/5] Escribiendo configuracion de Claude Desktop ..."
+set "C_E_CFG= ERROR: fallo escribiendo el config de Claude:"
+set "C_P5=[5/5] Reiniciando Claude Desktop ..."
+set "C_CLAUDE_OK= OK Claude iniciado"
+set "C_CLAUDE_NO= AVISO: abre Claude manualmente desde el menu inicio"
+set "C_LISTO=LISTO. Conexion agregada:"
+set "C_ESPERA=Espera 15 segundos con Claude abierto y proba:"
+set "C_PRUEBA=que tablas tiene mi base"
+set "C_SEGURIDAD1=Consejo de seguridad: usa un usuario de BD de solo"
+set "C_SEGURIDAD2=lectura (solo SELECT) para esta conexion."
+goto TXT_FIN
+
+:TXT_EN
+set "C_TIT=MV SQL NLP - Connect Claude Desktop to your database (MCP)"
+set "C_SUB1=Claude will be able to query your database directly (a"
+set "C_SUB2=read-only DB user is strongly recommended: SELECT only)."
+set "C_MOTOR=Which database engine do you use?"
+set "C_OPCION=  Option (1-4):"
+set "C_INVALIDA= Invalid option. Run the script again."
+set "C_NOMBRE=  Name for this connection, for example sales_sql:"
+set "C_RUTA=  Full path to the .db file, for example C:\data\sales.db:"
+set "C_HOST=  Server / host, for example 10.0.0.5 or localhost:"
+set "C_PUERTO=  Port, press Enter for the default:"
+set "C_BASE=  Database name:"
+set "C_USUARIO=  User:"
+set "C_PASS=  Password:"
+set "C_P1=[1/5] Creating folder"
+set "C_E_DIR= ERROR: Could not create"
+set "C_P2=[2/5] Checking Node.js ..."
+set "C_BAJANDO= Downloading Node.js"
+set "C_UNAVEZ=one time only ..."
+set "C_E_NODE= ERROR: Could not download Node. Check your internet connection."
+set "C_E_NODE2= ERROR: node.exe is not responding"
+set "C_P3=[3/5] Installing the MCP server for"
+set "C_REINTENTO= Retrying..."
+set "C_INSTALADO=installed"
+set "C_P4=[4/5] Writing the Claude Desktop configuration ..."
+set "C_E_CFG= ERROR: could not write the Claude config:"
+set "C_P5=[5/5] Restarting Claude Desktop ..."
+set "C_CLAUDE_OK= OK Claude started"
+set "C_CLAUDE_NO= NOTE: open Claude manually from the Start Menu"
+set "C_LISTO=DONE. Connection added:"
+set "C_ESPERA=Wait 15 seconds with Claude open and try:"
+set "C_PRUEBA=what tables are in my database"
+set "C_SEGURIDAD1=Security tip: use a read-only database user"
+set "C_SEGURIDAD2=(SELECT only) for this connection."
+goto TXT_FIN
+
+:TXT_PT
+set "C_TIT=MV SQL NLP - Conectar o Claude Desktop ao seu banco (MCP)"
+set "C_SUB1=O Claude vai poder consultar seu banco direto (o"
+set "C_SUB2=recomendado e criar um usuario de banco so de SELECT)."
+set "C_MOTOR=Qual motor de banco de dados voce usa?"
+set "C_OPCION=  Opcao (1-4):"
+set "C_INVALIDA= Opcao invalida. Rode o script de novo."
+set "C_NOMBRE=  Nome para esta conexao, por exemplo vendas_sql:"
+set "C_RUTA=  Caminho completo do arquivo .db, por exemplo C:\dados\vendas.db:"
+set "C_HOST=  Servidor / host, por exemplo 10.0.0.5 ou localhost:"
+set "C_PUERTO=  Porta, Enter para o valor padrao:"
+set "C_BASE=  Nome do banco:"
+set "C_USUARIO=  Usuario:"
+set "C_PASS=  Senha:"
+set "C_P1=[1/5] Criando a estrutura"
+set "C_E_DIR= ERRO: Nao foi possivel criar"
+set "C_P2=[2/5] Verificando o Node.js ..."
+set "C_BAJANDO= Baixando o Node.js"
+set "C_UNAVEZ=uma unica vez ..."
+set "C_E_NODE= ERRO: Nao foi possivel baixar o Node. Verifique sua conexao."
+set "C_E_NODE2= ERRO: node.exe nao responde"
+set "C_P3=[3/5] Instalando o servidor MCP para"
+set "C_REINTENTO= Tentando de novo..."
+set "C_INSTALADO=instalado"
+set "C_P4=[4/5] Escrevendo a configuracao do Claude Desktop ..."
+set "C_E_CFG= ERRO: falha ao escrever o config do Claude:"
+set "C_P5=[5/5] Reiniciando o Claude Desktop ..."
+set "C_CLAUDE_OK= OK Claude iniciado"
+set "C_CLAUDE_NO= AVISO: abra o Claude manualmente pelo Menu Iniciar"
+set "C_LISTO=PRONTO. Conexao adicionada:"
+set "C_ESPERA=Espere 15 segundos com o Claude aberto e teste:"
+set "C_PRUEBA=quais tabelas tem no meu banco"
+set "C_SEGURIDAD1=Dica de seguranca: use um usuario de banco somente"
+set "C_SEGURIDAD2=leitura (so SELECT) para esta conexao."
+goto TXT_FIN
+
+:TXT_FIN
+
 echo.
 echo  ==========================================================
-echo    MV SQL NLP - Conectar Claude Desktop a tu base (MCP)
+echo    %C_TIT%
 echo  ==========================================================
 echo.
-echo  Claude va a poder consultar tu base directamente (solo
-echo  lectura recomendada: crea un usuario de BD de solo SELECT).
+echo  %C_SUB1%
+echo  %C_SUB2%
 echo.
 
 REM --- RUTA BASE LIMPIA (no virtualizada por MSIX) ---
@@ -49,7 +192,7 @@ set "NODE_URL=https://nodejs.org/dist/%NODE_VERSION%/node-%NODE_VERSION%-win-x64
 REM =========================================================
 REM  1) Elegir motor de base de datos
 REM =========================================================
-echo  Que motor de base de datos usas?
+echo  %C_MOTOR%
 echo.
 echo    1 = SQL Server
 echo    2 = PostgreSQL
@@ -57,38 +200,38 @@ echo    3 = MySQL / MariaDB
 echo    4 = SQLite (archivo .db)
 echo.
 set "MV_ENGINE="
-set /p MV_ENGINE=  Opcion (1-4):
+set /p MV_ENGINE=%C_OPCION%
 if "%MV_ENGINE%"=="1" set "MV_ENGINE=mssql"
 if "%MV_ENGINE%"=="2" set "MV_ENGINE=postgres"
 if "%MV_ENGINE%"=="3" set "MV_ENGINE=mysql"
 if "%MV_ENGINE%"=="4" set "MV_ENGINE=sqlite"
 if not "%MV_ENGINE%"=="mssql" if not "%MV_ENGINE%"=="postgres" if not "%MV_ENGINE%"=="mysql" if not "%MV_ENGINE%"=="sqlite" (
-    echo  Opcion invalida. Corre el script de nuevo.
+    echo %C_INVALIDA%
     pause
     exit /b 1
 )
 
-set /p MV_NAME=  Nombre para esta conexion (ej: ventas_sql):
+set /p MV_NAME=%C_NOMBRE%
 if "%MV_NAME%"=="" set "MV_NAME=mi_base"
 
 if "%MV_ENGINE%"=="sqlite" (
-    set /p MV_SQLITE=  Ruta completa del archivo .db (ej: C:\datos\ventas.db):
+    set /p MV_SQLITE=%C_RUTA%
 ) else (
-    set /p MV_HOST=  Servidor / host (ej: 10.0.0.5 o localhost):
-    set /p MV_PORT=  Puerto (Enter = default del motor):
-    set /p MV_DB=  Nombre de la base:
-    set /p MV_USER=  Usuario:
-    set /p MV_PASS=  Password:
+    set /p MV_HOST=%C_HOST%
+    set /p MV_PORT=%C_PUERTO%
+    set /p MV_DB=%C_BASE%
+    set /p MV_USER=%C_USUARIO%
+    set /p MV_PASS=%C_PASS%
 )
 
 REM =========================================================
 echo.
-echo [1/5] Creando estructura %BASE% ...
+echo %C_P1% %BASE% ...
 if not exist "%BASE%"      mkdir "%BASE%"      2>nul
 if not exist "%BASE_NODE%" mkdir "%BASE_NODE%" 2>nul
 if not exist "%BASE_MCP%"  mkdir "%BASE_MCP%"  2>nul
 if not exist "%BASE%" (
-    echo  ERROR: No se pudo crear %BASE%
+    echo %C_E_DIR% %BASE%
     pause
     exit /b 1
 )
@@ -96,7 +239,7 @@ echo  OK
 
 REM =========================================================
 echo.
-echo [2/5] Verificando Node.js ...
+echo %C_P2%
 "%NODE_EXE%" --version >nul 2>&1
 if not errorlevel 1 goto NODE_OK
 
@@ -110,12 +253,12 @@ for /f "delims=" %%P in ('powershell -NoProfile -Command "(Get-Command node -EA 
 if not errorlevel 1 goto NODE_OK
 
 REM Descargar Node portable
-echo  Descargando Node.js %NODE_VERSION% (una sola vez)...
+echo %C_BAJANDO% %NODE_VERSION% - %C_UNAVEZ%
 set "NODE_ZIP=%TEMP%\mvsql_node.zip"
 del "%NODE_ZIP%" >nul 2>&1
 powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol='Tls12,Tls13'; try{Invoke-WebRequest -Uri '%NODE_URL%' -OutFile '%NODE_ZIP%' -UseBasicParsing -TimeoutSec 180}catch{}" >nul 2>&1
 if not exist "%NODE_ZIP%" (
-    echo  ERROR: No se pudo descargar Node. Revisa tu conexion a internet.
+    echo %C_E_NODE%
     pause
     exit /b 1
 )
@@ -125,7 +268,7 @@ del "%NODE_ZIP%" >nul 2>&1
 rd /s /q "%TEMP%\mvsql_node" >nul 2>&1
 "%NODE_EXE%" --version >nul 2>&1
 if errorlevel 1 (
-    echo  ERROR: node.exe no responde
+    echo %C_E_NODE2%
     pause
     exit /b 1
 )
@@ -135,7 +278,7 @@ for /f %%v in ('"%NODE_EXE%" --version 2^>nul') do echo  OK Node: %%v
 
 REM =========================================================
 echo.
-echo [3/5] Instalando servidor MCP para %MV_ENGINE% ...
+echo %C_P3% %MV_ENGINE% ...
 set "MCP_PKG="
 if "%MV_ENGINE%"=="mssql"    set "MCP_PKG=mssql-mcp-server"
 if "%MV_ENGINE%"=="postgres" set "MCP_PKG=@modelcontextprotocol/server-postgres"
@@ -145,15 +288,15 @@ if "%MV_ENGINE%"=="sqlite"   set "MCP_PKG=mcp-server-sqlite-npx"
 "%NODE_EXE%" "%NPM_CLI%" install %MCP_PKG% --prefix "%BASE_MCP%" --no-save >nul 2>&1
 powershell -NoProfile -Command "$p=Join-Path 'C:\MVSQL_MCP\mcp\node_modules' ($env:MCP_PKG -replace '/','\'); if(-not (Test-Path $p)){exit 1}" >nul 2>&1
 if errorlevel 1 (
-    echo  Reintento...
+    echo %C_REINTENTO%
     timeout /t 4 /nobreak >nul
     "%NODE_EXE%" "%NPM_CLI%" install %MCP_PKG% --prefix "%BASE_MCP%" --no-save
 )
-echo  OK %MCP_PKG% instalado
+echo  OK %MCP_PKG% %C_INSTALADO%
 
 REM =========================================================
 echo.
-echo [4/5] Escribiendo configuracion de Claude Desktop ...
+echo %C_P4%
 
 REM El PowerShell:
 REM  - localiza el config real (MSIX LocalCache o %%APPDATA%%\Claude)
@@ -189,7 +332,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 
 findstr /c:"CONFIG_OK" "%TEMP%\mvsql_mcp_result.txt" >nul
 if errorlevel 1 (
-    echo  ERROR: fallo escribiendo el config de Claude:
+    echo %C_E_CFG%
     type "%TEMP%\mvsql_mcp_result.txt"
     pause
     exit /b 1
@@ -199,7 +342,7 @@ del "%TEMP%\mvsql_mcp_result.txt" >nul 2>&1
 
 REM =========================================================
 echo.
-echo [5/5] Reiniciando Claude Desktop ...
+echo %C_P5%
 tasklist /FI "IMAGENAME eq Claude.exe" 2>nul | findstr /i "Claude.exe" >nul
 if not errorlevel 1 (
     taskkill /F /IM Claude.exe >nul 2>&1
@@ -212,20 +355,20 @@ if not defined CLAUDE_EXE (
 )
 if defined CLAUDE_EXE (
     start "" "%CLAUDE_EXE%"
-    echo  OK Claude iniciado
+    echo %C_CLAUDE_OK%
 ) else (
-    echo  AVISO: abre Claude manualmente desde el menu inicio
+    echo %C_CLAUDE_NO%
 )
 
 echo.
 echo  ==========================================================
-echo    LISTO. Conexion "%MV_NAME%" (%MV_ENGINE%) agregada.
+echo    %C_LISTO% %MV_NAME% - %MV_ENGINE%
 echo  ==========================================================
-echo    Espera 15 segundos con Claude abierto y proba:
-echo    "que tablas tiene mi base %MV_NAME%?"
+echo    %C_ESPERA%
+echo    %C_PRUEBA% %MV_NAME%
 echo.
-echo    Consejo de seguridad: usa un usuario de BD de solo
-echo    lectura (solo SELECT) para esta conexion.
+echo    %C_SEGURIDAD1%
+echo    %C_SEGURIDAD2%
 echo  ==========================================================
 echo.
 pause

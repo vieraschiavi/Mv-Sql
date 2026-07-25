@@ -381,7 +381,11 @@ st.markdown("""
 # ESTADO
 # ──────────────────────────────────────────────────────────────
 ss = st.session_state
-ss.setdefault("lang", "es")
+# El idioma inicial lo fija el launcher (INICIAR_MVSQL.bat pregunta una vez
+# y guarda la elección): si el cliente eligió portugués, la app abre en
+# portugués, no en castellano. Igual se puede cambiar desde el selector.
+ss.setdefault("lang", os.environ.get("MVSQL_LANG", "es")
+              if os.environ.get("MVSQL_LANG") in ("es", "en", "pt") else "es")
 ss.setdefault("motor", None)          # MotorMVSQL
 ss.setdefault("historial", [])
 ss.setdefault("pregunta_precargada", "")

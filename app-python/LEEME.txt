@@ -1,0 +1,156 @@
+MV SQL NLP — Tu base de datos, en tu idioma
+=============================================
+
+[ESPAÑOL]
+
+NOVEDADES DE ESTA VERSION
+  - Menu "Formato de numeros": decimales, separador de miles, % y moneda
+    ($U, US$, AR$, R$, etc.) aplicados a tablas, graficos y analisis.
+  - Graficos profesionales: ejes con etiquetas, valores legibles sin
+    solaparse, y tipo de grafico a eleccion (o automatico).
+  - Modo Archivo: consulta un CSV, Excel o Parquet sin base de datos
+    (carga rapida con cache).
+  - Nuevo proveedor: Microsoft Copilot (Azure OpenAI).
+
+CONECTAR CLAUDE DESKTOP A TU BASE (MCP)
+  Doble clic en CONECTAR_CLAUDE_MCP.bat: elegi el motor (SQL Server,
+  PostgreSQL, MySQL o SQLite), pone los datos de conexion, y tu Claude
+  Desktop queda conectado DIRECTO a tu base - le preguntas a Claude en
+  el chat y consulta la base solo. Consejo: usa un usuario de solo
+  lectura (solo SELECT).
+
+
+IDIOMA
+  La primera vez, INICIAR_MVSQL.bat te pregunta el idioma
+  (1 Espanol / 2 English / 3 Portugues). Queda guardado: el instalador,
+  el conector MCP y la app arrancan en ese idioma. Podes cambiarlo
+  cuando quieras desde el selector de la barra lateral.
+
+INICIO RAPIDO (Windows)
+  La primera vez, el instalador te pregunta si queres crear accesos
+  directos: "MV SQL NLP" aparece en tu Escritorio y en el Menu Inicio
+  (con el icono de MV) para abrirlo como cualquier programa.
+  Doble clic en INICIAR_MVSQL.bat
+  Instala Python, dependencias, genera una base demo y abre la app en
+  http://localhost:8791 (puerto fijo, para no chocar con otras apps que
+  tengas corriendo en tu PC).
+
+SI YA COMPRASTE EL PLAN "CREDITOS EMBEBIDOS":
+  Este zip incluye tu archivo nl2sql_rag/licencia_mvsql.json con tus
+  creditos de IA activados. En la app, elegi el proveedor de IA
+  "MV SQL Creditos" en la barra lateral - no necesitas ninguna API key,
+  ya viene todo configurado.
+
+SI ELEGISTE "IA PROPIA":
+  Elegi tu proveedor (Claude, GPT, Gemini, Groq, Mistral, DeepSeek, Grok
+  u Ollama local) en la barra lateral y pega tu propia API key.
+
+CONECTAR TU BASE DE DATOS
+  Sidebar -> Base de datos -> elegi el motor (SQLite, SQL Server, MySQL o
+  PostgreSQL) y las credenciales. La conexion es siempre de solo lectura.
+
+La app tiene selector de idioma (ES/EN/PT) arriba a la izquierda.
+
+Soporte: vieraschiavi@gmail.com
+
+-------------------------------------------------
+
+[ENGLISH]
+
+WHAT'S NEW IN THIS VERSION
+  - "Number format" menu: decimals, thousands separator, % and currency
+    applied to tables, charts and analysis.
+  - Professional charts: labeled axes, readable non-overlapping values,
+    selectable chart type (or automatic).
+  - File mode: query a CSV, Excel or Parquet file with no database
+    (fast cached loading).
+  - New provider: Microsoft Copilot (Azure OpenAI).
+
+CONNECT CLAUDE DESKTOP TO YOUR DATABASE (MCP)
+  Double-click CONECTAR_CLAUDE_MCP.bat: pick the engine (SQL Server,
+  PostgreSQL, MySQL or SQLite), enter the connection details, and your
+  Claude Desktop gets connected STRAIGHT to your database. Tip: use a
+  read-only (SELECT-only) database user.
+
+
+LANGUAGE
+  On the first run, INICIAR_MVSQL.bat asks for your language
+  (1 Espanol / 2 English / 3 Portugues). The choice is saved: the
+  installer, the MCP connector and the app all start in that language.
+  You can change it any time from the sidebar selector.
+
+QUICK START (Windows)
+  On first run, the installer asks if you want shortcuts: "MV SQL NLP"
+  appears on your Desktop and Start Menu (with the MV icon) so you can
+  open it like any program.
+  Double-click INICIAR_MVSQL.bat
+  Installs Python, dependencies, generates a demo database and opens the
+  app at http://localhost:8791 (fixed port, to avoid clashing with other
+  apps you may have running on your PC).
+
+IF YOU BOUGHT THE "EMBEDDED CREDITS" PLAN:
+  This zip includes your nl2sql_rag/licencia_mvsql.json file with your
+  AI credits activated. In the app, pick the "MV SQL Creditos" AI
+  provider in the sidebar - no API key needed, everything is preconfigured.
+
+IF YOU CHOSE "YOUR OWN AI":
+  Pick your provider (Claude, GPT, Gemini, Groq, Mistral, DeepSeek, Grok
+  or local Ollama) in the sidebar and paste your own API key.
+
+CONNECT YOUR DATABASE
+  Sidebar -> Database -> pick the engine (SQLite, SQL Server, MySQL or
+  PostgreSQL) and credentials. The connection is always read-only.
+
+The app has a language selector (ES/EN/PT) at the top left.
+
+Support: vieraschiavi@gmail.com
+
+-------------------------------------------------
+
+[PORTUGUÊS]
+
+NOVIDADES DESTA VERSAO
+  - Menu "Formato de numeros": decimais, separador de milhares, % e
+    moeda aplicados a tabelas, graficos e analises.
+  - Graficos profissionais: eixos rotulados, valores legiveis sem
+    sobreposicao, e tipo de grafico a escolha (ou automatico).
+  - Modo Arquivo: consulte um CSV, Excel ou Parquet sem banco de dados
+    (carga rapida com cache).
+  - Novo provedor: Microsoft Copilot (Azure OpenAI).
+
+CONECTAR O CLAUDE DESKTOP AO SEU BANCO (MCP)
+  Duplo clique no CONECTAR_CLAUDE_MCP.bat: escolha o motor (SQL Server,
+  PostgreSQL, MySQL ou SQLite), informe os dados de conexao, e seu
+  Claude Desktop fica conectado DIRETO ao seu banco. Dica: use um
+  usuario somente leitura (apenas SELECT).
+
+
+IDIOMA
+  Na primeira vez, o INICIAR_MVSQL.bat pergunta o idioma
+  (1 Espanol / 2 English / 3 Portugues). A escolha fica salva: o
+  instalador, o conector MCP e o app abrem nesse idioma. Da para trocar
+  quando quiser no seletor da barra lateral.
+
+INICIO RAPIDO (Windows)
+  Duplo clique em INICIAR_MVSQL.bat
+  Instala Python, dependencias, gera um banco demo e abre o app em
+  http://localhost:8791 (porta fixa, para nao conflitar com outros apps
+  que voce tenha rodando no seu PC).
+
+SE VOCE JA COMPROU O PLANO "CREDITOS EMBUTIDOS":
+  Este zip inclui seu arquivo nl2sql_rag/licencia_mvsql.json com seus
+  creditos de IA ativados. No app, escolha o provedor de IA
+  "MV SQL Creditos" na barra lateral - nao precisa de nenhuma API key,
+  ja vem tudo configurado.
+
+SE VOCE ESCOLHEU "IA PROPRIA":
+  Escolha seu provedor (Claude, GPT, Gemini, Groq, Mistral, DeepSeek, Grok
+  ou Ollama local) na barra lateral e cole sua propria API key.
+
+CONECTAR SEU BANCO DE DADOS
+  Sidebar -> Banco de dados -> escolha o motor (SQLite, SQL Server, MySQL
+  ou PostgreSQL) e as credenciais. A conexao e sempre somente leitura.
+
+O app tem seletor de idioma (ES/EN/PT) no canto superior esquerdo.
+
+Suporte: vieraschiavi@gmail.com
