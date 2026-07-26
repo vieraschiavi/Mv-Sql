@@ -2,6 +2,8 @@
 
 Una hoja, para imprimir o mandar en PDF. Va **después** de la demo, nunca antes.
 
+🌎 Idiomas: **Español** · [English](VENTA_ONEPAGER_EN.md) · [Português](VENTA_ONEPAGER_PT.md)
+
 ---
 
 <div align="center">

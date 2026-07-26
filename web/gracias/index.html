@@ -26,8 +26,69 @@
   </div>
 
   <script>
+    // Esta es la página que ve todo el que paga: tiene que hablarle en el
+    // idioma en que compró, no en castellano por defecto.
+    const TXT = {
+      es: {
+        verificando: "Verificando tu pago…",
+        esperando: "Un segundo, confirmamos el pago con MercadoPago.",
+        falta_id: "Falta el identificador de pago",
+        falta_id_sub: 'Volvé a <a href="{url}" style="color:#38bdf8">la página de compra</a> e intentá de nuevo.',
+        pendiente: "El pago está pendiente",
+        no_acreditado: "Todavía no se acreditó.",
+        pendiente_sub: "Refrescá esta página en unos segundos, o escribinos a vieraschiavi@gmail.com con tu comprobante.",
+        confirmado: "¡Pago confirmado! 🎉",
+        con_creditos: "con créditos de IA embebidos",
+        con_propia: "con tu propia IA (configurala en la app)",
+        listo: "Tu descarga está lista, plan {plan} {modo}.",
+        descargar: "⬇ Descargar MV SQL NLP",
+        guarda: "Guardá este link — es tu licencia:",
+        no_verificado: "No se pudo verificar el pago"
+      },
+      en: {
+        verificando: "Checking your payment…",
+        esperando: "One moment — we're confirming the payment with MercadoPago.",
+        falta_id: "The payment identifier is missing",
+        falta_id_sub: 'Go back to <a href="{url}" style="color:#38bdf8">the purchase page</a> and try again.',
+        pendiente: "The payment is still pending",
+        no_acreditado: "It hasn't cleared yet.",
+        pendiente_sub: "Refresh this page in a few seconds, or write to vieraschiavi@gmail.com with your receipt.",
+        confirmado: "Payment confirmed! 🎉",
+        con_creditos: "with embedded AI credits",
+        con_propia: "with your own AI (set it up inside the app)",
+        listo: "Your download is ready — {plan} plan {modo}.",
+        descargar: "⬇ Download MV SQL NLP",
+        guarda: "Save this link — it is your licence:",
+        no_verificado: "We could not verify the payment"
+      },
+      pt: {
+        verificando: "Verificando seu pagamento…",
+        esperando: "Um segundo — estamos confirmando o pagamento com o MercadoPago.",
+        falta_id: "Falta o identificador do pagamento",
+        falta_id_sub: 'Volte para <a href="{url}" style="color:#38bdf8">a página de compra</a> e tente de novo.',
+        pendiente: "O pagamento está pendente",
+        no_acreditado: "Ainda não foi compensado.",
+        pendiente_sub: "Atualize esta página em alguns segundos, ou escreva para vieraschiavi@gmail.com com o seu comprovante.",
+        confirmado: "Pagamento confirmado! 🎉",
+        con_creditos: "com créditos de IA embutidos",
+        con_propia: "com a sua própria IA (configure dentro do app)",
+        listo: "Seu download está pronto — plano {plan} {modo}.",
+        descargar: "⬇ Baixar o MV SQL NLP",
+        guarda: "Guarde este link — é a sua licença:",
+        no_verificado: "Não foi possível verificar o pagamento"
+      }
+    };
+
     const params = new URLSearchParams(location.search);
     const paymentId = params.get("payment_id") || params.get("collection_id");
+
+    let guardado = null;
+    try { guardado = localStorage.getItem('mvsql_lang'); } catch (e) {}
+    const qsLang = params.get('lang');
+    const LANG = TXT[qsLang] ? qsLang : (TXT[guardado] ? guardado : 'es');
+    const T = TXT[LANG];
+    const URL_COMPRA = "/?lang=" + LANG + "#precios";
+    document.documentElement.lang = LANG;
 
     async function run() {
       const title = document.getElementById("title");
@@ -35,10 +96,13 @@
       const spinner = document.getElementById("spinner");
       const result = document.getElementById("result");
 
+      title.textContent = T.verificando;
+      sub.textContent = T.esperando;
+
       if (!paymentId) {
         spinner.style.display = "none";
-        title.textContent = "Falta el identificador de pago";
-        sub.innerHTML = 'Volvé a <a href="/#download" style="color:#38bdf8">la página de compra</a> e intentá de nuevo.';
+        title.textContent = T.falta_id;
+        sub.innerHTML = T.falta_id_sub.replace("{url}", URL_COMPRA);
         return;
       }
 
@@ -47,22 +111,22 @@
         const data = await r.json();
         spinner.style.display = "none";
         if (!r.ok) {
-          title.textContent = "El pago está pendiente";
-          sub.innerHTML = `<span class="err">${data.error || "Todavía no se acreditó."}</span><br>Refrescá esta página en unos segundos, o escribinos a vieraschiavi@gmail.com con tu comprobante.`;
+          title.textContent = T.pendiente;
+          sub.innerHTML = `<span class="err">${data.error || T.no_acreditado}</span><br>${T.pendiente_sub}`;
           return;
         }
-        title.textContent = "¡Pago confirmado! 🎉";
-        const modoTxt = data.mode === "credits" ? "con créditos de IA embebidos" : "con tu propia IA (configurala en la app)";
-        sub.textContent = `Tu descarga está lista, plan ${data.plan} ${modoTxt}.`;
+        title.textContent = T.confirmado;
+        const modoTxt = data.mode === "credits" ? T.con_creditos : T.con_propia;
+        sub.textContent = T.listo.replace("{plan}", data.plan).replace("{modo}", modoTxt);
         result.innerHTML = `
-          <a class="btn btn-primary" href="/api/download?token=${encodeURIComponent(data.token)}">⬇ Descargar MV SQL NLP</a>
+          <a class="btn btn-primary" href="/api/download?token=${encodeURIComponent(data.token)}">${T.descargar}</a>
           <p style="color:var(--muted);font-size:.8rem;margin-top:1.2rem">
-            Guardá este link — es tu licencia: <br>
+            ${T.guarda} <br>
             <code style="word-break:break-all">${location.origin}/api/download?token=${data.token}</code>
           </p>`;
       } catch (e) {
         spinner.style.display = "none";
-        title.textContent = "No se pudo verificar el pago";
+        title.textContent = T.no_verificado;
         sub.innerHTML = `<span class="err">${e.message}</span>`;
       }
     }

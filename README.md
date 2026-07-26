@@ -1,5 +1,7 @@
 # ⚡ MV SQL NLP
 
+🌎 Idiomas: **Español** · [English](README.en.md) · [Português](README.pt.md)
+
 **Tu base de datos, en tu idioma.** Consultá cualquier base SQL en lenguaje
 natural (español, inglés o portugués), sin saber una línea de código. La IA
 genera SQL profesional optimizado con CTEs, lo valida contra tu esquema real,
@@ -13,7 +15,7 @@ gráficos y análisis exportables a Excel, CSV, PDF y HTML.
 | [`web/`](web/) | Landing comercial (estilo SaaS dark) lista para **Vercel** — 3 idiomas (ES/EN/PT), demo animada, precios con MercadoPago |
 | [`desktop/`](desktop/) | **Programa de PC profesional** (Electron + React) con instalador NSIS `.exe` para Windows |
 | [`app-python/`](app-python/) | **Versión autoinstalable** (`INICIAR_MVSQL.bat`): un doble clic instala todo y abre la app (Streamlit) |
-| [`docs/`](docs/) | Plan de negocio y modelo financiero, material de venta (guion de demo, propuesta, one-pager), checklist de despliegue, integración MercadoPago |
+| [`docs/`](docs/) | Plan de negocio y modelo financiero, material de venta en 3 idiomas (guion de demo, propuesta, one-pager), checklist de despliegue, integración MercadoPago |
 
 ## ✨ Funciones principales
 

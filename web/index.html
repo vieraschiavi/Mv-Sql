@@ -30,21 +30,29 @@ h1,h2,h3{margin:0;line-height:1.08;text-wrap:balance;letter-spacing:-.02em}
 
 /* NAV */
 nav{position:sticky;top:0;z-index:30;background:rgba(8,19,36,.82);backdrop-filter:blur(10px)}
-nav .wrap{display:flex;align-items:center;gap:16px;height:60px}
-.brand{display:flex;align-items:center;gap:9px;font-weight:800}
+nav .wrap{display:flex;align-items:center;gap:14px;height:60px;min-width:0}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;flex:none;white-space:nowrap}
 .brand .bolt{font-size:22px}
 .brand b{font-size:15px}
 .nlinks{display:flex;gap:4px;margin-left:14px}
 .nlinks a{color:var(--muted);font-size:13.5px;font-weight:600;padding:7px 11px;border-radius:8px}
 .nlinks a:hover{color:#fff;background:rgba(255,255,255,.06)}
-@media(max-width:980px){.nlinks{display:none}}
-.right{margin-left:auto;display:flex;align-items:center;gap:10px}
+@media(max-width:1180px){.nlinks{display:none}}
+.right{margin-left:auto;display:flex;align-items:center;gap:10px;min-width:0;flex-shrink:1}
 .lang{display:flex;gap:2px;background:rgba(255,255,255,.06);border:1px solid var(--line2);border-radius:8px;padding:3px}
 .lang button{background:none;border:0;color:var(--faint);font-size:11.5px;font-weight:800;padding:5px 8px;
   border-radius:6px;cursor:pointer;font-family:inherit;letter-spacing:.03em}
 .lang button.on{background:var(--amber);color:var(--amber-ink)}
 .pais-sel select{background:rgba(255,255,255,.06);border:1px solid var(--line2);color:var(--faint);
-  font-size:11.5px;font-weight:700;padding:6px 7px;border-radius:8px;font-family:inherit;cursor:pointer}
+  font-size:11.5px;font-weight:700;padding:6px 7px;border-radius:8px;font-family:inherit;cursor:pointer;
+  max-width:150px}
+/* En pantallas chicas la barra tiene que entrar entera: sin esto el
+   selector de país empujaba el bloque derecho fuera del ancho. */
+@media(max-width:620px){
+  .wrap{padding:0 14px}
+  .pais-sel select{max-width:104px;padding:6px 4px;font-size:11px}
+  .lang button{padding:5px 6px;font-size:11px}
+}
 .pais-precio{font-size:12.5px;color:var(--faint);margin-top:4px;line-height:1.5}
 .pais-precio:empty{display:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:750;font-size:14px;
@@ -55,6 +63,10 @@ nav .wrap{display:flex;align-items:center;gap:16px;height:60px}
 .btn-o{background:transparent;color:#fff;border-color:var(--line2)}
 .btn-o:hover{border-color:var(--amber);color:var(--amber)}
 .btn-buy{padding:8px 15px}
+/* VIDEO vertical 9:16 */
+.vidwrap{max-width:398px;margin:0 auto;border-radius:20px;overflow:hidden;
+  border:1px solid var(--line-d);box-shadow:0 24px 60px rgba(0,0,0,.22)}
+@media(max-width:460px){.vidwrap{max-width:100%}}
 @media(max-width:560px){.btn-buy{display:none}}
 
 /* HERO */
@@ -72,7 +84,11 @@ nav .wrap{display:flex;align-items:center;gap:16px;height:60px}
 @keyframes p{0%,100%{opacity:1}50%{opacity:.35}}
 @media(prefers-reduced-motion:reduce){.dot{animation:none}}
 .hero h1{font-size:clamp(33px,5.2vw,54px);font-weight:850;color:#fff}
-.hero .lead{font-size:clamp(15.5px,1.8vw,18px);color:var(--muted);max-width:48ch;margin:20px 0 26px}
+.hero .lead{font-size:clamp(15.5px,1.8vw,18px);color:var(--muted);max-width:48ch;margin:20px 0 26px;
+  overflow-wrap:anywhere}
+/* Los items de un grid no se achican por debajo de su contenido salvo que
+   se les diga: sin esto el texto del hero se salía en pantallas chicas. */
+.hero .hgrid>*{min-width:0}
 .hcta{display:flex;flex-wrap:wrap;gap:12px}
 .metrics{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:34px}
 .metric{min-width:96px}
@@ -281,12 +297,12 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
 <section id="video" class="panel"><div class="wrap" style="text-align:center">
   <div class="eyebrow" data-i="vey">Video</div>
   <h2 class="h2" data-i="vh">Mirá MV SQL NLP en acción</h2>
-  <p class="lead-d" data-i="vl" style="margin-left:auto;margin-right:auto">Grabación real del programa, narrada:
-  conecta la base demo, pregunta en español, genera el SQL con CTEs, lo valida, y muestra tabla, gráfico y análisis — de punta a punta.</p>
-  <div style="max-width:860px;margin:0 auto;border-radius:18px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.18)">
-    <video id="demoVideo" controls preload="metadata" playsinline style="width:100%;display:block;background:#0E1117">
+  <p class="lead-d" data-i="vl" style="margin-left:auto;margin-right:auto">Grabación real del programa, narrada y con la
+  interfaz en tu idioma: pregunta, SQL con CTEs validado, intervalo de confianza, tabla, gráfico, relación entre variables,
+  auditoría y permisos por usuario.</p>
+  <div class="vidwrap">
+    <video id="demoVideo" controls preload="metadata" playsinline style="width:100%;display:block;background:#0E1117;aspect-ratio:9/16">
       <source id="demoSrc" src="/assets/video/demo_es.mp4" type="video/mp4">
-      <source src="/assets/video/demo.webm" type="video/webm">
       Tu navegador no soporta la reproducción de video HTML5.
     </video>
   </div>
@@ -540,7 +556,7 @@ var I18N={
     chs:"conectado ao seu banco",cb1:"Quanto cobramos por mês em 2026?",
     cb2:'O melhor mês foi maio: <span class="hl">$U 31.033.659</span> cobrados. A tendência é crescente: +45% desde janeiro. 📈',
     cb3:"✓ SQL validado contra seu esquema · confiança 94% (±5) · exportado para Excel",
-    vey:"Vídeo",vh:"Veja o MV SQL NLP em ação",vl:"Gravação real do programa, narrada: conecta o banco demo, pergunta em linguagem natural, gera o SQL com CTEs, valida, e mostra tabela, gráfico e análise — de ponta a ponta.",
+    vey:"Vídeo",vh:"Veja o MV SQL NLP em ação",vl:"Gravação real do programa, narrada e com a interface no seu idioma: pergunta, SQL com CTEs validado, intervalo de confiança, tabela, gráfico, relação entre variáveis, auditoria e permissões por usuário.",
     pey:"A plataforma",ph:"Tudo o que um analista SQL sênior faz, sem escrever código",
     pl:"Você pergunta em linguagem natural; o MV SQL NLP faz o resto: SQL otimizado, validação anti-alucinação, intervalo de confiança e resultados prontos para apresentar.",
     f1t:"A IA que você escolher",f1p:"Use sua própria API key do provedor que preferir — ou nossos créditos, sem configurar nada.",
@@ -599,7 +615,7 @@ var I18N={
     chs:"connected to your database",cb1:"How much did we collect per month in 2026?",
     cb2:'The best month was May: <span class="hl">$U 31,033,659</span> collected. The trend is growing: +45% since January. 📈',
     cb3:"✓ SQL validated against your schema · 94% confidence (±5) · exported to Excel",
-    vey:"Video",vh:"See MV SQL NLP in action",vl:"A real, narrated recording of the product: it connects the demo database, takes a plain-language question, generates CTE SQL, validates it, and shows the table, chart and analysis — end to end.",
+    vey:"Video",vh:"See MV SQL NLP in action",vl:"A real, narrated recording of the product, with the interface in your own language: the question, validated CTE SQL, the confidence interval, table, chart, how the variables relate, the audit trail and per-user permissions.",
     pey:"The platform",ph:"Everything a senior SQL analyst does, without writing code",
     pl:"You ask in plain words; MV SQL NLP does the rest: optimized SQL, anti-hallucination validation, confidence interval, and presentation-ready results.",
     f1t:"The AI you choose",f1p:"Use your own API key from your preferred provider — or our credits, zero setup.",

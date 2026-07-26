@@ -11,11 +11,40 @@
 <body>
   <div class="box">
     <div class="mv-logo" style="font-size:1.6rem;font-weight:800">⚡ MV SQL <span class="grad-text">NLP</span></div>
-    <h1 style="margin:1rem 0">El pago no se completó</h1>
-    <p style="color:var(--muted);margin-bottom:1.6rem">
+    <h1 id="t" style="margin:1rem 0">El pago no se completó</h1>
+    <p id="s" style="color:var(--muted);margin-bottom:1.6rem">
       No te preocupes, no se te cobró nada. Podés intentarlo de nuevo cuando quieras.
     </p>
-    <a class="btn btn-primary" href="/#download">Volver a intentar</a>
+    <a class="btn btn-primary" id="v" href="/#precios">Volver a intentar</a>
   </div>
+
+  <script>
+  // El cliente que compró en inglés o portugués tiene que ver también en su
+  // idioma la página de "algo salió mal": es donde más se abandona.
+  var TXT = {
+    es: { titulo:"El pago no se completó",
+          sub:"No te preocupes, no se te cobró nada. Podés intentarlo de nuevo cuando quieras.",
+          volver:"Volver a intentar" },
+    en: { titulo:"The payment didn't go through",
+          sub:"Don't worry — you were not charged. You can try again whenever you want.",
+          volver:"Try again" },
+    pt: { titulo:"O pagamento não foi concluído",
+          sub:"Fique tranquilo, nada foi cobrado. Você pode tentar de novo quando quiser.",
+          volver:"Tentar de novo" }
+  };
+  (function () {
+    var qs = new URLSearchParams(location.search).get('lang');
+    var guardado = null;
+    try { guardado = localStorage.getItem('mvsql_lang'); } catch (e) {}
+    var lang = TXT[qs] ? qs : (TXT[guardado] ? guardado : 'es');
+    var t = TXT[lang];
+    document.documentElement.lang = lang;
+    document.title = t.titulo + " — MV SQL NLP";
+    document.getElementById('t').textContent = t.titulo;
+    document.getElementById('s').textContent = t.sub;
+    document.getElementById('v').textContent = t.volver;
+    document.getElementById('v').href = "/?lang=" + lang + "#precios";
+  })();
+  </script>
 </body>
 </html>
