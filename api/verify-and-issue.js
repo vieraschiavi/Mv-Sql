@@ -1,0 +1,7 @@
+// Puente hacia web/api/verify-and-issue.js
+//
+// El sitio vive en web/, pero el proyecto de Vercel publica desde la raíz del
+// repositorio: sin este archivo la ruta /api/verify-and-issue no existe y devuelve 404.
+// Acá no va lógica — la implementación real está en web/api/verify-and-issue.js, que es
+// también la que cubren los tests.
+module.exports = require("../web/api/verify-and-issue.js");

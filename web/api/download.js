@@ -9,14 +9,29 @@ const path = require("path");
 const JSZip = require("jszip");
 const { verifyLicense } = require("./_license.js");
 
+// El zip está en web/downloads/. Según desde dónde publique Vercel (la raíz
+// del repo o web/), el cwd de la función es uno u otro: se prueban ambos en
+// vez de asumir, que es lo que hacía que la descarga fallara al mover la raíz.
+function rutaDelZip() {
+  const candidatas = [
+    path.join(process.cwd(), "downloads", "mvsql-nlp-app.zip"),
+    path.join(process.cwd(), "web", "downloads", "mvsql-nlp-app.zip"),
+    path.join(__dirname, "..", "downloads", "mvsql-nlp-app.zip"),
+  ];
+  const encontrada = candidatas.find((p) => fs.existsSync(p));
+  if (!encontrada) {
+    throw new Error("No se encontró el paquete de descarga en el servidor.");
+  }
+  return encontrada;
+}
+
 module.exports = async (req, res) => {
   try {
     const { token } = req.query;
     if (!token) return res.status(400).send("Falta el token de descarga. Comprá desde mvsqlnlp.com.");
 
     const license = verifyLicense(token);
-    const zipPath = path.join(process.cwd(), "downloads", "mvsql-nlp-app.zip");
-    const baseZip = fs.readFileSync(zipPath);
+    const baseZip = fs.readFileSync(rutaDelZip());
 
     res.setHeader("Content-Disposition", 'attachment; filename="MV-SQL-NLP.zip"');
     res.setHeader("Content-Type", "application/zip");
