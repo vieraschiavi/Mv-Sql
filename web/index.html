@@ -190,7 +190,7 @@ nav .wrap{display:flex;align-items:center;gap:14px;height:60px;min-width:0}
 .sub-h{font-size:20px;color:var(--ink-d);margin:0 0 14px}
 
 /* downloads */
-.dl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.dl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
 @media(max-width:860px){.dl-grid{grid-template-columns:1fr}}
 .dl{background:var(--tint);border:1px solid var(--line-d);border-radius:16px;padding:24px;display:flex;flex-direction:column}
 .dl h3{font-size:17px;color:var(--ink-d);margin-bottom:6px}
@@ -462,10 +462,14 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   <p class="lead-d" data-i="dl">Descargá la versión que prefieras y usala completa por 3 días, sin tarjeta.
   Después, comprás la licencia en un clic.</p>
   <div class="dl-grid">
-    <div class="dl"><h3 data-i="dl1t">💻 Instalador para Windows (.exe)</h3>
-      <p data-i="dl1p">Programa de PC profesional (React + Electron): instalador clásico, acceso directo, actualizaciones.
-      Para quien quiere una app de escritorio de verdad.</p>
+    <div class="dl"><h3 data-i="dl1t">💻 Instalador liviano (.exe)</h3>
+      <p data-i="dl1p">Programa de PC (React + Electron): instalador clásico, acceso directo, actualizaciones. Versión
+      liviana — sin cuadernos, equipo ni auditoría (esas funciones están en el instalador completo, abajo).</p>
       <a class="btn btn-d" href="https://github.com/vieraschiavi/Mv-Sql/releases/latest" data-i="dl1cta">Descargar .exe</a></div>
+    <div class="dl"><h3 data-i="dl4t">🛠️ Instalador completo (.exe) — todas las funciones</h3>
+      <p data-i="dl4p">El producto completo (cuadernos, equipo, auditoría, SHAP, diagrama de esquema, EXPLAIN...) como
+      instalador de Windows de verdad: elegís la carpeta, queda en "Aplicaciones y características" con desinstalador. Más funciones que el instalador liviano de arriba.</p>
+      <a class="btn btn-d" href="https://github.com/vieraschiavi/Mv-Sql/releases/latest/download/MV-SQL-NLP-Setup.exe" data-i="dl4cta">Descargar instalador completo</a></div>
     <div class="dl"><h3 data-i="dl2t">⚡ Autoinstalable (.bat + Python)</h3>
       <p data-i="dl2p">Doble clic en INICIAR_MVSQL.bat: instala todo solo, genera una base demo y abre la app en tu
       navegador en 2 minutos. Sin conocimientos técnicos.</p>
@@ -587,7 +591,8 @@ var I18N={
     emailhint:"Sua licença e o link de download chegam neste email.",
     paylead:"Meios de pagamento:",payb0:"Cartão",payb1:"Transferência",paysec:"🔒 Pagamento verificado no servidor antes de liberar o download.",
     dey:"Downloads",dh:"Teste grátis por 3 dias — tudo incluído",dl:"Baixe a versão que preferir e use completa por 3 dias, sem cartão. Depois, compre a licença em um clique.",
-    dl1t:"💻 Instalador para Windows (.exe)",dl1p:"Programa de PC profissional (React + Electron): instalador clássico, atalho, atualizações. Para quem quer um app de desktop de verdade.",dl1cta:"Baixar .exe",
+    dl1t:"💻 Instalador leve (.exe)",dl1p:"Programa de PC (React + Electron): instalador clássico, atalho, atualizações. Versão leve — sem cadernos, equipe nem auditoria (esses recursos estão no instalador completo, abaixo).",dl1cta:"Baixar .exe",
+    dl4t:"🛠️ Instalador completo (.exe) — todos os recursos",dl4p:"O produto completo (cadernos, equipe, auditoria, SHAP, diagrama de esquema, EXPLAIN...) como instalador de Windows de verdade: você escolhe a pasta, aparece em \"Aplicativos e recursos\" com desinstalador. Mais recursos que o instalador leve acima.",dl4cta:"Baixar instalador completo",
     dl2t:"⚡ Autoinstalável (.bat + Python)",dl2p:"Duplo clique no INICIAR_MVSQL.bat: instala tudo sozinho, gera um banco demo e abre o app no navegador em 2 minutos. Sem conhecimentos técnicos.",dl2cta:"Baixar .zip",
     dl3t:"🧩 Conector MCP para Claude Desktop",dl3p:"Já usa o Claude Desktop? O CONECTAR_CLAUDE_MCP.bat conecta seu Claude direto ao seu banco (SQL Server, MySQL, PostgreSQL ou SQLite) — vem incluído no zip.",dl3cta:"Incluído no .zip",
     bey:"Novo",bandt:"Seu Claude, conectado ao seu banco de dados",
@@ -646,7 +651,8 @@ var I18N={
     emailhint:"Your license and download link arrive at this email.",
     paylead:"Payment methods:",payb0:"Card",payb1:"Bank transfer",paysec:"🔒 Payment verified server-side before enabling the download.",
     dey:"Downloads",dh:"Try free for 3 days — everything included",dl:"Download whichever version you prefer and use it in full for 3 days, no card. Then buy the license in one click.",
-    dl1t:"💻 Windows installer (.exe)",dl1p:"Professional PC program (React + Electron): classic installer, shortcut, updates. For those who want a real desktop app.",dl1cta:"Download .exe",
+    dl1t:"💻 Lightweight installer (.exe)",dl1p:"PC program (React + Electron): classic installer, shortcut, updates. Lightweight version — no notebooks, team or audit log (those are in the full installer below).",dl1cta:"Download .exe",
+    dl4t:"🛠️ Full installer (.exe) — every feature",dl4p:"The complete product (notebooks, team, audit log, SHAP, schema diagram, EXPLAIN...) as a real Windows installer: pick the install folder, shows up in \"Apps & features\" with a proper uninstaller. More features than the lightweight installer above.",dl4cta:"Download full installer",
     dl2t:"⚡ Self-installing (.bat + Python)",dl2p:"Double-click INICIAR_MVSQL.bat: it installs everything by itself, generates a demo database and opens the app in your browser in 2 minutes. No technical knowledge.",dl2cta:"Download .zip",
     dl3t:"🧩 MCP connector for Claude Desktop",dl3p:"Already use Claude Desktop? CONECTAR_CLAUDE_MCP.bat connects your Claude straight to your database (SQL Server, MySQL, PostgreSQL or SQLite) — included in the zip.",dl3cta:"Included in the .zip",
     bey:"New",bandt:"Your Claude, connected to your database",
