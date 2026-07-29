@@ -1,0 +1,21 @@
+MV SQL NLP - End User License Agreement (EULA)
+
+1. LICENSE. The user is granted a personal, non-transferable license to
+   use the MV SQL NLP software, subject to the contracted plan
+   (Personal, Professional, Business or Credits).
+
+2. TRIAL. The trial version enables all features for 3 days.
+
+3. DATA. MV SQL NLP connects to the user's databases in read-only mode.
+   The user's data is never transmitted to MV SQL NLP servers. Only the
+   schema (table and column names) is sent to the AI provider the user
+   configures.
+
+4. LIABILITY. The software is provided "as is". The user is responsible
+   for reviewing generated queries before making business decisions
+   based on their results.
+
+5. PAYMENTS. Subscriptions and credits are processed through MercadoPago
+   or other enabled payment methods.
+
+(c) 2026 MV SQL NLP. All rights reserved.

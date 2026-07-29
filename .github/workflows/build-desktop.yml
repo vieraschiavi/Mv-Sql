@@ -3,11 +3,12 @@ name: Build MV SQL NLP releases
 # Compila el instalador de Windows (Electron + React) en un runner Windows
 # real, con acceso de red sin restricciones: ahí sí se puede compilar el
 # módulo nativo de SQLite (better-sqlite3) y descargar el binario de
-# Electron para win32-x64. También sube la versión autoinstalable
-# (Python/Streamlit) al mismo Release, como zip listo para descargar.
+# Electron para win32-x64. También sube al mismo Release el producto
+# completo (Python/Streamlit): el zip autoinstalable de siempre, y el
+# instalador .exe (NSIS) con selector de carpeta y desinstalador real.
 #
 # Se dispara al publicar un tag "v*" (ej. v1.0.0) o manualmente desde la
-# pestaña Actions ("Run workflow"). Ambos artefactos quedan en
+# pestaña Actions ("Run workflow"). Los tres artefactos quedan en
 # https://github.com/<owner>/<repo>/releases
 
 on:
@@ -45,19 +46,30 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  attach-python-zip:
+  attach-python-downloads:
     needs: build-windows-exe
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Determinar el tag del Release
+      - name: Determinar version y tag del Release
         id: version
         # electron-builder etiqueta el Release según version en package.json,
         # no según el ref que disparó el workflow — por eso lo leemos de ahí
         # en vez de usar github.ref_name (que en un disparo manual es "main",
         # no una versión, y antes hacía que este job se salteara siempre).
-        run: echo "tag=v$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_OUTPUT"
-      - name: Subir versión autoinstalable (.bat) al Release
+        run: |
+          V=$(node -p "require('./desktop/package.json').version")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "tag=v$V" >> "$GITHUB_OUTPUT"
+      - name: Instalar NSIS (para compilar el instalador .exe del producto Python)
+        run: sudo apt-get update && sudo apt-get install -y nsis
+      - name: Compilar instalador Windows (NSIS) del producto completo
+        run: makensis "/DVERSION=${{ steps.version.outputs.version }}" installer/mvsql.nsi
+      - name: Subir zip autoinstalable (.bat) al Release
         run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/mvsql-nlp-app.zip --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Subir instalador .exe (NSIS) al Release
+        run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/MV-SQL-NLP-Setup.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
