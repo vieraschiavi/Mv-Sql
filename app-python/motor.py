@@ -45,31 +45,16 @@ class RecuperadorEsquema:
 # ──────────────────────────────────────────────────────────────
 # 2) GENERACIÓN SQL (multi-proveedor, con CTE y autoevaluación)
 # ──────────────────────────────────────────────────────────────
-SYSTEM_SQL = """Sos un experto en SQL que traduce preguntas en lenguaje natural a consultas SQL de nivel profesional. La pregunta puede venir en español, inglés o portugués.
-
-REGLAS ESTRICTAS:
-1. Usá EXCLUSIVAMENTE las tablas y columnas del esquema provisto. NUNCA inventes nombres.
-2. El motor es {dialecto}. Usá exactamente su sintaxis.
-3. OPTIMIZACIÓN: si la consulta requiere agregaciones intermedias, subconsultas repetidas o pasos lógicos, estructurala con CTEs (WITH ... AS) con nombres descriptivos. Preferí CTE a subconsultas anidadas. Evitá SELECT *: listá solo las columnas necesarias. Filtrá lo antes posible (predicados en el WHERE más interno). Nunca apliques funciones sobre columnas indexables en el WHERE: usá rangos (col >= 'inicio' AND col < 'fin').
-4. Si la pregunta pide ranking o "top", agregá ORDER BY y limitá filas.
-5. Usá JOINs explícitos según las relaciones del esquema.
-6. Filtrá registros anulados/eliminados si existe la columna (anulada=0, deleted=0, activo=1).
-7. Solo SELECT (o WITH ... SELECT). Nunca INSERT/UPDATE/DELETE/DROP/ALTER/EXEC.
-8. Alias legibles en español para columnas calculadas (total_cobrado, promedio_mensual).
-
-FORMATO DE RESPUESTA — devolvé EXACTAMENTE esto, sin markdown ni explicación extra:
-SQL:
-<la consulta>
-CONFIANZA: <entero 0-100: qué tan seguro estás de que la consulta responde exactamente la pregunta con este esquema>
-SUPUESTOS: <si asumiste algo (interpretación de fechas, qué columna usar), listalo en una línea; si no, "ninguno">
-
-ESQUEMA DISPONIBLE (usá solo esto):
-{esquema}
-"""
-
-SYSTEM_EXPLICAR = """Sos un analista de datos. Te paso una pregunta de un usuario de negocio, el SQL ejecutado y una muestra del resultado. Explicá el resultado en 2-4 frases claras en el MISMO idioma de la pregunta, con números concretos. No expliques el SQL: explicá QUÉ dice el dato. Si el resultado está vacío, decilo y sugerí por qué puede ser."""
-
-SYSTEM_PROCEDURE = """Sos un DBA experto. Convertí la consulta SELECT provista en un STORED PROCEDURE de nivel producción para {dialecto}, llamado {nombre}. Parametrizá las fechas y filtros literales que encuentres como parámetros con valores default sensatos. Incluí comentario de cabecera (propósito, parámetros, autor: MV SQL NLP). Devolvé SOLO el código SQL del procedure, sin markdown."""
+# Los prompts de sistema (SYSTEM_SQL/SYSTEM_EXPLICAR/SYSTEM_PROCEDURE) NO
+# viven acá como constantes de módulo a propósito: eran importables con
+# `import motor; motor.SYSTEM_SQL` — legibles con dos líneas de Python
+# aunque este archivo esté compilado con Cython (tools/build_cython.py).
+# Compilado o no, un atributo público de módulo siempre es introspectable.
+# Viven como variables locales dentro de los métodos que los usan
+# (MotorMVSQL.responder / .generar_stored_procedure): sin un nombre
+# público que apunte a ellos, extraerlos requiere desensamblar la
+# extensión compilada o interceptar la llamada real a la IA, no un
+# `dir(motor)`.
 
 
 def _parsear_respuesta_sql(texto):
@@ -238,7 +223,28 @@ class MotorMVSQL:
 
         # 2) generación
         esquema = "\n\n".join(f["texto"] for f in relevantes)
-        system = SYSTEM_SQL.format(dialecto=self.cx.dialecto, esquema=esquema)
+        _system_sql = """Sos un experto en SQL que traduce preguntas en lenguaje natural a consultas SQL de nivel profesional. La pregunta puede venir en español, inglés o portugués.
+
+REGLAS ESTRICTAS:
+1. Usá EXCLUSIVAMENTE las tablas y columnas del esquema provisto. NUNCA inventes nombres.
+2. El motor es {dialecto}. Usá exactamente su sintaxis.
+3. OPTIMIZACIÓN: si la consulta requiere agregaciones intermedias, subconsultas repetidas o pasos lógicos, estructurala con CTEs (WITH ... AS) con nombres descriptivos. Preferí CTE a subconsultas anidadas. Evitá SELECT *: listá solo las columnas necesarias. Filtrá lo antes posible (predicados en el WHERE más interno). Nunca apliques funciones sobre columnas indexables en el WHERE: usá rangos (col >= 'inicio' AND col < 'fin').
+4. Si la pregunta pide ranking o "top", agregá ORDER BY y limitá filas.
+5. Usá JOINs explícitos según las relaciones del esquema.
+6. Filtrá registros anulados/eliminados si existe la columna (anulada=0, deleted=0, activo=1).
+7. Solo SELECT (o WITH ... SELECT). Nunca INSERT/UPDATE/DELETE/DROP/ALTER/EXEC.
+8. Alias legibles en español para columnas calculadas (total_cobrado, promedio_mensual).
+
+FORMATO DE RESPUESTA — devolvé EXACTAMENTE esto, sin markdown ni explicación extra:
+SQL:
+<la consulta>
+CONFIANZA: <entero 0-100: qué tan seguro estás de que la consulta responde exactamente la pregunta con este esquema>
+SUPUESTOS: <si asumiste algo (interpretación de fechas, qué columna usar), listalo en una línea; si no, "ninguno">
+
+ESQUEMA DISPONIBLE (usá solo esto):
+{esquema}
+"""
+        system = _system_sql.format(dialecto=self.cx.dialecto, esquema=esquema)
         pregunta_ia = f"{pregunta}\n\n[Preferencias del usuario: {contexto}]" if contexto else pregunta
         crudo = self._completar(system, pregunta_ia)
         sql, conf_llm, supuestos = _parsear_respuesta_sql(crudo)
@@ -290,8 +296,13 @@ class MotorMVSQL:
             try:
                 muestra = _muestra_texto(resultado["columnas"], resultado["filas"])
                 extra = f"\n\nPREFERENCIAS DEL USUARIO: {contexto}" if contexto else ""
+                _system_explicar = ("Sos un analista de datos. Te paso una pregunta de un "
+                    "usuario de negocio, el SQL ejecutado y una muestra del resultado. "
+                    "Explicá el resultado en 2-4 frases claras en el MISMO idioma de la "
+                    "pregunta, con números concretos. No expliques el SQL: explicá QUÉ dice "
+                    "el dato. Si el resultado está vacío, decilo y sugerí por qué puede ser.")
                 resultado["explicacion"] = self._completar(
-                    SYSTEM_EXPLICAR,
+                    _system_explicar,
                     f"PREGUNTA: {pregunta}\n\nSQL:\n{sql}\n\nRESULTADO ({len(resultado['filas'])} filas):\n{muestra}{extra}",
                     max_tokens=400)
             except Exception:
@@ -301,7 +312,12 @@ class MotorMVSQL:
 
     def generar_stored_procedure(self, sql, nombre="sp_mvsql_consulta"):
         """Convierte una consulta guardada en stored procedure del dialecto activo."""
-        system = SYSTEM_PROCEDURE.format(dialecto=self.cx.dialecto, nombre=nombre)
+        _system_procedure = ("Sos un DBA experto. Convertí la consulta SELECT provista en un "
+            "STORED PROCEDURE de nivel producción para {dialecto}, llamado {nombre}. "
+            "Parametrizá las fechas y filtros literales que encuentres como parámetros con "
+            "valores default sensatos. Incluí comentario de cabecera (propósito, parámetros, "
+            "autor: MV SQL NLP). Devolvé SOLO el código SQL del procedure, sin markdown.")
+        system = _system_procedure.format(dialecto=self.cx.dialecto, nombre=nombre)
         codigo = self._completar(system, sql, max_tokens=2000)
         return re.sub(r"```sql|```", "", codigo, flags=re.IGNORECASE).strip()
 

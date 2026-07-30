@@ -135,9 +135,9 @@ LangString TXT_FinishReadme ${LANG_SPANISH} "Ver el LEEME (primeros pasos)"
 LangString TXT_FinishReadme ${LANG_ENGLISH} "View the README (getting started)"
 LangString TXT_FinishReadme ${LANG_PORTUGUESEBR} "Ver o LEIA-ME (primeiros passos)"
 
-LangString TXT_UninstAskData ${LANG_SPANISH} "Tambien encontramos datos tuyos: usuarios del equipo, auditoria y/o la base demo.$\r$\n$\r$\n¿Querés borrarlos tambien? Elegi 'No' para conservarlos por si reinstalas mas adelante."
-LangString TXT_UninstAskData ${LANG_ENGLISH} "We also found your data: team users, the audit log and/or the demo database.$\r$\n$\r$\nDo you want to delete it too? Choose 'No' to keep it in case you reinstall later."
-LangString TXT_UninstAskData ${LANG_PORTUGUESEBR} "Tambem encontramos seus dados: usuarios da equipe, auditoria e/ou o banco demo.$\r$\n$\r$\nQuer apagar tambem? Escolha 'Nao' para manter, caso reinstale depois."
+LangString TXT_UninstAskData ${LANG_SPANISH} "Tambien encontramos datos tuyos: usuarios del equipo, auditoria, tu licencia y/o el contador de tu prueba gratuita.$\r$\n$\r$\n¿Querés borrarlos tambien? Elegi 'No' para conservarlos por si reinstalas mas adelante (ojo: borrar el contador de prueba reinicia los 7 dias)."
+LangString TXT_UninstAskData ${LANG_ENGLISH} "We also found your data: team users, the audit log, your license and/or your free-trial counter.$\r$\n$\r$\nDo you want to delete it too? Choose 'No' to keep it in case you reinstall later (note: deleting the trial counter restarts the 7 days)."
+LangString TXT_UninstAskData ${LANG_PORTUGUESEBR} "Tambem encontramos seus dados: usuarios da equipe, auditoria, sua licenca e/ou o contador do seu teste gratis.$\r$\n$\r$\nQuer apagar tambem? Escolha 'Nao' para manter, caso reinstale depois (atencao: apagar o contador do teste reinicia os 7 dias)."
 
 LangString TXT_UninstDone ${LANG_SPANISH} "MV SQL NLP se desinstalo correctamente."
 LangString TXT_UninstDone ${LANG_ENGLISH} "MV SQL NLP was successfully uninstalled."
@@ -161,9 +161,25 @@ Section "MV SQL NLP" SEC_MAIN
   File "${APP_SRC}\esquema_visual.py"
   File "${APP_SRC}\exportar.py"
   File "${APP_SRC}\generar_db_demo.py"
+  File "${APP_SRC}\eula.py"
+  File "${APP_SRC}\EULA_ES.txt"
+  File "${APP_SRC}\EULA_EN.txt"
+  File "${APP_SRC}\EULA_PT.txt"
   File "${APP_SRC}\guardadas.py"
-  File "${APP_SRC}\motor.py"
-  File "${APP_SRC}\proveedores_ia.py"
+
+  ; Modulos protegidos: si tools/build_cython.py corrio antes (lo hace la
+  ; CI en windows-latest, ver .github/workflows/build-desktop.yml) y borro
+  ; el .py fuente de estos 3, solo va a existir el .pyd compilado — y
+  ; viceversa en un build local sin Cython. /nonfatal evita que falte uno
+  ; de los dos rompa la compilacion del instalador; nunca deberian existir
+  ; los dos juntos (el .py en claro anularia la proteccion del .pyd).
+  File /nonfatal "${APP_SRC}\licencia*.py"
+  File /nonfatal "${APP_SRC}\licencia*.pyd"
+  File /nonfatal "${APP_SRC}\motor*.py"
+  File /nonfatal "${APP_SRC}\motor*.pyd"
+  File /nonfatal "${APP_SRC}\proveedores_ia*.py"
+  File /nonfatal "${APP_SRC}\proveedores_ia*.pyd"
+
   File "${APP_SRC}\requirements.txt"
   File "${APP_SRC}\mvsql.ico"
   File "${APP_SRC}\INICIAR_MVSQL.bat"
@@ -219,11 +235,13 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\.venv"
   RMDir /r "$INSTDIR\__pycache__"
   Delete "$INSTDIR\*.py"
+  Delete "$INSTDIR\*.pyd"
   Delete "$INSTDIR\*.bat"
   Delete "$INSTDIR\*.txt"
   Delete "$INSTDIR\*.ico"
   Delete "$INSTDIR\.accesos_ok"
   Delete "$INSTDIR\.idioma"
+  Delete "$INSTDIR\.eula_aceptado"
   Delete "$INSTDIR\Uninstall.exe"
 
   ; Los datos del cliente (usuarios, auditoria, base demo, licencia) se
@@ -239,6 +257,8 @@ Section "Uninstall"
     StrCpy $1 "1"
   IfFileExists "$INSTDIR\licencia_mvsql.json" 0 +2
     StrCpy $1 "1"
+  IfFileExists "$INSTDIR\.mvsql_trial.json" 0 +2
+    StrCpy $1 "1"
   StrCmp $1 "0" fin_datos
   MessageBox MB_YESNO|MB_ICONQUESTION "$(TXT_UninstAskData)" IDNO fin_datos
     Delete "$INSTDIR\equipo.json"
@@ -246,6 +266,7 @@ Section "Uninstall"
     Delete "$INSTDIR\cartera_demo.db"
     Delete "$INSTDIR\catalogo_demo.json"
     Delete "$INSTDIR\licencia_mvsql.json"
+    Delete "$INSTDIR\.mvsql_trial.json"
   fin_datos:
 
   RMDir "$INSTDIR"

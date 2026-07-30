@@ -1,9 +1,14 @@
 // MV SQL NLP — GET /api/download?token=...
 // Sirve el paquete descargable, gateado por la licencia emitida tras el pago.
-//   mode "own_ai":  zip base tal cual — el cliente configura su propia API key.
-//   mode "credits": zip base + licencia_mvsql.json embebida con los créditos
-//                   comprados, lista para usar sin configurar nada
-//                   (mismo espíritu que el zip de ejemplo original).
+// Los dos modos llevan licencia_mvsql.json embebida — sin eso, la app
+// (app-python/licencia.py) trataría a un cliente que pagó como si fuera
+// el trial gratuito y lo bloquearía a los 7 días igual que a cualquiera.
+//   mode "own_ai":  zip + licencia_mvsql.json (sin proxy_url/créditos) —
+//                   el cliente configura su propia API key, pero queda
+//                   eximido del límite de trial.
+//   mode "credits": zip + licencia_mvsql.json con los créditos comprados,
+//                   lista para usar sin configurar nada (mismo espíritu
+//                   que el zip de ejemplo original).
 const fs = require("fs");
 const path = require("path");
 const JSZip = require("jszip");
@@ -36,25 +41,32 @@ module.exports = async (req, res) => {
     res.setHeader("Content-Disposition", 'attachment; filename="MV-SQL-NLP.zip"');
     res.setHeader("Content-Type", "application/zip");
 
-    if (license.mode !== "credits") {
-      return res.status(200).send(baseZip);
-    }
+    const esCredits = license.mode === "credits";
+    const licenciaJson = esCredits
+      ? {
+          producto: "MV SQL NLP",
+          email: license.email,
+          plan: license.plan,
+          modo: "credits",
+          creditos: license.credits,
+          token,
+          emitida: new Date(license.iat * 1000).toISOString(),
+          vence: new Date(license.exp * 1000).toISOString(),
+          proxy_url: `https://${req.headers.host}/api/ai-proxy`,
+          nota: "No compartas este archivo: contiene tu token de créditos. Elegí el proveedor 'MV SQL Créditos' en la app — no hace falta ninguna API key.",
+        }
+      : {
+          producto: "MV SQL NLP",
+          email: license.email,
+          plan: license.plan,
+          modo: "own_ai",
+          emitida: new Date(license.iat * 1000).toISOString(),
+          vence: new Date(license.exp * 1000).toISOString(),
+          nota: "No compartas este archivo: acredita tu licencia paga. Configurá tu propia API key en 'Proveedor de IA' — este archivo solo te exime del límite de la prueba gratuita.",
+        };
 
     const zip = await JSZip.loadAsync(baseZip);
-    zip.file(
-      "nl2sql_rag/licencia_mvsql.json",
-      JSON.stringify({
-        producto: "MV SQL NLP",
-        email: license.email,
-        plan: license.plan,
-        creditos: license.credits,
-        token,
-        emitida: new Date(license.iat * 1000).toISOString(),
-        vence: new Date(license.exp * 1000).toISOString(),
-        proxy_url: `https://${req.headers.host}/api/ai-proxy`,
-        nota: "No compartas este archivo: contiene tu token de créditos. Elegí el proveedor 'MV SQL Créditos' en la app — no hace falta ninguna API key.",
-      }, null, 2)
-    );
+    zip.file("nl2sql_rag/licencia_mvsql.json", JSON.stringify(licenciaJson, null, 2));
     const out = await zip.generateAsync({ type: "nodebuffer" });
     res.status(200).send(out);
   } catch (e) {

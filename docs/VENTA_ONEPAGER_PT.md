@@ -70,7 +70,7 @@ segundos, feito pela própria pessoa que precisa do dado.
 | Licença mensal | US$ 15 / 29 / 79 conforme os usuários |
 | Suporte e manutenção | US$ 150 por mês (opcional) |
 
-**Teste grátis por 3 dias antes de decidir qualquer coisa** — sem cartão.
+**Teste grátis por 7 dias antes de decidir qualquer coisa** — sem cartão.
 
 ---
 

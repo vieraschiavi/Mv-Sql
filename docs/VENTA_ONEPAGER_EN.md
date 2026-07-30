@@ -70,7 +70,7 @@ by the person who actually needs the number.
 | Monthly licence | US$ 15 / 29 / 79 depending on seats |
 | Support and maintenance | US$ 150 per month (optional) |
 
-**Try it free for 3 days before deciding anything** — no credit card.
+**Try it free for 7 days before deciding anything** — no credit card.
 
 ---
 

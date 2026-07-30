@@ -24,7 +24,9 @@ import plotly.express as px
 import streamlit as st
 
 from conectores import ConexionBD, MOTORES
+from eula import eula_aceptado, registrar_aceptacion, texto_eula
 from exportar import a_csv, a_excel, a_pdf, a_html, a_json
+from licencia import TRIAL_DIAS, verificar_acceso
 from motor import MotorMVSQL
 from proveedores_ia import PROVEEDORES, probar_conexion, cargar_licencia_creditos
 import auditoria
@@ -386,6 +388,83 @@ ss = st.session_state
 # portugués, no en castellano. Igual se puede cambiar desde el selector.
 ss.setdefault("lang", os.environ.get("MVSQL_LANG", "es")
               if os.environ.get("MVSQL_LANG") in ("es", "en", "pt") else "es")
+
+# ──────────────────────────────────────────────────────────────
+# EULA — se pide una sola vez por PC, antes que cualquier otra cosa.
+# El instalador de Windows ya lo muestra en su propia página, pero
+# quien usa el zip + INICIAR_MVSQL.bat nunca pasaba por ahí.
+# ──────────────────────────────────────────────────────────────
+if not eula_aceptado():
+    _TXT_EULA = {
+        "es": ("📄 Acuerdo de licencia (EULA)",
+               "Para usar MV SQL NLP necesitás aceptar el acuerdo de licencia.",
+               "Acepto los términos y condiciones", "Continuar",
+               "Tenés que tildar la casilla para continuar."),
+        "en": ("📄 License agreement (EULA)",
+               "To use MV SQL NLP you need to accept the license agreement.",
+               "I accept the terms and conditions", "Continue",
+               "You need to check the box to continue."),
+        "pt": ("📄 Contrato de licença (EULA)",
+               "Para usar o MV SQL NLP você precisa aceitar o contrato de licença.",
+               "Aceito os termos e condições", "Continuar",
+               "Marque a caixa para continuar."),
+    }
+    _titulo_eula, _cuerpo_eula, _chk_eula, _btn_eula, _falta_eula = _TXT_EULA[ss.lang]
+    st.markdown('<div class="mv-logo" style="font-size:2.6rem">⚡ MV SQL NLP</div>',
+                unsafe_allow_html=True)
+    st.title(_titulo_eula)
+    st.write(_cuerpo_eula)
+    st.text_area("EULA", texto_eula(ss.lang), height=280, disabled=True,
+                 label_visibility="collapsed")
+    _ok_eula = st.checkbox(_chk_eula, key="chk_eula_aceptar")
+    if st.button(_btn_eula, key="btn_eula_continuar"):
+        if _ok_eula:
+            registrar_aceptacion()
+            st.rerun()
+        else:
+            st.warning(_falta_eula)
+    st.stop()
+
+# ──────────────────────────────────────────────────────────────
+# TRIAL / LICENCIA — se chequea antes de armar el resto de la app
+# ──────────────────────────────────────────────────────────────
+_acceso = verificar_acceso()
+if not _acceso["permitido"]:
+    _TXT_VENCIDO = {
+        "es": ("⏳ Tu prueba gratuita terminó",
+               f"Probaste MV SQL NLP durante {TRIAL_DIAS} días. Para seguir usándolo, "
+               "comprá tu licencia — planes desde MercadoPago o tarjeta internacional, "
+               "activación inmediata.",
+               "Comprar licencia en mvsqlnlp.com"),
+        "en": ("⏳ Your free trial has ended",
+               f"You tried MV SQL NLP for {TRIAL_DIAS} days. To keep using it, buy your "
+               "license — plans payable via MercadoPago or an international card, "
+               "instant activation.",
+               "Buy a license at mvsqlnlp.com"),
+        "pt": ("⏳ Seu teste grátis terminou",
+               f"Você testou o MV SQL NLP por {TRIAL_DIAS} dias. Para continuar usando, "
+               "compre sua licença — planos via MercadoPago ou cartão internacional, "
+               "ativação imediata.",
+               "Comprar licença em mvsqlnlp.com"),
+    }
+    _titulo_venc, _cuerpo_venc, _cta_venc = _TXT_VENCIDO[ss.lang]
+    st.markdown('<div class="mv-logo" style="font-size:2.6rem">⚡ MV SQL NLP</div>',
+                unsafe_allow_html=True)
+    st.title(_titulo_venc)
+    st.write(_cuerpo_venc)
+    st.link_button(_cta_venc, "https://mvsqlnlp.com/#precios")
+    st.stop()
+elif _acceso["dias_restantes"] is not None and _acceso["dias_restantes"] <= 2:
+    _TXT_AVISO = {
+        "es": f"⏳ Tu prueba gratuita termina en {_acceso['dias_restantes']} día(s) — "
+              "comprá tu licencia en mvsqlnlp.com para no perder acceso.",
+        "en": f"⏳ Your free trial ends in {_acceso['dias_restantes']} day(s) — buy your "
+              "license at mvsqlnlp.com to keep access.",
+        "pt": f"⏳ Seu teste grátis termina em {_acceso['dias_restantes']} dia(s) — compre "
+              "sua licença em mvsqlnlp.com para não perder o acesso.",
+    }
+    st.warning(_TXT_AVISO[ss.lang])
+
 ss.setdefault("motor", None)          # MotorMVSQL
 ss.setdefault("historial", [])
 ss.setdefault("pregunta_precargada", "")

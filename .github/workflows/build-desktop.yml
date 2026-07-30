@@ -7,6 +7,13 @@ name: Build MV SQL NLP releases
 # completo (Python/Streamlit): el zip autoinstalable de siempre, y el
 # instalador .exe (NSIS) con selector de carpeta y desinstalador real.
 #
+# Los módulos con la lógica sensible (motor.py, proveedores_ia.py,
+# licencia.py) se compilan con Cython a .pyd ANTES de empaquetar — un
+# segundo runner windows-latest hace ese build (necesita un compilador de
+# C real apuntando a Windows, algo que el runner de Linux de acá abajo no
+# puede producir) y el job de empaquetado usa el .pyd en vez del .py
+# fuente. Ver tools/build_cython.py para el detalle y las limitaciones.
+#
 # Se dispara al publicar un tag "v*" (ej. v1.0.0) o manualmente desde la
 # pestaña Actions ("Run workflow"). Los tres artefactos quedan en
 # https://github.com/<owner>/<repo>/releases
@@ -46,8 +53,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-cython-windows:
+    # Corre en windows-latest porque necesita el compilador de C de
+    # Visual Studio (ya viene instalado en la imagen del runner) para
+    # producir extensiones .pyd de verdad — un .so de Linux no le sirve
+    # de nada al cliente de Windows.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalar Cython
+        run: pip install cython
+      - name: Compilar motor.py / proveedores_ia.py / licencia.py a .pyd
+        run: python tools/build_cython.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mvsql-pyd
+          path: app-python/*.pyd
+          if-no-files-found: error
+
   attach-python-downloads:
-    needs: build-windows-exe
+    needs: [build-windows-exe, build-cython-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,8 +89,25 @@ jobs:
           V=$(node -p "require('./desktop/package.json').version")
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "tag=v$V" >> "$GITHUB_OUTPUT"
+      - uses: actions/download-artifact@v4
+        with:
+          name: mvsql-pyd
+          path: app-python
+      - name: Sacar el .py fuente de lo que ya se compiló a .pyd
+        # Sin esto se empaquetarían los dos: el .py en claro al lado del
+        # .pyd anularía la protección (y encima Python siempre prioriza
+        # el .py sobre el binario si el .py es más nuevo en el path).
+        run: |
+          for base in motor proveedores_ia licencia; do
+            if ls app-python/${base}*.pyd >/dev/null 2>&1; then
+              rm -f "app-python/${base}.py"
+              echo "protegido: ${base}.py reemplazado por $(ls app-python/${base}*.pyd)"
+            fi
+          done
       - name: Instalar NSIS (para compilar el instalador .exe del producto Python)
         run: sudo apt-get update && sudo apt-get install -y nsis
+      - name: Empaquetar el zip autoinstalable (con los .pyd si están)
+        run: python3 tools/empaquetar_zip.py
       - name: Compilar instalador Windows (NSIS) del producto completo
         run: makensis "/DVERSION=${{ steps.version.outputs.version }}" installer/mvsql.nsi
       - name: Subir zip autoinstalable (.bat) al Release

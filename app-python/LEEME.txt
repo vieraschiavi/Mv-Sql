@@ -35,15 +35,25 @@ INICIO RAPIDO (Windows)
   http://localhost:8791 (puerto fijo, para no chocar con otras apps que
   tengas corriendo en tu PC).
 
+PRUEBA GRATIS: 7 DIAS
+  Si este zip lo bajaste sin comprar (o el instalador .exe), la app
+  funciona completa por 7 dias desde la primera vez que la abris.
+  Pasado ese plazo pide comprar la licencia - no hace falta hacer nada,
+  se activa sola al comprar (ver abajo).
+
 SI YA COMPRASTE EL PLAN "CREDITOS EMBEBIDOS":
   Este zip incluye tu archivo nl2sql_rag/licencia_mvsql.json con tus
   creditos de IA activados. En la app, elegi el proveedor de IA
   "MV SQL Creditos" en la barra lateral - no necesitas ninguna API key,
-  ya viene todo configurado.
+  ya viene todo configurado. Ese mismo archivo te exime del limite de
+  7 dias.
 
 SI ELEGISTE "IA PROPIA":
   Elegi tu proveedor (Claude, GPT, Gemini, Groq, Mistral, DeepSeek, Grok
-  u Ollama local) en la barra lateral y pega tu propia API key.
+  u Ollama local) en la barra lateral y pega tu propia API key. Si
+  compraste este plan (no es el trial), el zip ya incluye tu
+  licencia_mvsql.json - te exime del limite de 7 dias aunque no uses
+  creditos nuestros.
 
 CONECTAR TU BASE DE DATOS
   Sidebar -> Base de datos -> elegi el motor (SQLite, SQL Server, MySQL o
@@ -88,14 +98,24 @@ QUICK START (Windows)
   app at http://localhost:8791 (fixed port, to avoid clashing with other
   apps you may have running on your PC).
 
+FREE TRIAL: 7 DAYS
+  If you downloaded this zip without buying (or the .exe installer), the
+  app works in full for 7 days from the first time you open it. After
+  that it asks you to buy a license - nothing to configure, it activates
+  automatically once you buy (see below).
+
 IF YOU BOUGHT THE "EMBEDDED CREDITS" PLAN:
   This zip includes your nl2sql_rag/licencia_mvsql.json file with your
   AI credits activated. In the app, pick the "MV SQL Creditos" AI
-  provider in the sidebar - no API key needed, everything is preconfigured.
+  provider in the sidebar - no API key needed, everything is
+  preconfigured. That same file exempts you from the 7-day limit.
 
 IF YOU CHOSE "YOUR OWN AI":
   Pick your provider (Claude, GPT, Gemini, Groq, Mistral, DeepSeek, Grok
-  or local Ollama) in the sidebar and paste your own API key.
+  or local Ollama) in the sidebar and paste your own API key. If you
+  bought this plan (not the trial), the zip already includes your
+  licencia_mvsql.json - it exempts you from the 7-day limit even though
+  you're not using our credits.
 
 CONNECT YOUR DATABASE
   Sidebar -> Database -> pick the engine (SQLite, SQL Server, MySQL or
@@ -137,15 +157,25 @@ INICIO RAPIDO (Windows)
   http://localhost:8791 (porta fixa, para nao conflitar com outros apps
   que voce tenha rodando no seu PC).
 
+TESTE GRATIS: 7 DIAS
+  Se baixou este zip sem comprar (ou o instalador .exe), o app funciona
+  completo por 7 dias a partir da primeira vez que voce abre. Depois
+  disso pede para comprar a licenca - nao precisa configurar nada, ativa
+  sozinha ao comprar (veja abaixo).
+
 SE VOCE JA COMPROU O PLANO "CREDITOS EMBUTIDOS":
   Este zip inclui seu arquivo nl2sql_rag/licencia_mvsql.json com seus
   creditos de IA ativados. No app, escolha o provedor de IA
   "MV SQL Creditos" na barra lateral - nao precisa de nenhuma API key,
-  ja vem tudo configurado.
+  ja vem tudo configurado. Esse mesmo arquivo te isenta do limite de
+  7 dias.
 
 SE VOCE ESCOLHEU "IA PROPRIA":
   Escolha seu provedor (Claude, GPT, Gemini, Groq, Mistral, DeepSeek, Grok
-  ou Ollama local) na barra lateral e cole sua propria API key.
+  ou Ollama local) na barra lateral e cole sua propria API key. Se
+  comprou esse plano (nao e o teste), o zip ja inclui seu
+  licencia_mvsql.json - te isenta do limite de 7 dias mesmo sem usar
+  nossos creditos.
 
 CONECTAR SEU BANCO DE DADOS
   Sidebar -> Banco de dados -> escolha o motor (SQLite, SQL Server, MySQL
