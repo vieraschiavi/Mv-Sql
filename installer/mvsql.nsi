@@ -161,10 +161,25 @@ Section "MV SQL NLP" SEC_MAIN
   File "${APP_SRC}\esquema_visual.py"
   File "${APP_SRC}\exportar.py"
   File "${APP_SRC}\generar_db_demo.py"
+  File "${APP_SRC}\eula.py"
+  File "${APP_SRC}\EULA_ES.txt"
+  File "${APP_SRC}\EULA_EN.txt"
+  File "${APP_SRC}\EULA_PT.txt"
   File "${APP_SRC}\guardadas.py"
-  File "${APP_SRC}\licencia.py"
-  File "${APP_SRC}\motor.py"
-  File "${APP_SRC}\proveedores_ia.py"
+
+  ; Modulos protegidos: si tools/build_cython.py corrio antes (lo hace la
+  ; CI en windows-latest, ver .github/workflows/build-desktop.yml) y borro
+  ; el .py fuente de estos 3, solo va a existir el .pyd compilado — y
+  ; viceversa en un build local sin Cython. /nonfatal evita que falte uno
+  ; de los dos rompa la compilacion del instalador; nunca deberian existir
+  ; los dos juntos (el .py en claro anularia la proteccion del .pyd).
+  File /nonfatal "${APP_SRC}\licencia*.py"
+  File /nonfatal "${APP_SRC}\licencia*.pyd"
+  File /nonfatal "${APP_SRC}\motor*.py"
+  File /nonfatal "${APP_SRC}\motor*.pyd"
+  File /nonfatal "${APP_SRC}\proveedores_ia*.py"
+  File /nonfatal "${APP_SRC}\proveedores_ia*.pyd"
+
   File "${APP_SRC}\requirements.txt"
   File "${APP_SRC}\mvsql.ico"
   File "${APP_SRC}\INICIAR_MVSQL.bat"
@@ -220,11 +235,13 @@ Section "Uninstall"
   RMDir /r "$INSTDIR\.venv"
   RMDir /r "$INSTDIR\__pycache__"
   Delete "$INSTDIR\*.py"
+  Delete "$INSTDIR\*.pyd"
   Delete "$INSTDIR\*.bat"
   Delete "$INSTDIR\*.txt"
   Delete "$INSTDIR\*.ico"
   Delete "$INSTDIR\.accesos_ok"
   Delete "$INSTDIR\.idioma"
+  Delete "$INSTDIR\.eula_aceptado"
   Delete "$INSTDIR\Uninstall.exe"
 
   ; Los datos del cliente (usuarios, auditoria, base demo, licencia) se

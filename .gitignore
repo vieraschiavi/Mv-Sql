@@ -6,6 +6,14 @@ desktop/release/
 __pycache__/
 *.pyc
 
+# artefactos de tools/build_cython.py (se generan localmente o en CI —
+# nunca se comitean: son binarios especificos de cada plataforma/version
+# de Python, y el .c intermedio de Cython no aporta nada versionado)
+app-python/*.pyd
+app-python/*.so
+app-python/*.c
+app-python/build/
+
 # datos locales
 app-python/cartera_demo.db
 app-python/catalogo_demo.json
@@ -16,6 +24,7 @@ app-python/catalogo_demo.json
 .env.local
 licencia_mvsql.json
 .mvsql_trial.json
+.eula_aceptado
 .idioma
 .accesos_ok
 equipo.json

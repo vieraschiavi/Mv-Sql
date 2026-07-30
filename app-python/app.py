@@ -24,6 +24,7 @@ import plotly.express as px
 import streamlit as st
 
 from conectores import ConexionBD, MOTORES
+from eula import eula_aceptado, registrar_aceptacion, texto_eula
 from exportar import a_csv, a_excel, a_pdf, a_html, a_json
 from licencia import TRIAL_DIAS, verificar_acceso
 from motor import MotorMVSQL
@@ -387,6 +388,42 @@ ss = st.session_state
 # portugués, no en castellano. Igual se puede cambiar desde el selector.
 ss.setdefault("lang", os.environ.get("MVSQL_LANG", "es")
               if os.environ.get("MVSQL_LANG") in ("es", "en", "pt") else "es")
+
+# ──────────────────────────────────────────────────────────────
+# EULA — se pide una sola vez por PC, antes que cualquier otra cosa.
+# El instalador de Windows ya lo muestra en su propia página, pero
+# quien usa el zip + INICIAR_MVSQL.bat nunca pasaba por ahí.
+# ──────────────────────────────────────────────────────────────
+if not eula_aceptado():
+    _TXT_EULA = {
+        "es": ("📄 Acuerdo de licencia (EULA)",
+               "Para usar MV SQL NLP necesitás aceptar el acuerdo de licencia.",
+               "Acepto los términos y condiciones", "Continuar",
+               "Tenés que tildar la casilla para continuar."),
+        "en": ("📄 License agreement (EULA)",
+               "To use MV SQL NLP you need to accept the license agreement.",
+               "I accept the terms and conditions", "Continue",
+               "You need to check the box to continue."),
+        "pt": ("📄 Contrato de licença (EULA)",
+               "Para usar o MV SQL NLP você precisa aceitar o contrato de licença.",
+               "Aceito os termos e condições", "Continuar",
+               "Marque a caixa para continuar."),
+    }
+    _titulo_eula, _cuerpo_eula, _chk_eula, _btn_eula, _falta_eula = _TXT_EULA[ss.lang]
+    st.markdown('<div class="mv-logo" style="font-size:2.6rem">⚡ MV SQL NLP</div>',
+                unsafe_allow_html=True)
+    st.title(_titulo_eula)
+    st.write(_cuerpo_eula)
+    st.text_area("EULA", texto_eula(ss.lang), height=280, disabled=True,
+                 label_visibility="collapsed")
+    _ok_eula = st.checkbox(_chk_eula, key="chk_eula_aceptar")
+    if st.button(_btn_eula, key="btn_eula_continuar"):
+        if _ok_eula:
+            registrar_aceptacion()
+            st.rerun()
+        else:
+            st.warning(_falta_eula)
+    st.stop()
 
 # ──────────────────────────────────────────────────────────────
 # TRIAL / LICENCIA — se chequea antes de armar el resto de la app
