@@ -60,12 +60,12 @@ reemplazar el placeholder de `web/index.html` (sección `#video`) por el `<video
 *Pantalla: guardar como "Facturación mensual por sucursal" → aparece en el panel de guardadas → clic en "Stored procedure" → se muestra el código generado.*
 
 **[1:50–2:10] — Cierre + oferta**
-> 🎙 "MV SQL NLP. Tu base de datos, en tu idioma: español, inglés o portugués. Probalo gratis tres días, con todas las funciones, sin tarjeta. Y cuando te convenza, pagás como quieras: suscripción con tu propia API, o créditos que te facturamos nosotros — con MercadoPago, en tu moneda."
+> 🎙 "MV SQL NLP. Tu base de datos, en tu idioma: español, inglés o portugués. Probalo gratis siete días, con todas las funciones, sin tarjeta. Y cuando te convenza, pagás como quieras: suscripción con tu propia API, o créditos que te facturamos nosotros — con MercadoPago, en tu moneda."
 
-*Pantalla: corte a la web (landing), scroll por precios, badge de MercadoPago, botón "Probar gratis 3 días". Logo final ⚡ MV SQL NLP + URL.*
+*Pantalla: corte a la web (landing), scroll por precios, badge de MercadoPago, botón "Probar gratis 7 días". Logo final ⚡ MV SQL NLP + URL.*
 
 **[2:10] — Placa final**
-> Texto en pantalla: **MV SQL NLP — Dejá de esperar reportes. Preguntale a tu base.** + URL + "Prueba gratis 3 días".
+> Texto en pantalla: **MV SQL NLP — Dejá de esperar reportes. Preguntale a tu base.** + URL + "Prueba gratis 7 días".
 
 ---
 

@@ -15,6 +15,7 @@ app-python/catalogo_demo.json
 .env
 .env.local
 licencia_mvsql.json
+.mvsql_trial.json
 .idioma
 .accesos_ok
 equipo.json

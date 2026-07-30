@@ -32,9 +32,9 @@ TITULO = {
 }
 
 CIERRE = {
-    "es": ("Probalo gratis 3 días", "mvsqlnlp.com"),
-    "en": ("Try it free for 3 days", "mvsqlnlp.com"),
-    "pt": ("Teste grátis por 3 dias", "mvsqlnlp.com"),
+    "es": ("Probalo gratis 7 días", "mvsqlnlp.com"),
+    "en": ("Try it free for 7 days", "mvsqlnlp.com"),
+    "pt": ("Teste grátis por 7 dias", "mvsqlnlp.com"),
 }
 
 # (clave_de_captura, rótulo, narración)
@@ -72,7 +72,7 @@ GUION = {
          "de que esas tablas existen."),
         (None, "Tus datos nunca salen de tu red",
          "Tus datos nunca salen de tu red: a la inteligencia artificial solo "
-         "viajan los nombres de las tablas. Probalo gratis tres días en "
+         "viajan los nombres de las tablas. Probalo gratis siete días en "
          "mvsqlnlp.com."),
     ],
     "en": [
@@ -106,7 +106,7 @@ GUION = {
          "those tables exist."),
         (None, "Your data never leaves your network",
          "Your data never leaves your network: only the table names travel to the "
-         "AI. Try it free for three days at mvsqlnlp.com."),
+         "AI. Try it free for seven days at mvsqlnlp.com."),
     ],
     "pt": [
         (None, "MV SQL NLP",
@@ -140,7 +140,7 @@ GUION = {
          "sabendo que essas tabelas existem."),
         (None, "Seus dados nunca saem da sua rede",
          "Seus dados nunca saem da sua rede: para a inteligência artificial viajam "
-         "apenas os nomes das tabelas. Teste grátis por três dias em "
+         "apenas os nomes das tabelas. Teste grátis por sete dias em "
          "mvsqlnlp.com."),
     ],
 }

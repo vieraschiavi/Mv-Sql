@@ -38,7 +38,7 @@ PROVEEDORES = {
         "modelos": [],
         "modelo_default": "",
         "necesita_key": False,
-        "url_keys": "https://mvsqlnlp.com/#pricing",
+        "url_keys": "https://mvsqlnlp.com/#precios",
     },
     "anthropic": {
         "nombre": "Anthropic (Claude)",

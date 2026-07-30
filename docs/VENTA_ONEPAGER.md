@@ -67,7 +67,7 @@ En segundos, hecho por la persona que necesita el dato.
 | Licencia mensual | US$ 15 / 29 / 79 según puestos |
 | Soporte y mantenimiento | US$ 150 por mes (opcional) |
 
-**Probalo gratis 3 días antes de decidir nada** — sin tarjeta.
+**Probalo gratis 7 días antes de decidir nada** — sin tarjeta.
 
 ---
 

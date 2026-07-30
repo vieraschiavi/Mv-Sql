@@ -25,6 +25,7 @@ import streamlit as st
 
 from conectores import ConexionBD, MOTORES
 from exportar import a_csv, a_excel, a_pdf, a_html, a_json
+from licencia import TRIAL_DIAS, verificar_acceso
 from motor import MotorMVSQL
 from proveedores_ia import PROVEEDORES, probar_conexion, cargar_licencia_creditos
 import auditoria
@@ -386,6 +387,47 @@ ss = st.session_state
 # portugués, no en castellano. Igual se puede cambiar desde el selector.
 ss.setdefault("lang", os.environ.get("MVSQL_LANG", "es")
               if os.environ.get("MVSQL_LANG") in ("es", "en", "pt") else "es")
+
+# ──────────────────────────────────────────────────────────────
+# TRIAL / LICENCIA — se chequea antes de armar el resto de la app
+# ──────────────────────────────────────────────────────────────
+_acceso = verificar_acceso()
+if not _acceso["permitido"]:
+    _TXT_VENCIDO = {
+        "es": ("⏳ Tu prueba gratuita terminó",
+               f"Probaste MV SQL NLP durante {TRIAL_DIAS} días. Para seguir usándolo, "
+               "comprá tu licencia — planes desde MercadoPago o tarjeta internacional, "
+               "activación inmediata.",
+               "Comprar licencia en mvsqlnlp.com"),
+        "en": ("⏳ Your free trial has ended",
+               f"You tried MV SQL NLP for {TRIAL_DIAS} days. To keep using it, buy your "
+               "license — plans payable via MercadoPago or an international card, "
+               "instant activation.",
+               "Buy a license at mvsqlnlp.com"),
+        "pt": ("⏳ Seu teste grátis terminou",
+               f"Você testou o MV SQL NLP por {TRIAL_DIAS} dias. Para continuar usando, "
+               "compre sua licença — planos via MercadoPago ou cartão internacional, "
+               "ativação imediata.",
+               "Comprar licença em mvsqlnlp.com"),
+    }
+    _titulo_venc, _cuerpo_venc, _cta_venc = _TXT_VENCIDO[ss.lang]
+    st.markdown('<div class="mv-logo" style="font-size:2.6rem">⚡ MV SQL NLP</div>',
+                unsafe_allow_html=True)
+    st.title(_titulo_venc)
+    st.write(_cuerpo_venc)
+    st.link_button(_cta_venc, "https://mvsqlnlp.com/#precios")
+    st.stop()
+elif _acceso["dias_restantes"] is not None and _acceso["dias_restantes"] <= 2:
+    _TXT_AVISO = {
+        "es": f"⏳ Tu prueba gratuita termina en {_acceso['dias_restantes']} día(s) — "
+              "comprá tu licencia en mvsqlnlp.com para no perder acceso.",
+        "en": f"⏳ Your free trial ends in {_acceso['dias_restantes']} day(s) — buy your "
+              "license at mvsqlnlp.com to keep access.",
+        "pt": f"⏳ Seu teste grátis termina em {_acceso['dias_restantes']} dia(s) — compre "
+              "sua licença em mvsqlnlp.com para não perder o acesso.",
+    }
+    st.warning(_TXT_AVISO[ss.lang])
+
 ss.setdefault("motor", None)          # MotorMVSQL
 ss.setdefault("historial", [])
 ss.setdefault("pregunta_precargada", "")

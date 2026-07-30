@@ -60,7 +60,7 @@ gráficos, confianza, exportes) con costo de venta LATAM.
   Gemini Flash, ~3–4k tokens in + ~400 out, incluyendo reintento y explicación):
   **≈ US$ 0,004–0,015**. Margen bruto del crédito: **85–95%**. Es el producto más
   rentable y el más fácil de vender ("no necesitás saber qué es una API key").
-- **Prueba 3 días full** = 30 créditos de cortesía (costo para nosotros < US$ 0,50 por trial).
+- **Prueba 7 días full** = 30 créditos de cortesía (costo para nosotros < US$ 0,50 por trial).
 
 ## 3. Estructura de costos
 
@@ -134,7 +134,7 @@ el producto se estanca — los competidores globales iteran rápido.
 **Riesgos honestos:** (a) los grandes (Microsoft Copilot, etc.) integran
 NL2SQL gratis en sus stacks — el diferencial defendible es LATAM + on-premise +
 acompañamiento; (b) soporte técnico de conexiones a bases ajenas consume
-tiempo — cobrar la implementación lo convierte en ingreso; (c) el trial de 3
+tiempo — cobrar la implementación lo convierte en ingreso; (c) el trial de 7
 días con créditos nuestros puede abusarse — limitar por email verificado + device.
 
 ## 6. Checklist de lanzamiento (orden sugerido)
@@ -143,7 +143,10 @@ días con créditos nuestros puede abusarse — limitar por email verificado + d
 - [ ] Grabar el video demo (guion en `GUION_VIDEO_DEMO.md`) y embeberlo
 - [ ] Compilar el instalador Windows (`desktop/`, `npm run dist`) y firmarlo
 - [ ] Alta MercadoPago + endpoints de pago (ver `INTEGRACION_MERCADOPAGO.md`)
-- [ ] Sistema de licencias (JWT firmado) + trial 3 días
+- [x] Sistema de licencias (JWT firmado) + trial 7 días — trial ahora se hace
+  cumplir de verdad en `app-python/licencia.py` (antes solo era texto de la
+  web, la app corría sin límite); las descargas pagas (own_ai y credits)
+  quedan eximidas vía `licencia_mvsql.json`
 - [ ] Monotributo + facturación electrónica
 - [ ] 5 clientes beta (gratis 1 mes a cambio de testimonio)
 - [ ] Lanzamiento: YouTube + LinkedIn + US$ 300 ads
