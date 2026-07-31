@@ -5,6 +5,30 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MV SQL NLP · Tu base de datos, en tu idioma</title>
 <meta name="description" content="Preguntale a tu base de datos en lenguaje natural. La IA genera SQL profesional con CTEs, lo valida contra tu esquema y devuelve tablas, gráficos y análisis exportables. Claude, ChatGPT, Copilot, Gemini y más.">
+<link rel="canonical" href="https://mvsqlnlp.com/">
+<link rel="alternate" hreflang="es" href="https://mvsqlnlp.com/">
+<link rel="alternate" hreflang="en" href="https://mvsqlnlp.com/?lang=en">
+<link rel="alternate" hreflang="pt" href="https://mvsqlnlp.com/?lang=pt">
+<link rel="alternate" hreflang="x-default" href="https://mvsqlnlp.com/">
+<meta name="theme-color" content="#081527">
+<!-- Open Graph / Twitter: sin esto, compartir el link por WhatsApp,
+     LinkedIn o Slack mostraba una tarjeta gris, sin imagen ni titulo. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="MV SQL NLP">
+<meta property="og:locale" content="es_UY">
+<meta property="og:locale:alternate" content="en_US">
+<meta property="og:locale:alternate" content="pt_BR">
+<meta property="og:url" content="https://mvsqlnlp.com/">
+<meta property="og:title" content="MV SQL NLP · Tu base de datos, en tu idioma">
+<meta property="og:description" content="Preguntale a tu base de datos en lenguaje natural. La IA genera SQL profesional con CTEs, lo valida contra tu esquema y devuelve tablas, graficos y analisis exportables.">
+<meta property="og:image" content="https://mvsqlnlp.com/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="MV SQL NLP — Tu base de datos, en tu idioma">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MV SQL NLP · Tu base de datos, en tu idioma">
+<meta name="twitter:description" content="Preguntale a tu base de datos en lenguaje natural. La IA escribe el SQL, lo valida contra tu esquema real y te devuelve tablas y graficos.">
+<meta name="twitter:image" content="https://mvsqlnlp.com/assets/og-image.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <style>
 :root{
@@ -301,7 +325,7 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   interfaz en tu idioma: pregunta, SQL con CTEs validado, intervalo de confianza, tabla, gráfico, relación entre variables,
   auditoría y permisos por usuario.</p>
   <div class="vidwrap">
-    <video id="demoVideo" controls preload="metadata" playsinline style="width:100%;display:block;background:#0E1117;aspect-ratio:9/16">
+    <video id="demoVideo" controls preload="metadata" playsinline poster="/assets/video-poster.png" aria-label="Video demo de MV SQL NLP" style="width:100%;display:block;background:#0E1117;aspect-ratio:9/16">
       <source id="demoSrc" src="/assets/video/demo_es.mp4" type="video/mp4">
       Tu navegador no soporta la reproducción de video HTML5.
     </video>
@@ -676,6 +700,20 @@ document.querySelectorAll('[data-i]').forEach(function(el){ORIG[el.getAttribute(
 var CUR_LANG='es';
 window.LANG='es';
 window.I18N=I18N;
+// Título y descripción por idioma, para la pestaña del navegador, para
+// Google y para la tarjeta que se ve al compartir el link.
+var META={
+  es:{titulo:"MV SQL NLP · Tu base de datos, en tu idioma",
+      locale:"es_UY",
+      desc:"Preguntale a tu base de datos en lenguaje natural. La IA genera SQL profesional con CTEs, lo valida contra tu esquema y devuelve tablas, graficos y analisis exportables."},
+  en:{titulo:"MV SQL NLP · Your database, in your own words",
+      locale:"en_US",
+      desc:"Ask your database in plain language. The AI writes professional SQL with CTEs, validates it against your real schema and returns tables, charts and exportable analysis."},
+  pt:{titulo:"MV SQL NLP · Seu banco de dados, no seu idioma",
+      locale:"pt_BR",
+      desc:"Pergunte ao seu banco de dados em linguagem natural. A IA gera SQL profissional com CTEs, valida contra o seu esquema e devolve tabelas, graficos e analises exportaveis."}
+};
+
 function setLang(lang){
   CUR_LANG=lang; window.LANG=lang;
   var dict=lang==='es'?null:I18N[lang];
@@ -684,6 +722,25 @@ function setLang(lang){
     el.innerHTML=(dict&&dict[k]!=null)?dict[k]:ORIG[k];
   });
   document.documentElement.lang=lang;
+  // El <title> y la meta description también cambian: antes se quedaban
+  // en español para siempre, así que un usuario en inglés veía la pestaña
+  // del navegador en castellano y Google indexaba /?lang=en con el título
+  // y la descripción en español.
+  if(META[lang]){
+    document.title=META[lang].titulo;
+    var md=document.querySelector('meta[name="description"]');
+    if(md)md.setAttribute('content',META[lang].desc);
+    ['og:title','twitter:title'].forEach(function(p){
+      var m=document.querySelector('meta[property="'+p+'"],meta[name="'+p+'"]');
+      if(m)m.setAttribute('content',META[lang].titulo);
+    });
+    ['og:description','twitter:description'].forEach(function(p){
+      var m=document.querySelector('meta[property="'+p+'"],meta[name="'+p+'"]');
+      if(m)m.setAttribute('content',META[lang].desc);
+    });
+    var ogl=document.querySelector('meta[property="og:locale"]');
+    if(ogl)ogl.setAttribute('content',META[lang].locale);
+  }
   document.querySelectorAll('.lang button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-lang')===lang);});
   try{localStorage.setItem('mvsql_lang',lang);}catch(e){}
   // el precio en UYU lo pinta purchase.js; volver a pintarlo tras re-render

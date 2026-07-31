@@ -45,5 +45,17 @@
     "api/download.js": {
       "includeFiles": "downloads/**"
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/en",
+      "destination": "/?lang=en",
+      "permanent": true
+    },
+    {
+      "source": "/pt",
+      "destination": "/?lang=pt",
+      "permanent": true
+    }
+  ]
 }
