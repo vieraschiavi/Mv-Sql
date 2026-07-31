@@ -43,7 +43,9 @@
         listo: "Tu descarga está lista, plan {plan} {modo}.",
         descargar: "⬇ Descargar MV SQL NLP",
         guarda: "Guardá este link — es tu licencia:",
-        no_verificado: "No se pudo verificar el pago"
+        no_verificado: "No se pudo verificar el pago",
+        no_verificado_sub: "Tu pago está a salvo. Reintentá en un momento; si sigue igual, escribinos a vieraschiavi@gmail.com con tu comprobante y te mandamos la descarga.",
+        reintentar: "Reintentar"
       },
       en: {
         verificando: "Checking your payment…",
@@ -59,7 +61,9 @@
         listo: "Your download is ready — {plan} plan {modo}.",
         descargar: "⬇ Download MV SQL NLP",
         guarda: "Save this link — it is your licence:",
-        no_verificado: "We could not verify the payment"
+        no_verificado: "We could not verify the payment",
+        no_verificado_sub: "Your payment is safe. Try again in a moment; if it persists, write to vieraschiavi@gmail.com with your receipt and we will send you the download.",
+        reintentar: "Try again"
       },
       pt: {
         verificando: "Verificando seu pagamento…",
@@ -75,7 +79,9 @@
         listo: "Seu download está pronto — plano {plan} {modo}.",
         descargar: "⬇ Baixar o MV SQL NLP",
         guarda: "Guarde este link — é a sua licença:",
-        no_verificado: "Não foi possível verificar o pagamento"
+        no_verificado: "Não foi possível verificar o pagamento",
+        no_verificado_sub: "Seu pagamento está seguro. Tente de novo em instantes; se continuar, escreva para vieraschiavi@gmail.com com o seu comprovante e enviaremos o download.",
+        reintentar: "Tentar de novo"
       }
     };
 
@@ -108,28 +114,84 @@
 
       try {
         const r = await fetch(`/api/verify-and-issue?payment_id=${encodeURIComponent(paymentId)}`);
-        const data = await r.json();
+
+        // El JSON se parsea aparte y tolerando el fallo. Antes se hacía
+        // `await r.json()` ANTES de mirar r.ok: si la API devolvía un 500
+        // con HTML (error de Vercel, timeout de la función), el parseo
+        // explotaba y el cliente que ACABABA DE PAGAR terminaba leyendo
+        // "Unexpected token '<'... is not valid JSON".
+        let data = null;
+        try { data = await r.json(); } catch (_) { /* respuesta no-JSON */ }
+
         spinner.style.display = "none";
+
         if (!r.ok) {
-          title.textContent = T.pendiente;
-          sub.innerHTML = `<span class="err">${data.error || T.no_acreditado}</span><br>${T.pendiente_sub}`;
+          // 402 = pago todavía no acreditado: es un estado esperable y
+          // tiene su propio texto. Cualquier otro código es un fallo
+          // nuestro y no debe mostrarse como "el pago está pendiente".
+          const esPendiente = r.status === 402;
+          title.textContent = esPendiente ? T.pendiente : T.no_verificado;
+          sub.textContent = "";
+          const linea = document.createElement("span");
+          linea.className = "err";
+          linea.textContent = esPendiente
+            ? ((data && data.error) || T.no_acreditado)
+            : T.no_verificado_sub;
+          sub.appendChild(linea);
+          if (esPendiente) {
+            sub.appendChild(document.createElement("br"));
+            sub.appendChild(document.createTextNode(T.pendiente_sub));
+          }
+          mostrarReintento();
           return;
         }
+
         title.textContent = T.confirmado;
         const modoTxt = data.mode === "credits" ? T.con_creditos : T.con_propia;
         sub.textContent = T.listo.replace("{plan}", data.plan).replace("{modo}", modoTxt);
-        result.innerHTML = `
-          <a class="btn btn-primary" href="/api/download?token=${encodeURIComponent(data.token)}">${T.descargar}</a>
-          <p style="color:var(--muted);font-size:.8rem;margin-top:1.2rem">
-            ${T.guarda} <br>
-            <code style="word-break:break-all">${location.origin}/api/download?token=${data.token}</code>
-          </p>`;
+
+        const enlace = `${location.origin}/api/download?token=${encodeURIComponent(data.token)}`;
+        result.textContent = "";
+        const boton = document.createElement("a");
+        boton.className = "btn btn-primary";
+        boton.href = enlace;
+        boton.textContent = T.descargar;
+        const nota = document.createElement("p");
+        nota.style.cssText = "color:var(--muted);font-size:.8rem;margin-top:1.2rem";
+        nota.textContent = T.guarda + " ";
+        const code = document.createElement("code");
+        code.style.wordBreak = "break-all";
+        code.textContent = enlace;
+        nota.appendChild(document.createElement("br"));
+        nota.appendChild(code);
+        result.appendChild(boton);
+        result.appendChild(nota);
       } catch (e) {
+        // El detalle técnico va a la consola, no a la cara del cliente:
+        // "Failed to fetch" no le dice nada y encima asusta a alguien que
+        // acaba de pagar.
+        console.error("verify-and-issue:", e);
         spinner.style.display = "none";
         title.textContent = T.no_verificado;
-        sub.innerHTML = `<span class="err">${e.message}</span>`;
+        sub.textContent = T.no_verificado_sub;
+        mostrarReintento();
       }
     }
+
+    function mostrarReintento() {
+      const result = document.getElementById("result");
+      result.textContent = "";
+      const b = document.createElement("button");
+      b.className = "btn btn-primary";
+      b.textContent = T.reintentar;
+      b.addEventListener("click", function () {
+        document.getElementById("spinner").style.display = "";
+        result.textContent = "";
+        run();
+      });
+      result.appendChild(b);
+    }
+
     run();
   </script>
 </body>

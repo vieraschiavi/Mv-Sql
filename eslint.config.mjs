@@ -39,7 +39,10 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "no-unused-vars": ["error", {
+        argsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      }],
     },
   },
 
@@ -53,7 +56,10 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "no-unused-vars": ["error", {
+        argsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      }],
     },
   },
 
@@ -71,7 +77,10 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
-      "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "no-unused-vars": ["error", {
+        argsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      }],
     },
   },
 
