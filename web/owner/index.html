@@ -139,6 +139,8 @@ function pintar(d) {
     r.pagos_rechazados + " rechazados";
 
   // gráfico de barras por mes
+  // Los tres innerHTML de esta función solo VACÍAN contenedores. Todo lo
+  // que se rellena después va con createElement + textContent.
   var g = $("grafico"); g.innerHTML = "";
   var serie = d.por_mes || [];
   if (!serie.length) { g.hidden = true; $("grafico-vacio").hidden = false; }

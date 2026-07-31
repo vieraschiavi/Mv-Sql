@@ -18,3 +18,21 @@ faker>=24
 
 # Opcional — la app avisa si falta cuando se usa
 # sshtunnel>=0.4     # conectar a bases detras de un servidor SSH
+
+# ── Dependencias para correr los tests ──────────────────────────────
+# NINGUNA. Los tests de app-python/tests/ usan solo la biblioteca
+# estandar (sqlite3, json, hashlib, tempfile, urllib): no hace falta
+# instalar nada de este archivo para correrlos.
+#
+#     python3 tests/test_solo_lectura.py
+#     python3 tests/test_equipo_auditoria.py
+#     python3 tests/test_cuadernos_esquema.py
+#
+# O toda la suite del repo (Node + Python) con un solo comando, desde
+# la raiz:  npm test
+#
+# Es a proposito: los modulos que los tests tocan (conectores, catalogo,
+# equipo, auditoria, cuadernos, esquema_visual) no importan nada de
+# fuera, asi que la seguridad y los permisos se pueden verificar en una
+# maquina limpia, sin pip install. Si algun dia un modulo bajo test
+# necesita una libreria externa, hay que declararla aca.

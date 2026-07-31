@@ -17,6 +17,7 @@ Correr:  streamlit run app.py
 ==================================================================
 """
 
+import html
 import os
 
 import pandas as pd
@@ -1160,7 +1161,14 @@ with st.sidebar:
                 _c1, _c2 = st.columns([4, 1])
                 _tab = _u.get("tablas")
                 _detalle = t["eq_todas"] if _tab == "*" else f"{len(_tab)} {t['eq_tablas']}"
-                _c1.markdown(f"**{_u['nombre']}** · {equipo.ROLES[_u['rol']]['nombre']}  \n"
+                # El nombre lo elige quien crea el usuario y se guarda tal
+                # cual en equipo.json. Como este markdown va con
+                # unsafe_allow_html=True, sin escaparlo un usuario llamado
+                # "<img src=x onerror=...>" ejecutaría en el navegador del
+                # admin. equipo.crear_usuario() ya rechaza esos nombres,
+                # pero esto cubre los que hayan quedado guardados de antes.
+                _nombre_seguro = html.escape(str(_u["nombre"]))
+                _c1.markdown(f"**{_nombre_seguro}** · {equipo.ROLES[_u['rol']]['nombre']}  \n"
                              f"<span style='color:#94a3b8;font-size:.78rem'>{_detalle}</span>",
                              unsafe_allow_html=True)
                 if _c2.button("🗑", key=f"del_u_{_u['nombre']}", help=t["borrar"]):

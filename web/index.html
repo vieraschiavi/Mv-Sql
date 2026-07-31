@@ -696,6 +696,8 @@ var I18N={
   }
 };
 var ORIG={};
+// Lectura, no escritura: guarda el markup original en español para poder
+// volver a él al cambiar de idioma.
 document.querySelectorAll('[data-i]').forEach(function(el){ORIG[el.getAttribute('data-i')]=el.innerHTML;});
 var CUR_LANG='es';
 window.LANG='es';
@@ -719,6 +721,9 @@ function setLang(lang){
   var dict=lang==='es'?null:I18N[lang];
   document.querySelectorAll('[data-i]').forEach(function(el){
     var k=el.getAttribute('data-i');
+    // innerHTML seguro: o es una cadena del diccionario I18N (literal, más
+    // abajo en este mismo archivo) o el markup propio guardado en ORIG.
+    // Nada de esto viene del usuario ni de la base de datos.
     el.innerHTML=(dict&&dict[k]!=null)?dict[k]:ORIG[k];
   });
   document.documentElement.lang=lang;
@@ -828,7 +833,8 @@ if(cform){cform.addEventListener('submit',function(e){
   var vacio=document.getElementById('resenasVacio');
   fetch('/assets/resenas.json').then(function(r){return r.ok?r.json():[];}).catch(function(){return [];}).then(function(datos){
     if(!Array.isArray(datos)||!datos.length)return;
-    lista.innerHTML='';
+    lista.innerHTML='';  // solo vacía el contenedor; las reseñas se arman
+                         // con createElement/textContent más abajo
     datos.forEach(function(r){
       var card=document.createElement('div');card.className='resena';
       var est=document.createElement('div');est.className='estrellas';

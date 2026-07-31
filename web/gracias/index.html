@@ -108,6 +108,9 @@
       if (!paymentId) {
         spinner.style.display = "none";
         title.textContent = T.falta_id;
+        // innerHTML seguro: T.falta_id_sub es literal (lleva un <a>) y
+        // URL_COMPRA se arma con LANG, que ya fue validado contra las
+        // claves de TXT más arriba. No hay dato externo acá.
         sub.innerHTML = T.falta_id_sub.replace("{url}", URL_COMPRA);
         return;
       }

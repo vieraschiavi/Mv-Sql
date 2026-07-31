@@ -162,6 +162,31 @@ def _():
     assert len(filas) == 2, filas
 
 
+@test("INYECCIÓN DIRECTA: ejecutar('DROP TABLE clientes') no borra la tabla")
+def _():
+    # El caso que importa: saltearse motor.py por completo y llamar al
+    # método público del conector, que es lo que hace cualquier código que
+    # no pase por el orquestador (celdas SQL de cuadernos, por ejemplo).
+    cx = ConexionBD("sqlite", ruta=_DB).conectar()
+    try:
+        cx.ejecutar("DROP TABLE clientes")
+        assert False, "ejecutó un DROP: la barrera no está en el punto de ejecución"
+    except SQLNoPermitido:
+        pass
+
+    # La tabla tiene que seguir existiendo Y con sus filas intactas.
+    cols, filas, _ = cx.ejecutar("SELECT id, nombre FROM clientes")
+    assert len(filas) == 2, f"la tabla quedó alterada: {filas}"
+
+    # Y desde una conexión nueva, para descartar que sea caché de esta.
+    otra = sqlite3.connect(_DB)
+    n = otra.execute(
+        "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='clientes'"
+    ).fetchone()[0]
+    otra.close()
+    assert n == 1, "la tabla clientes desapareció de la base"
+
+
 @test("ejecutar() frena el DELETE ANTES de llegar al cursor")
 def _():
     cx = ConexionBD("sqlite", ruta=_DB).conectar()

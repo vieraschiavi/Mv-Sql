@@ -86,6 +86,14 @@ def crear_usuario(nombre: str, rol: str, pin: str, tablas=None) -> dict:
     nombre = (nombre or "").strip()
     if not nombre:
         raise ValueError("El nombre no puede estar vacío.")
+    # El nombre se muestra después en el panel del equipo, que se renderiza
+    # como HTML. Sin esto, un usuario llamado "<img src=x onerror=...>"
+    # ejecutaba en el navegador del admin. Se valida acá además de escapar
+    # al mostrarlo: la entrada sucia no debería llegar a guardarse.
+    if any(c in nombre for c in "<>\"'&"):
+        raise ValueError("El nombre no puede tener < > \" ' ni &.")
+    if len(nombre) > 60:
+        raise ValueError("El nombre no puede pasar de 60 caracteres.")
     if not pin or len(str(pin)) < 4:
         raise ValueError("El PIN debe tener al menos 4 dígitos.")
 
