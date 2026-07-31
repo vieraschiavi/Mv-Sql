@@ -15,8 +15,6 @@ function pintarPreciosUyu() {
   });
 }
 
-let BUY_MODE = "suscripcion";
-
 // Descripciones del modo de compra (es = default; en/pt vienen del I18N de la página)
 const BUY_DESC_ES = {
   susc_desc: "Licencia mensual con tu propia clave de IA (Claude, ChatGPT, Gemini, " +
@@ -26,7 +24,6 @@ const BUY_DESC_ES = {
 };
 
 function setBuyMode(mode) {
-  BUY_MODE = mode;
   const susc = document.getElementById("plans-suscripcion");
   const cred = document.getElementById("plans-credits");
   if (susc) susc.style.display = mode === "suscripcion" ? "grid" : "none";

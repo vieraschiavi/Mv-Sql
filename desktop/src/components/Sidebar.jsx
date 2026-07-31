@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { PROVIDERS, ENGINES } from "../i18n.js";
 
 export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
-                                  connection, catalog, saved, onRunSaved, onDeleteSaved }) {
+                                  catalog, saved, onRunSaved, onDeleteSaved }) {
   const [motor, setMotor] = useState("sqlite");
   const [ruta, setRuta] = useState("");
   const [srv, setSrv] = useState({ servidor: "", puerto: "", base: "", usuario: "", password: "" });
