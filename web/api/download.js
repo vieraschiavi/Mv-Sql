@@ -13,6 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const JSZip = require("jszip");
 const { verifyLicense } = require("./_license.js");
+const { limitar } = require("./_guard.js");
 
 // El zip está en web/downloads/. Según desde dónde publique Vercel (la raíz
 // del repo o web/), el cwd de la función es uno u otro: se prueban ambos en
@@ -31,6 +32,7 @@ function rutaDelZip() {
 }
 
 module.exports = async (req, res) => {
+  if (!limitar(req, res, { max: 20, ventanaMs: 60_000, nombre: "download" })) return;
   try {
     const { token } = req.query;
     if (!token) return res.status(400).send("Falta el token de descarga. Comprá desde mvsqlnlp.com.");

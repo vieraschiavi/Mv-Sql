@@ -3,9 +3,11 @@
 // link de pago. A diferencia de una preferencia, esto cobra todos los meses
 // hasta que el cliente cancela: es lo que hace que los clientes se acumulen.
 const { SUSCRIPCIONES } = require("./_products.js");
+const { emailValido, limitar } = require("./_guard.js");
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido." });
+  if (!limitar(req, res, { max: 10, ventanaMs: 60_000, nombre: "sub" })) return;
 
   const accessToken = process.env.MP_ACCESS_TOKEN;
   if (!accessToken) return res.status(500).json({ error: "Falta MP_ACCESS_TOKEN." });
@@ -15,7 +17,7 @@ module.exports = async (req, res) => {
     const clave = `${plan}:suscripcion`;
     const producto = SUSCRIPCIONES[clave];
     if (!producto) return res.status(400).json({ error: "Plan de suscripción inválido." });
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    if (!emailValido(email)) {
       return res.status(400).json({ error: "Ingresá un email válido." });
     }
 

@@ -11,6 +11,7 @@
 // consumir la API key del dueño sin límite. Ante la duda, se corta el
 // servicio, nunca la billetera.
 const { verifyLicense } = require("./_license.js");
+const { limitar } = require("./_guard.js");
 
 async function getKv() {
   try {
@@ -24,6 +25,7 @@ async function getKv() {
 }
 
 module.exports = async (req, res) => {
+  if (!limitar(req, res, { max: 60, ventanaMs: 60_000, nombre: "aiproxy" })) return;
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido." });
   try {
     const { token, system, user, max_tokens } = req.body || {};

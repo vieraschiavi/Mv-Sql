@@ -2,9 +2,11 @@
 // Crea una preferencia de Checkout Pro y devuelve la URL de pago.
 const { client, Preference } = require("./_mp.js");
 const { PRODUCTS, esRecurrente } = require("./_products.js");
+const { emailValido, limitar } = require("./_guard.js");
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido." });
+  if (!limitar(req, res, { max: 10, ventanaMs: 60_000, nombre: "pref" })) return;
   try {
     const { plan, mode, email } = req.body || {};
     const clave = `${plan}:${mode}`;
@@ -18,7 +20,9 @@ module.exports = async (req, res) => {
         error: "Este plan es una suscripción mensual: usá /api/create-subscription.",
       });
     }
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    // El email termina dentro de external_reference y se muestra después
+    // en el panel del dueño: si acá entra HTML, allá se renderiza.
+    if (!emailValido(email)) {
       return res.status(400).json({ error: "Ingresá un email válido." });
     }
 

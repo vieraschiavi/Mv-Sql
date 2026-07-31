@@ -4,11 +4,21 @@
 // si está aprobado, emite el token de licencia/descarga.
 const { client, Payment } = require("./_mp.js");
 const { issueLicense } = require("./_license.js");
+const { limitar } = require("./_guard.js");
 
 module.exports = async (req, res) => {
+  // Este endpoint emite licencias a partir de un payment_id y nada más:
+  // no pide ninguna prueba de que quien llama sea el comprador. Los IDs
+  // de MercadoPago son numéricos y correlativos, así que sin freno se
+  // pueden barrer hasta pegarle a un pago aprobado y quedarse con la
+  // licencia (y con los créditos de IA) de otro cliente.
+  if (!limitar(req, res, { max: 10, ventanaMs: 60_000, nombre: "verify" })) return;
   try {
     const paymentId = req.query.payment_id || req.query.collection_id;
     if (!paymentId) return res.status(400).json({ error: "Falta payment_id." });
+    if (!/^\d{1,20}$/.test(String(paymentId))) {
+      return res.status(400).json({ error: "payment_id inválido." });
+    }
 
     const payment = await new Payment(client()).get({ id: paymentId });
     if (payment.status !== "approved") {
