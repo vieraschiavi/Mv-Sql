@@ -18,7 +18,16 @@
 ; esta probado; preferible no fingir que el instalador lo resuelve.
 ;
 ;   Compilar:  makensis installer\mvsql.nsi
-;   Version:   makensis /DVERSION=1.2.3 installer\mvsql.nsi
+;   Version:   makensis -DVERSION=1.2.3 installer\mvsql.nsi
+;
+; OJO con el flag: es "-D", no "/D" — el makensis de apt (el mismo que
+; usa la CI en ubuntu-latest) tira "Can't open script" con la sintaxis
+; estilo Windows. Probado en este mismo tipo de entorno antes de que
+; rompiera un release real.
+;
+; Version del propietario (sin limite de prueba, para uso personal del
+; dueno del producto — NO se ofrece en la web publica, solo como asset
+; de GitHub Releases): makensis -DPROPIETARIO=1 installer\mvsql.nsi
 ; ============================================================================
 
 Unicode true
@@ -31,14 +40,26 @@ Unicode true
 !define PRODUCT_PUBLISHER "MV SQL NLP"
 !define PRODUCT_WEB "https://mvsqlnlp.com"
 !define APP_SRC "..\app-python"
-!define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\MVSQLNLP"
+
+!ifdef PROPIETARIO
+  ; Clave de registro propia para la version del propietario: si alguna
+  ; vez conviven las dos instalaciones en la misma PC, no se pisan la
+  ; entrada de "Aplicaciones y caracteristicas" ni el desinstalador.
+  !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\MVSQLNLP_OWNER"
+!else
+  !define UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\MVSQLNLP"
+!endif
 
 Name "${PRODUCT_NAME}"
 ; Nombre de archivo estable (sin la version en el nombre): la web enlaza
 ; directo a este .exe, igual que ya hace con mvsql-nlp-app.zip. La version
 ; real vive en el registro (DisplayVersion) y en las propiedades del
 ; archivo (VIProductVersion), no en el nombre del archivo.
-OutFile "..\web\downloads\MV-SQL-NLP-Setup.exe"
+!ifdef PROPIETARIO
+  OutFile "..\web\downloads\MV-SQL-NLP-Setup-OWNER.exe"
+!else
+  OutFile "..\web\downloads\MV-SQL-NLP-Setup.exe"
+!endif
 ; Instala en el perfil del usuario: sin esto, escribir en Archivos de
 ; programa pide permisos de administrador que muchas PCs de empresa no
 ; dan a diario. El usuario igual puede elegir otra carpeta en el paso
@@ -194,6 +215,18 @@ Section "MV SQL NLP" SEC_MAIN
   FileWrite $0 "instalador"
   FileClose $0
 
+  !ifdef PROPIETARIO
+    ; Version del propietario: exenta del trial de 7 dias. No es un JWT
+    ; firmado por el backend — no hace falta: app-python/licencia.py
+    ; solo valida "vence" del lado del cliente para este archivo, igual
+    ; que las descargas compradas via web/api/download.js (ese es el
+    ; mismo mecanismo, no uno nuevo). No se distribuye desde la web
+    ; publica — solo como asset de GitHub Releases.
+    FileOpen $0 "$INSTDIR\licencia_mvsql.json" w
+    FileWrite $0 '{"producto":"MV SQL NLP","email":"propietario@mvsqlnlp.com","plan":"propietario","modo":"propietario","emitida":"2026-01-01T00:00:00+00:00","vence":"2099-12-31T00:00:00+00:00","nota":"Version del propietario: sin limite de prueba."}'
+    FileClose $0
+  !endif
+
   ; -- Accesos directos --
   !insertmacro MUI_STARTMENU_WRITE_BEGIN Application
     CreateDirectory "$SMPROGRAMS\$StartMenuFolder"
@@ -208,7 +241,11 @@ Section "MV SQL NLP" SEC_MAIN
 
   ; -- Desinstalador + entrada en "Aplicaciones y caracteristicas" --
   WriteUninstaller "$INSTDIR\Uninstall.exe"
-  WriteRegStr HKCU "${UNINST_KEY}" "DisplayName" "${PRODUCT_NAME}"
+  !ifdef PROPIETARIO
+    WriteRegStr HKCU "${UNINST_KEY}" "DisplayName" "${PRODUCT_NAME} (Propietario)"
+  !else
+    WriteRegStr HKCU "${UNINST_KEY}" "DisplayName" "${PRODUCT_NAME}"
+  !endif
   WriteRegStr HKCU "${UNINST_KEY}" "DisplayVersion" "${VERSION}"
   WriteRegStr HKCU "${UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
   WriteRegStr HKCU "${UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB}"

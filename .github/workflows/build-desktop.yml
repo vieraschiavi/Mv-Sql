@@ -109,12 +109,26 @@ jobs:
       - name: Empaquetar el zip autoinstalable (con los .pyd si están)
         run: python3 tools/empaquetar_zip.py
       - name: Compilar instalador Windows (NSIS) del producto completo
-        run: makensis "/DVERSION=${{ steps.version.outputs.version }}" installer/mvsql.nsi
+        # OJO: el flag es "-D", no "/D" — este build de makensis (el mismo
+        # paquete apt que corre acá) no reconoce la sintaxis estilo Windows
+        # y falla con "Can't open script" si se usa "/D". Se detectó
+        # probando la variante del propietario de abajo en un sandbox Linux
+        # idéntico a este runner, antes de que rompiera en un release real.
+        run: makensis "-DVERSION=${{ steps.version.outputs.version }}" installer/mvsql.nsi
+      - name: Compilar instalador Windows (NSIS) — versión del propietario, sin límite de prueba
+        # Para uso personal del dueño del producto: no se ofrece en la web
+        # pública (mvsqlnlp.com), solo queda como asset de este Release en
+        # GitHub. Ver installer/mvsql.nsi, bloque "!ifdef PROPIETARIO".
+        run: makensis "-DVERSION=${{ steps.version.outputs.version }}" -DPROPIETARIO=1 installer/mvsql.nsi
       - name: Subir zip autoinstalable (.bat) al Release
         run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/mvsql-nlp-app.zip --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Subir instalador .exe (NSIS) al Release
         run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/MV-SQL-NLP-Setup.exe --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Subir instalador del propietario (.exe, sin trial) al Release
+        run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/MV-SQL-NLP-Setup-OWNER.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -19,6 +19,11 @@ app-python/cartera_demo.db
 app-python/catalogo_demo.json
 .mvsql/
 
+# instalador del propietario (makensis -DPROPIETARIO=1): solo se publica
+# como asset de GitHub Releases (ver build-desktop.yml), nunca se comitea
+# ni se sirve desde web/downloads/ — esa carpeta la publica Vercel.
+web/downloads/MV-SQL-NLP-Setup-OWNER.exe
+
 # entornos
 .env
 .env.local
