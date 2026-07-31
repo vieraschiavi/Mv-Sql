@@ -33,7 +33,9 @@ const mockMP = {
 };
 
 const cargaOriginal = Module._load;
-Module._load = function (pedido, padre, esMain) {
+// Se usa `arguments` para reenviar la llamada original, así que los dos
+// parámetros de más van con guion bajo: están por firma, no por uso.
+Module._load = function (pedido, _padre, _esMain) {
   if (pedido.endsWith("_mp.js")) return mockMP;
   return cargaOriginal.apply(this, arguments);
 };

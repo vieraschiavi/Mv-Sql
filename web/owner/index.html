@@ -139,6 +139,8 @@ function pintar(d) {
     r.pagos_rechazados + " rechazados";
 
   // gráfico de barras por mes
+  // Los tres innerHTML de esta función solo VACÍAN contenedores. Todo lo
+  // que se rellena después va con createElement + textContent.
   var g = $("grafico"); g.innerHTML = "";
   var serie = d.por_mes || [];
   if (!serie.length) { g.hidden = true; $("grafico-vacio").hidden = false; }
@@ -155,11 +157,31 @@ function pintar(d) {
     });
   }
 
+  // Estas celdas se arman con textContent y NO con innerHTML a propósito:
+  // "producto" y "referencia" salen de external_reference de MercadoPago,
+  // que incluye el email que tipeó el comprador. Interpolarlo como HTML
+  // dejaba ejecutar script en esta misma página, que es la que guarda el
+  // OWNER_TOKEN en localStorage.
+  function celda(texto, opciones) {
+    var td = document.createElement("td");
+    var o = opciones || {};
+    if (o.clase) td.className = o.clase;
+    if (o.codigo) {
+      var code = document.createElement("code");
+      code.textContent = texto;
+      td.appendChild(code);
+    } else {
+      td.textContent = texto;
+    }
+    return td;
+  }
+
   var tp = $("t-productos").querySelector("tbody"); tp.innerHTML = "";
   (d.por_producto || []).forEach(function (p) {
     var tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + p.producto + "</td><td class='num'>" + p.unidades +
-                   "</td><td class='num'>" + usd(p.usd) + "</td>";
+    tr.appendChild(celda(p.producto));
+    tr.appendChild(celda(p.unidades, { clase: "num" }));
+    tr.appendChild(celda(usd(p.usd), { clase: "num" }));
     tp.appendChild(tr);
   });
   $("prod-vacio").hidden = (d.por_producto || []).length > 0;
@@ -167,9 +189,10 @@ function pintar(d) {
   var tv = $("t-ventas").querySelector("tbody"); tv.innerHTML = "";
   (d.ultimas_ventas || []).forEach(function (v) {
     var tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + v.fecha + "</td><td><code>" + (v.referencia || "—") +
-                   "</code></td><td>" + (v.medio || "—") + "</td><td class='num'>" +
-                   usd(v.monto_usd) + "</td>";
+    tr.appendChild(celda(v.fecha));
+    tr.appendChild(celda(v.referencia || "—", { codigo: true }));
+    tr.appendChild(celda(v.medio || "—"));
+    tr.appendChild(celda(usd(v.monto_usd), { clase: "num" }));
     tv.appendChild(tr);
   });
   $("ventas-vacio").hidden = (d.ultimas_ventas || []).length > 0;

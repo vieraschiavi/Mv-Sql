@@ -7,6 +7,14 @@
     "web"
   ],
   "scripts": {
-    "test": "npm test --workspace web"
+    "test": "node tools/correr-tests.mjs",
+    "test:web": "node tools/correr-tests.mjs --web",
+    "test:python": "node tools/correr-tests.mjs --python",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.8.0"
   }
 }

@@ -260,21 +260,13 @@ ESQUEMA DISPONIBLE (usá solo esto):
 
         # 3b) reintento automático si la validación falló (self-repair)
         if not es_valido:
-            correccion = (f"{pregunta_ia}\n\nTu consulta anterior fue:\n{sql}\n\n"
-                          f"Fue RECHAZADA por estos problemas:\n- " + "\n- ".join(problemas) +
-                          "\nGenerá una consulta corregida usando SOLO tablas y columnas del esquema.")
-            try:
-                crudo2 = self._completar(system, correccion)
-                sql2, conf_llm2, supuestos2 = _parsear_respuesta_sql(crudo2)
-                ok2, prob2, adv2 = validar_sql(sql2, self.catalogo)
-                if ok2:
-                    sql, conf_llm, supuestos = sql2, conf_llm2, supuestos2
-                    es_valido, problemas, advertencias = ok2, prob2, adv2
-                    resultado.update(sql=sql, supuestos=supuestos, valido=True,
-                                     problemas=[], advertencias=adv2,
-                                     usa_cte=sql.lower().lstrip().startswith("with"))
-            except Exception:
-                pass  # el reintento es best-effort
+            arreglado = self._reintentar_sql(system, pregunta_ia, sql, problemas)
+            if arreglado:
+                sql, conf_llm, supuestos, advertencias = arreglado
+                es_valido, problemas = True, []
+                resultado.update(sql=sql, supuestos=supuestos, valido=True,
+                                 problemas=[], advertencias=advertencias,
+                                 usa_cte=sql.lower().lstrip().startswith("with"))
 
         # 4) confianza
         resultado["confianza"] = calcular_confianza(
@@ -293,22 +285,51 @@ ESQUEMA DISPONIBLE (usá solo esto):
 
         # 6) explicación en lenguaje natural
         if explicar and resultado["filas"] is not None:
-            try:
-                muestra = _muestra_texto(resultado["columnas"], resultado["filas"])
-                extra = f"\n\nPREFERENCIAS DEL USUARIO: {contexto}" if contexto else ""
-                _system_explicar = ("Sos un analista de datos. Te paso una pregunta de un "
-                    "usuario de negocio, el SQL ejecutado y una muestra del resultado. "
-                    "Explicá el resultado en 2-4 frases claras en el MISMO idioma de la "
-                    "pregunta, con números concretos. No expliques el SQL: explicá QUÉ dice "
-                    "el dato. Si el resultado está vacío, decilo y sugerí por qué puede ser.")
-                resultado["explicacion"] = self._completar(
-                    _system_explicar,
-                    f"PREGUNTA: {pregunta}\n\nSQL:\n{sql}\n\nRESULTADO ({len(resultado['filas'])} filas):\n{muestra}{extra}",
-                    max_tokens=400)
-            except Exception:
-                pass
+            resultado["explicacion"] = self._explicar_resultado(
+                pregunta, sql, resultado, contexto)
 
         return resultado
+
+    def _reintentar_sql(self, system, pregunta_ia, sql, problemas):
+        """Un intento de auto-corrección cuando el SQL no validó.
+
+        Devuelve (sql, confianza, supuestos, advertencias) si la segunda
+        vuelta sí valida, o None. Es best-effort: si el proveedor de IA
+        falla, se sigue con el resultado original en vez de romper.
+        """
+        correccion = (f"{pregunta_ia}\n\nTu consulta anterior fue:\n{sql}\n\n"
+                      f"Fue RECHAZADA por estos problemas:\n- " + "\n- ".join(problemas) +
+                      "\nGenerá una consulta corregida usando SOLO tablas y columnas del esquema.")
+        try:
+            crudo = self._completar(system, correccion)
+            sql2, conf2, supuestos2 = _parsear_respuesta_sql(crudo)
+            ok, _prob, adv = validar_sql(sql2, self.catalogo)
+            if ok:
+                return sql2, conf2, supuestos2, adv
+        except Exception:
+            pass
+        return None
+
+    def _explicar_resultado(self, pregunta, sql, resultado, contexto):
+        """Explicación en lenguaje natural de lo que dice el dato.
+
+        Devuelve None si falla: la explicación es un extra, nunca puede
+        tumbar una consulta que ya se ejecutó bien.
+        """
+        try:
+            muestra = _muestra_texto(resultado["columnas"], resultado["filas"])
+            extra = f"\n\nPREFERENCIAS DEL USUARIO: {contexto}" if contexto else ""
+            _system_explicar = ("Sos un analista de datos. Te paso una pregunta de un "
+                "usuario de negocio, el SQL ejecutado y una muestra del resultado. "
+                "Explicá el resultado en 2-4 frases claras en el MISMO idioma de la "
+                "pregunta, con números concretos. No expliques el SQL: explicá QUÉ dice "
+                "el dato. Si el resultado está vacío, decilo y sugerí por qué puede ser.")
+            return self._completar(
+                _system_explicar,
+                f"PREGUNTA: {pregunta}\n\nSQL:\n{sql}\n\nRESULTADO ({len(resultado['filas'])} filas):\n{muestra}{extra}",
+                max_tokens=400)
+        except Exception:
+            return None
 
     def generar_stored_procedure(self, sql, nombre="sp_mvsql_consulta"):
         """Convierte una consulta guardada en stored procedure del dialecto activo."""

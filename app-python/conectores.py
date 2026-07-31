@@ -16,10 +16,84 @@ y el resto del sistema (RAG, generación, validador, UI) no cambia.
 ==================================================================
 """
 
+import os
 import re
 import sqlite3
+from urllib.request import pathname2url
 
 from catalogo import extraer_catalogo_sqlite, extraer_catalogo_mssql
+
+
+class SQLNoPermitido(Exception):
+    """El SQL que se intentó ejecutar no es de solo lectura."""
+
+
+# Operaciones que nunca se ejecutan. Se matchean con \b (límite de
+# palabra) y no como substring con espacio: "delete " no matchea
+# "DELETE\nFROM" ni "DELETE\tFROM", y esa era justamente la forma de
+# saltearse el filtro que hacía motor.py.
+#
+# La lista es deliberadamente corta. Como acá arriba ya se exige un solo
+# statement que empiece con SELECT/WITH, lo único que queda por frenar es
+# un CTE modificador (WITH x AS (DELETE ... RETURNING) SELECT ...), que es
+# el caso real que sí pasa esos dos chequeos. Agregar palabras "por las
+# dudas" tiene costo: REPLACE(), por ejemplo, es una función de texto
+# legítima en un SELECT, y bloquearla rompería consultas válidas del
+# cliente. Por eso REPLACE solo se frena en su forma peligrosa
+# (REPLACE INTO), y no se filtran SET/CALL/DO/LOAD, que no pueden
+# aparecer como statement con las dos reglas de arriba puestas.
+_PROHIBIDAS = re.compile(
+    r"\b(insert|update|delete|drop|alter|truncate|create|"
+    r"exec|execute|merge|grant|revoke|attach|detach|vacuum|reindex|pragma)\b"
+    r"|\breplace\s+into\b"
+    r"|\bxp_|\bsp_executesql",
+    re.IGNORECASE,
+)
+
+# Los comentarios se sacan antes de mirar el SQL: "DELETE/**/FROM" o un
+# "--" que esconda medio statement no deben poder tapar una operación.
+_COMENTARIO_BLOQUE = re.compile(r"/\*.*?\*/", re.DOTALL)
+_COMENTARIO_LINEA = re.compile(r"--[^\n]*")
+
+
+def _sin_comentarios(sql):
+    return _COMENTARIO_LINEA.sub(" ", _COMENTARIO_BLOQUE.sub(" ", sql))
+
+
+def asegurar_solo_lectura(sql):
+    """Barrera de solo-lectura, en el punto de ejecución.
+
+    Antes esto vivía solo en motor.py (el orquestador). Cualquier camino
+    que no pasara por ahí — por ejemplo una celda SQL de un cuaderno, que
+    se guarda en un JSON local sin validar — llegaba al cursor sin
+    control. Ahora la regla se aplica acá, que es por donde pasan todos
+    los caminos sin excepción.
+
+    Lanza SQLNoPermitido si el SQL no es una lectura pura.
+    """
+    if not sql or not sql.strip():
+        raise SQLNoPermitido("La consulta está vacía.")
+
+    limpio = _sin_comentarios(sql).strip()
+
+    # Un solo statement: un ";" con algo después es encadenamiento
+    # ("SELECT 1; DROP TABLE x"). El ";" final suelto es inofensivo.
+    if ";" in limpio.rstrip().rstrip(";"):
+        raise SQLNoPermitido(
+            "No se permite ejecutar varias sentencias en una sola consulta.")
+
+    if not re.match(r"^\s*(select|with)\b", limpio, re.IGNORECASE):
+        raise SQLNoPermitido(
+            "MV SQL NLP es de solo lectura: la consulta debe empezar con "
+            "SELECT o WITH.")
+
+    hallada = _PROHIBIDAS.search(limpio)
+    if hallada:
+        raise SQLNoPermitido(
+            f"Operación no permitida: '{hallada.group(0).strip()}'. "
+            "MV SQL NLP nunca modifica tu base de datos.")
+
+    return True
 
 MOTORES = {
     "sqlite":    {"nombre": "SQLite (archivo)",   "dialecto": "SQLite"},
@@ -92,7 +166,23 @@ class ConexionBD:
             self._abrir_tunel()
         p = self.params
         if self.motor == "sqlite":
-            self._con = sqlite3.connect(self.ruta, check_same_thread=False)
+            # mode=ro: el propio SQLite rechaza cualquier escritura, sin
+            # depender de que el SQL se haya validado antes. Se arma la URI
+            # con pathname2url para que ande igual con rutas de Windows y
+            # con espacios en el nombre.
+            uri = f"file:{pathname2url(os.path.abspath(self.ruta))}?mode=ro"
+            try:
+                self._con = sqlite3.connect(uri, uri=True, check_same_thread=False)
+            except sqlite3.OperationalError as e:
+                # mode=ro no crea el archivo si no existe (a diferencia del
+                # connect común, que devolvía una base vacía y dejaba al
+                # usuario mirando "0 tablas" sin entender por qué).
+                if not os.path.exists(self.ruta):
+                    raise FileNotFoundError(
+                        f"No se encontró la base de datos: {self.ruta}\n"
+                        "Revisá la ruta. Si querés probar sin base propia, "
+                        "generá la demo con: python generar_db_demo.py") from e
+                raise
         elif self.motor == "sqlserver":
             import pyodbc
             driver = p["driver"] or "ODBC Driver 17 for SQL Server"
@@ -107,6 +197,16 @@ class ConexionBD:
                 host=p["servidor"], port=int(p.get("puerto") or 3306),
                 database=p["base"], user=p["usuario"], password=p["password"],
                 connect_timeout=30, read_timeout=120)
+            # Read-only a nivel sesión, igual que ya se hacía en Postgres y
+            # SQL Server. Es defensa en profundidad: la barrera principal es
+            # asegurar_solo_lectura(). Si el servidor es viejo y no soporta
+            # la sentencia, se sigue igual en vez de dejar al cliente sin
+            # poder conectarse.
+            try:
+                with self._con.cursor() as _c:
+                    _c.execute("SET SESSION TRANSACTION READ ONLY")
+            except Exception:
+                pass
         elif self.motor == "postgres":
             import psycopg2
             self._con = psycopg2.connect(
@@ -155,7 +255,11 @@ class ConexionBD:
         `params` permite consultas parametrizadas (las variables de los
         cuadernos): el valor viaja aparte del SQL, así que su contenido
         nunca se interpreta como código.
+
+        Lanza SQLNoPermitido si el SQL no es de solo lectura: la barrera
+        está acá, en el punto de ejecución, y no solo en motor.py.
         """
+        asegurar_solo_lectura(sql)
         sql = _aplicar_limite(sql, self.dialecto, limite)
         cur = self._con.cursor()
         if params:

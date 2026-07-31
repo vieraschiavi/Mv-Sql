@@ -210,5 +210,36 @@ def _():
         auditoria.RUTA = original
 
 
+@test("XSS: no se puede crear un usuario con HTML en el nombre")
+def _():
+    # El nombre se muestra en el panel del equipo, que se renderiza como
+    # HTML (unsafe_allow_html=True). Antes esto se guardaba tal cual y
+    # ejecutaba en el navegador del admin.
+    for payload in ['<img src=x onerror=alert(1)>', '<script>alert(1)</script>',
+                    'Ana"onmouseover="alert(1)', "Ana'x", "Ana&lt;"]:
+        try:
+            equipo.crear_usuario(payload, "lector", "1234")
+            assert False, f"aceptó un nombre con HTML: {payload!r}"
+        except ValueError:
+            pass
+
+
+@test("XSS: al mostrarlo, el nombre igual se escapa (por los ya guardados)")
+def _():
+    import html as _html
+    # Un equipo.json viejo puede tener un nombre sucio guardado de antes;
+    # el escape en el punto de render es la segunda capa.
+    sucio = '<img src=x onerror=alert(1)>'
+    assert _html.escape(sucio) == '&lt;img src=x onerror=alert(1)&gt;'
+    assert "<img" not in _html.escape(sucio)
+
+
+@test("los nombres normales siguen funcionando")
+def _():
+    u = equipo.crear_usuario("Ana Pérez-Gómez", "lector", "1234")
+    assert u["nombre"] == "Ana Pérez-Gómez"
+    equipo.eliminar_usuario("Ana Pérez-Gómez")
+
+
 print(f"\n  {pasadas} pasadas · {falladas} falladas\n")
 sys.exit(1 if falladas else 0)

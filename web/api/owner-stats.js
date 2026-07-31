@@ -5,6 +5,7 @@
 // Protegido por OWNER_TOKEN (variable de entorno en Vercel). Sin ese token
 // configurado el endpoint queda cerrado — nunca abierto por defecto.
 const { PRODUCTS } = require("./_products.js");
+const { limitar } = require("./_guard.js");
 
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun",
                "jul", "ago", "set", "oct", "nov", "dic"];
@@ -21,6 +22,7 @@ function comparacionSegura(a, b) {
 }
 
 module.exports = async (req, res) => {
+  if (!limitar(req, res, { max: 30, ventanaMs: 60_000, nombre: "owner" })) return;
   const esperado = process.env.OWNER_TOKEN;
   if (!esperado) {
     return res.status(503).json({ error: "Panel no configurado: falta OWNER_TOKEN en Vercel." });
