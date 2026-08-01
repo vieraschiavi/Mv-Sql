@@ -90,6 +90,51 @@ const HEADS = Object.fromEntries(
     assert.ok(!HEADS.pt.includes("Tu base de datos"), "pt: título en español");
   });
 
+  // ── Cobertura del contenido, no solo del <head> ──────────────────
+  // /en/ y /pt/ son stubs que redirigen a /?lang=xx: la landing en inglés
+  // ES la misma página con los strings cambiados por JS. Así que "¿está
+  // igual de completa que la de español?" no se contesta mirando meta
+  // tags — se contesta contando cuántas de las claves que la página pide
+  // traducir existen de verdad en cada diccionario. Una clave faltante
+  // no rompe nada visible en desarrollo: deja ese bloque en español en
+  // medio de la página en inglés, y nadie se entera hasta que lo ve un
+  // prospecto. Con 55% de la participación proyectada fuera de LATAM,
+  // eso se paga caro.
+  console.log("\n== Cobertura de traducción de la landing ==");
+
+  const CLAVES_USADAS = [...new Set(
+    [...HEADS.es.matchAll(/data-i="([^"]+)"/g)].map((m) => m[1]))];
+
+  function clavesDelDiccionario(lang) {
+    const bloque = HEADS.es.slice(HEADS.es.indexOf("var I18N={"));
+    const i = bloque.indexOf(`${lang}:{`);
+    if (i < 0) return new Set();
+    const resto = bloque.slice(i + lang.length + 2);
+    const fin = resto.search(/\n {2}[a-z]{2}:\{/);
+    const trozo = fin < 0 ? resto : resto.slice(0, fin);
+    return new Set([...trozo.matchAll(/(?:^|[,{\n]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g)]
+      .map((m) => m[1]));
+  }
+
+  for (const lang of ["en", "pt"]) {
+    await test(`el diccionario ${lang.toUpperCase()} cubre las ${CLAVES_USADAS.length} claves de la página`, () => {
+      const dict = clavesDelDiccionario(lang);
+      const faltan = CLAVES_USADAS.filter((k) => !dict.has(k));
+      assert.deepStrictEqual(faltan, [],
+        `${lang}: ${faltan.length} clave(s) sin traducir quedarían en español`);
+    });
+  }
+
+  await test("el precio y el trial dicen lo mismo en los 3 idiomas", () => {
+    // Un número distinto por idioma no es un bug de traducción: es una
+    // promesa comercial distinta según quién la lea.
+    for (const lang of ["es", "en", "pt"]) {
+      assert.ok(/\b7\b/.test(HEADS[lang].match(/nav_cta:"[^"]*"/)?.[0] || "7"),
+        `${lang}: el CTA del trial no dice 7 días`);
+    }
+    assert.ok(!/\b3[- ](día|day|dia)/i.test(HEADS.es), "quedó un trial de 3 días");
+  });
+
   console.log(`\n  ${pasadas} pasadas · ${falladas} falladas\n`);
   process.exit(falladas ? 1 : 0);
 })();
