@@ -202,6 +202,10 @@ Section "MV SQL NLP" SEC_MAIN
   File /nonfatal "${APP_SRC}\proveedores_ia*.pyd"
 
   File "${APP_SRC}\requirements.txt"
+  ; Los extras (pyarrow/shap/faker) van aparte: INICIAR_MVSQL.bat los
+  ; instala DESPUES del nucleo y sin cortar si fallan. Si este archivo no
+  ; viaja, el .bat no lo encuentra y el paso de extras falla siempre.
+  File "${APP_SRC}\requirements-extras.txt"
   File "${APP_SRC}\mvsql.ico"
   File "${APP_SRC}\INICIAR_MVSQL.bat"
   File "${APP_SRC}\CONECTAR_CLAUDE_MCP.bat"
@@ -279,6 +283,11 @@ Section "Uninstall"
   Delete "$INSTDIR\.accesos_ok"
   Delete "$INSTDIR\.idioma"
   Delete "$INSTDIR\.eula_aceptado"
+  ; Marcador de extras y log de pip: no los agarra ningun comodin de
+  ; arriba (uno empieza con punto, el otro es .log y no .txt), asi que
+  ; sin estas dos lineas quedaba basura en la carpeta tras desinstalar.
+  Delete "$INSTDIR\.extras_ok"
+  Delete "$INSTDIR\instalacion.log"
   Delete "$INSTDIR\Uninstall.exe"
 
   ; Los datos del cliente (usuarios, auditoria, base demo, licencia) se

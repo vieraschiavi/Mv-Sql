@@ -105,8 +105,12 @@ def main():
     for n in metidos:
         print(f"    {n}")
 
+    # requirements-extras.txt tiene que viajar sí o sí: INICIAR_MVSQL.bat lo
+    # instala después del núcleo, y si el archivo no está el paso de extras
+    # falla en todos los arranques del cliente.
     faltan = [n for n in ("INICIAR_MVSQL.bat", "CONECTAR_CLAUDE_MCP.bat",
-                          "app.py", "LEEME.txt", "requirements.txt", "mvsql.ico")
+                          "app.py", "LEEME.txt", "requirements.txt",
+                          "requirements-extras.txt", "mvsql.ico")
               if n not in metidos]
     if faltan:
         raise SystemExit(f"✗ Falta empaquetar: {faltan}")
