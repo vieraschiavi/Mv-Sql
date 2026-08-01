@@ -73,6 +73,9 @@ export default [
         ...globals.browser,
         // Definido en assets/i18n.js, que se carga aparte.
         I18N: "readonly",
+        // Utilidad de escape compartida — assets/seguro.js, cargado en un
+        // <script> aparte antes de este archivo en cada página que lo usa.
+        MvSqlSeguro: "readonly",
       },
     },
     rules: {
@@ -81,6 +84,16 @@ export default [
         argsIgnorePattern: "^_",
         caughtErrorsIgnorePattern: "^_",
       }],
+    },
+  },
+
+  // seguro.js: UMD deliberado (script de navegador Y módulo CommonJS para
+  // que web/tests/seguro.test.js lo pueda requerir sin bundler). Va DESPUÉS
+  // del bloque general de arriba para que sus globals lo pisen solo a él.
+  {
+    files: ["web/assets/seguro.js"],
+    languageOptions: {
+      globals: { ...globals.node },
     },
   },
 

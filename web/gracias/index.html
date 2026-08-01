@@ -6,6 +6,7 @@
   <title>¡Gracias! — MV SQL NLP</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
   <link rel="stylesheet" href="/assets/style.css">
+  <script src="/assets/seguro.js"></script>
   <style>
     .box { max-width: 34rem; margin: 8rem auto; text-align: center; padding: 0 1.4rem; }
     .box h1 { font-size: 2rem; margin-bottom: 1rem; }
@@ -108,10 +109,12 @@
       if (!paymentId) {
         spinner.style.display = "none";
         title.textContent = T.falta_id;
-        // innerHTML seguro: T.falta_id_sub es literal (lleva un <a>) y
-        // URL_COMPRA se arma con LANG, que ya fue validado contra las
-        // claves de TXT más arriba. No hay dato externo acá.
-        sub.innerHTML = T.falta_id_sub.replace("{url}", URL_COMPRA);
+        // T.falta_id_sub es literal (lleva un <a>) y LANG ya está validado
+        // contra las claves de TXT más arriba, así que URL_COMPRA no puede
+        // traer HTML hoy — pero igual pasa por escapeHTML() antes de entrar
+        // al innerHTML: así esta línea sigue siendo segura aunque el día de
+        // mañana URL_COMPRA se arme con algo menos controlado.
+        sub.innerHTML = T.falta_id_sub.replace("{url}", MvSqlSeguro.escapeHTML(URL_COMPRA));
         return;
       }
 
