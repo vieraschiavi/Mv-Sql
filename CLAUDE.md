@@ -43,13 +43,13 @@ del cliente: nunca ejecuta INSERT/UPDATE/DELETE/DDL.
 | Objetivo | Comando |
 |---|---|
 | Instalar deps de `web/` | `cd web && npm install` |
-| Tests de `web/` | `cd web && npm test` (= corre los 3 `tests/*.test.js` en secuencia) |
+| Tests de `web/` | `cd web && npm test` (descubre y corre todos los `tests/*.test.js`) |
 | Instalar deps de `desktop/` | `cd desktop && npm install` |
 | Correr `desktop/` en desarrollo | `cd desktop && npm run dev` |
 | Build del instalador `desktop/` (Windows) | `cd desktop && npm run dist` (o `npm run dist:portable`) |
 | Instalar deps de `app-python/` | `pip install -r app-python/requirements.txt` |
 | Correr la app Python (Streamlit) | `cd app-python && streamlit run app.py` (abre en `http://localhost:8791` vía `INICIAR_MVSQL.bat` en Windows) |
-| Tests de `app-python/` | `cd app-python && python3 tests/test_cuadernos_esquema.py && python3 tests/test_equipo_auditoria.py` |
+| Tests de `app-python/` | `cd app-python && for f in tests/test_*.py; do python3 "$f" || break; done` (o `npm test` en la raíz, que descubre estos + los de `web/` sin listarlos a mano) |
 | Lint / format | no hay — no introduzcas uno sin que te lo pidan |
 
 > No hay `package.json` de test en `desktop/`; no inventes uno. El repo raíz solo reexporta

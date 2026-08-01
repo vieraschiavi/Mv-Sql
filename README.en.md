@@ -61,6 +61,24 @@ npm run dist                                   # .exe installer (Windows)
 **Web (Vercel):** import the repo in Vercel with *Root Directory* = `web/`
 (it's a static site, no build step).
 
+## ✅ Running the tests (on a clean machine)
+
+With just `git` and `node` (18+) you can run the `web/` tests; if `python3`
+is also on your `PATH` it runs the NL-to-SQL engine tests too
+(`app-python/tests/` needs none of the packages in `requirements.txt`, only
+the standard library):
+
+```bash
+git clone https://github.com/vieraschiavi/Mv-Sql.git
+cd Mv-Sql
+npm ci        # only installs web/'s deps (jsonwebtoken, mercadopago, jszip…)
+npm test      # discovers and runs EVERYTHING: web/tests/*.test.js + app-python/tests/test_*.py
+```
+
+Exits with a non-zero status if anything fails — the same thing
+`.github/workflows/tests.yml` runs on every push. To run a subset:
+`npm test -- --web` or `npm test -- --python`.
+
 ## 💰 Commercial model
 
 **The service is the business; the product is the differentiator.**
@@ -72,7 +90,7 @@ npm run dist                                   # .exe installer (Windows)
 | Support and maintenance | US$ 150/month | subscription |
 | Embedded AI credits | US$ 9 / 35 / 110 | one-time |
 
-Full 3-day trial, no credit card. Market, competition and profitability analysis
+Full 7-day trial, no credit card. Market, competition and profitability analysis
 in [`docs/PLAN_DE_NEGOCIO.md`](docs/PLAN_DE_NEGOCIO.md); runnable financial model
 in [`docs/MODELO_NEGOCIO.py`](docs/MODELO_NEGOCIO.py). Production checklist in
 [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).

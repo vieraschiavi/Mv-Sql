@@ -120,6 +120,7 @@ code{font-family:var(--mono);background:rgba(255,255,255,.06);padding:2px 6px;bo
 </div>
 
 </div>
+<script src="/assets/seguro.js"></script>
 <script>
 var $ = function (id) { return document.getElementById(id); };
 var LS = "mvsql_owner_token";
@@ -157,21 +158,21 @@ function pintar(d) {
     });
   }
 
-  // Estas celdas se arman con textContent y NO con innerHTML a propósito:
-  // "producto" y "referencia" salen de external_reference de MercadoPago,
-  // que incluye el email que tipeó el comprador. Interpolarlo como HTML
-  // dejaba ejecutar script en esta misma página, que es la que guarda el
-  // OWNER_TOKEN en localStorage.
+  // Estas celdas se arman con MvSqlSeguro.textoSeguro() (textContent) y NO
+  // con innerHTML a propósito: "producto" y "referencia" salen de
+  // external_reference de MercadoPago, que incluye el email que tipeó el
+  // comprador. Interpolarlo como HTML dejaba ejecutar script en esta misma
+  // página, que es la que guarda el OWNER_TOKEN en localStorage.
   function celda(texto, opciones) {
     var td = document.createElement("td");
     var o = opciones || {};
     if (o.clase) td.className = o.clase;
     if (o.codigo) {
       var code = document.createElement("code");
-      code.textContent = texto;
+      MvSqlSeguro.textoSeguro(code, texto);
       td.appendChild(code);
     } else {
-      td.textContent = texto;
+      MvSqlSeguro.textoSeguro(td, texto);
     }
     return td;
   }

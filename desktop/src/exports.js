@@ -78,7 +78,14 @@ export async function exportPdf(columns, rows, { pregunta = "", sql = "", explic
 }
 
 export async function exportHtml(columns, rows) {
-  const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  // Mismo algoritmo que escapeHTML() en web/assets/seguro.js: escapa los 5
+  // caracteres reservados de HTML, no solo "&" y "<". Antes ">", '"' y "'"
+  // quedaban crudos — inofensivo en texto de <td> plano, pero un escape
+  // "a medias" es fácil de copiar mal el día que este helper se reutilice
+  // en un contexto de atributo.
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>MV SQL NLP</title>
 <style>body{font-family:system-ui;margin:2rem;color:#0f172a}h1{color:#1e3a8a}
 table{border-collapse:collapse;width:100%}th{background:#1e3a8a;color:#fff;padding:.5rem;text-align:left}
