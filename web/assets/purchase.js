@@ -34,8 +34,10 @@ function setBuyMode(mode) {
   if (desc) {
     const key = mode === "suscripcion" ? "susc_desc" : "credits_desc";
     const dict = (window.I18N && window.I18N[window.LANG]) || null;
-    // innerHTML seguro: dict/BUY_DESC_ES son literales de este repo (llevan
-    // <b> y <br> a propósito). No entra nada del usuario ni de la base.
+    // innerHTML [B] LITERAL: dict/BUY_DESC_ES son literales de este repo
+    // (llevan <b> y <br> a propósito). No entra nada del usuario ni de la
+    // base. El email que tipea el comprador NUNCA pasa por acá — va por
+    // status.textContent más arriba.
     desc.innerHTML = (dict && dict[key]) || BUY_DESC_ES[key];
   }
 }

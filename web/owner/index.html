@@ -140,8 +140,9 @@ function pintar(d) {
     r.pagos_rechazados + " rechazados";
 
   // gráfico de barras por mes
-  // Los tres innerHTML de esta función solo VACÍAN contenedores. Todo lo
-  // que se rellena después va con createElement + textContent.
+  // innerHTML [A] VACIADO — los tres de esta función (grafico, t-productos,
+  // t-ventas) solo vacían contenedores. Todo lo que se rellena después va
+  // por celda() → MvSqlSeguro.textoSeguro(), que es textContent.
   var g = $("grafico"); g.innerHTML = "";
   var serie = d.por_mes || [];
   if (!serie.length) { g.hidden = true; $("grafico-vacio").hidden = false; }
@@ -177,6 +178,7 @@ function pintar(d) {
     return td;
   }
 
+  // innerHTML [A] VACIADO
   var tp = $("t-productos").querySelector("tbody"); tp.innerHTML = "";
   (d.por_producto || []).forEach(function (p) {
     var tr = document.createElement("tr");
@@ -187,6 +189,7 @@ function pintar(d) {
   });
   $("prod-vacio").hidden = (d.por_producto || []).length > 0;
 
+  // innerHTML [A] VACIADO
   var tv = $("t-ventas").querySelector("tbody"); tv.innerHTML = "";
   (d.ultimas_ventas || []).forEach(function (v) {
     var tr = document.createElement("tr");
