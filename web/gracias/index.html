@@ -109,11 +109,12 @@
       if (!paymentId) {
         spinner.style.display = "none";
         title.textContent = T.falta_id;
-        // T.falta_id_sub es literal (lleva un <a>) y LANG ya está validado
-        // contra las claves de TXT más arriba, así que URL_COMPRA no puede
-        // traer HTML hoy — pero igual pasa por escapeHTML() antes de entrar
-        // al innerHTML: así esta línea sigue siendo segura aunque el día de
-        // mañana URL_COMPRA se arme con algo menos controlado.
+        // innerHTML [D] ESCAPADO: T.falta_id_sub es literal (lleva un <a>)
+        // y LANG ya está validado contra las claves de TXT más arriba, así
+        // que URL_COMPRA no puede traer HTML hoy — pero igual pasa por
+        // escapeHTML() antes de entrar al innerHTML: así esta línea sigue
+        // siendo segura aunque mañana URL_COMPRA se arme con algo menos
+        // controlado (ej. un parámetro de la URL).
         sub.innerHTML = T.falta_id_sub.replace("{url}", MvSqlSeguro.escapeHTML(URL_COMPRA));
         return;
       }

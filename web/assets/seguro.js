@@ -12,6 +12,18 @@
 // nunca como HTML, así que escaparlo antes lo rompería (quedaría
 // "&lt;" literal en pantalla). escapeHTML() es para cuando de verdad
 // hay que armar un string de HTML a mano.
+//
+// ── Clasificación de los innerHTML del repo ────────────────────────
+// Cada uso de innerHTML en código propio lleva un comentario con una
+// de estas cinco etiquetas, y web/tests/innerhtml-inventario.test.js
+// falla si aparece uno nuevo sin clasificar:
+//
+//   [A] VACIADO      innerHTML = "" literal. No puede introducir markup.
+//   [B] LITERAL      interpola solo cadenas del diccionario I18N de este
+//                    repo (llevan <b>/<br> a propósito). Sin dato externo.
+//   [C] LECTURA      lee innerHTML, no escribe.
+//   [D] ESCAPADO     lleva dato externo, pasado por escapeHTML() primero.
+//   [E] CRUDO        dato externo sin escapar. Tiene que ser SIEMPRE cero.
 // ===================================================================
 (function (global) {
   "use strict";

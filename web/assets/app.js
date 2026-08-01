@@ -1,4 +1,11 @@
-/* MV SQL NLP — landing interactions: i18n, pricing toggle, terminal demo */
+/* MV SQL NLP — landing interactions: i18n, pricing toggle, terminal demo
+ *
+ * ⚠️ CÓDIGO MUERTO: ninguna página carga este archivo. La landing actual
+ * (web/index.html) lleva su propio I18N inline y su propia demo; los
+ * únicos <script src> del sitio son purchase.js y seguro.js. Queda acá
+ * como referencia de la versión anterior — si se lo va a resucitar,
+ * pasar sus innerHTML por MvSqlSeguro antes de engancharlo a una página.
+ */
 
 // ── i18n ─────────────────────────────────────────────
 const LANGS = ["es", "en", "pt"];
@@ -21,8 +28,8 @@ function applyLang(lang) {
   const dict = I18N[lang];
   document.querySelectorAll("[data-i18n]").forEach((el) => {
     const key = el.getAttribute("data-i18n");
-    // innerHTML seguro: dict viene de I18N (assets/i18n.js), literales de
-    // este repo con markup propio. Sin dato de usuario ni de la base.
+    // innerHTML [B] LITERAL: dict viene de I18N (assets/i18n.js), literales
+    // de este repo con markup propio. Sin dato de usuario ni de la base.
     if (dict[key] !== undefined) el.innerHTML = dict[key];
   });
   document.querySelectorAll(".lang-switch button").forEach((b) =>
@@ -60,9 +67,9 @@ function restartDemo() {
   if (!body) return;
   const t = I18N[LANG];
 
-  // Demo simulada: todo el HTML de acá abajo es literal de este archivo y
-  // las interpolaciones son cadenas de I18N. No hay resultados de una base
-  // real — esta demo no consulta nada.
+  // innerHTML [B] LITERAL: demo simulada, todo el HTML de acá abajo es
+  // literal de este archivo y las interpolaciones son cadenas de I18N.
+  // No hay resultados de una base real — esta demo no consulta nada.
   body.innerHTML = `
     <div class="t-line"><span class="t-prompt">❯ </span><span class="t-user" id="d-q"></span><span class="t-cursor" id="d-cur"></span></div>
     <div id="d-rest"></div>`;
