@@ -61,6 +61,24 @@ npm run dist                                   # instalador .exe (Windows)
 **Web (Vercel):** importar o repositório na Vercel com *Root Directory* = `web/`
 (é um site estático, sem build).
 
+## ✅ Rodar os testes (em uma máquina limpa)
+
+Só com `git` e `node` (18+) já dá para rodar os testes de `web/`; se também
+houver `python3` no `PATH`, roda os testes do motor NL-para-SQL também
+(`app-python/tests/` não precisa de nenhum pacote de `requirements.txt`, só
+da biblioteca padrão):
+
+```bash
+git clone https://github.com/vieraschiavi/Mv-Sql.git
+cd Mv-Sql
+npm ci        # instala só as deps de web/ (jsonwebtoken, mercadopago, jszip…)
+npm test      # descobre e roda TUDO: web/tests/*.test.js + app-python/tests/test_*.py
+```
+
+Sai com código de saída diferente de zero se algo falhar — é o mesmo que
+`.github/workflows/tests.yml` roda a cada push. Para rodar um subconjunto:
+`npm test -- --web` ou `npm test -- --python`.
+
 ## 💰 Modelo comercial
 
 **O serviço é o negócio; o produto é o diferencial.**
@@ -72,7 +90,7 @@ npm run dist                                   # instalador .exe (Windows)
 | Suporte e manutenção | US$ 150/mês | assinatura |
 | Créditos de IA embutidos | US$ 9 / 35 / 110 | pagamento único |
 
-Teste completo de 3 dias sem cartão. Análise de mercado, concorrência e cenários
+Teste completo de 7 dias sem cartão. Análise de mercado, concorrência e cenários
 de rentabilidade em [`docs/PLAN_DE_NEGOCIO.md`](docs/PLAN_DE_NEGOCIO.md); modelo
 financeiro executável em [`docs/MODELO_NEGOCIO.py`](docs/MODELO_NEGOCIO.py).
 Checklist de entrada em produção em [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
