@@ -1,0 +1,31 @@
+# MV SQL NLP — extras OPCIONALES
+# ====================================================================
+# Nada de este archivo hace falta para que la app funcione. Cada uno
+# esta envuelto en try/except en el codigo, con un camino alternativo
+# que ya se probo que anda. Si el install de estos falla, el .bat sigue
+# adelante y la app arranca igual.
+#
+# Pesan mas que el resto del nucleo junto, y por eso se separaron: en un
+# disco con poco lugar, meterlos en el install obligatorio hace fallar
+# TODA la instalacion (OSError Errno 28) y el cliente se queda sin app.
+#
+#   pyarrow  ~153 MB  lector rapido de CSV/Parquet en modo Archivo.
+#                     Sin el: app.py autodetecta el separador con el
+#                     lector normal de pandas (app.py, modo Archivo).
+#
+#   shap     ~210 MB  con numba + llvmlite, que son el grueso. Da la
+#                     DIRECCION del efecto en el panel Explorar (la
+#                     flecha ▲/▼ y el color). Sin el: el panel usa la
+#                     importancia de Random Forest, que da la magnitud
+#                     igual, solo que sin direccion (app.py).
+#
+#   faker     ~25 MB  genera la base de datos demo (generar_db_demo.py).
+#                     Sin el: no hay base demo, pero se conecta la base
+#                     real del cliente, que es para lo que se compra.
+#
+# Instalacion a mano, si mas adelante hay lugar en el disco:
+#     .venv\Scripts\python -m pip install -r requirements-extras.txt
+# ====================================================================
+pyarrow>=15
+shap>=0.45
+faker>=24

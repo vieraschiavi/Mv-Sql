@@ -1,4 +1,19 @@
-# MV SQL NLP — dependencias
+# MV SQL NLP — dependencias del NUCLEO (obligatorias)
+# ====================================================================
+# Todo lo de este archivo hace falta para que la app arranque y ande.
+# Instalado ocupa ~750 MB.
+#
+# Lo pesado y opcional se fue a requirements-extras.txt (~240 MB mas):
+# pyarrow, shap y faker. El codigo ya los esquiva con try/except y cae
+# a un camino alternativo, asi que sin ellos la app funciona igual —
+# solo pierde el lector rapido de CSV, la direccion del efecto en el
+# panel Explorar, y el generador de la base demo.
+#
+# Se separaron porque un install de 1 GB en un disco casi lleno falla
+# entero: el cliente se queda sin app por no poder instalar una mejora
+# de un panel que capaz ni usa. El .bat instala este archivo primero y
+# los extras despues, sin que un fallo en los extras rompa la app.
+# ====================================================================
 streamlit>=1.35
 pandas>=2.0
 plotly>=5.20
@@ -6,15 +21,11 @@ scikit-learn>=1.4
 requests>=2.31
 openpyxl>=3.1
 reportlab>=4.0
-pyarrow>=15        # lectura rápida de CSV/Parquet en modo Archivo
-shap>=0.45         # panel Explorar: dirección del efecto de cada variable
-                   # (si no está instalado, la app cae a importancia Random Forest)
 
 # Conectores de base de datos (opcionales — instalá el que uses)
 # pyodbc>=5.0        # SQL Server (requiere ODBC Driver 17/18)
 # pymysql>=1.1       # MySQL / MariaDB
 # psycopg2-binary>=2.9  # PostgreSQL
-faker>=24
 
 # Opcional — la app avisa si falta cuando se usa
 # sshtunnel>=0.4     # conectar a bases detras de un servidor SSH

@@ -32,5 +32,7 @@ licencia_mvsql.json
 .eula_aceptado
 .idioma
 .accesos_ok
+.extras_ok
+instalacion.log
 equipo.json
 auditoria.db
