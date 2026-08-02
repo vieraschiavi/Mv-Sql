@@ -64,6 +64,12 @@ set "M_E_PERM2=o ejecutar como administrador."
 set "M_E_PYVER=Tu version de Python no es compatible con alguna libreria."
 set "M_E_OTRO=Causa no reconocida. El detalle completo quedo en:"
 set "M_LOG=Detalle tecnico:"
+set "M_DISCO_TITULO=  En que disco queres instalar? (el programa entero: entorno, datos y base)"
+set "M_DISCO_PREG=  Letra de unidad (Enter = quedarse en "
+set "M_DISCO_INVAL=  Esa letra no es un disco valido en esta PC. Probemos de nuevo."
+set "M_DISCO_MOV=Copiando el programa a"
+set "M_DISCO_MOV2=Se abre una ventana nueva ahi apenas termine. Esta la podes cerrar."
+set "M_DISCO_MOV_ERR=[X] No se pudo copiar a ese disco. Seguimos instalando en"
 set "M_DEMO=Generando base de datos demo..."
 set "M_DEMO_OK=Base demo OK"
 set "M_DEMO_ERR=[*] No se pudo generar la demo (podes conectar tu propia base)"
@@ -106,6 +112,12 @@ set "M_E_PERM2=or running as administrator."
 set "M_E_PYVER=Your Python version is not compatible with one of the libraries."
 set "M_E_OTRO=Cause not recognised. The full detail was saved to:"
 set "M_LOG=Technical detail:"
+set "M_DISCO_TITULO=  Which drive do you want to install on? (the whole thing: environment, data, database)"
+set "M_DISCO_PREG=  Drive letter (Enter = stay on "
+set "M_DISCO_INVAL=  That letter is not a valid drive on this PC. Let's try again."
+set "M_DISCO_MOV=Copying the program to"
+set "M_DISCO_MOV2=A new window opens there once it's done. You can close this one."
+set "M_DISCO_MOV_ERR=[X] Could not copy to that drive. Continuing to install on"
 set "M_DEMO=Generating the demo database..."
 set "M_DEMO_OK=Demo database OK"
 set "M_DEMO_ERR=[*] Could not generate the demo (you can connect your own database)"
@@ -148,6 +160,12 @@ set "M_E_PERM2=ou executar como administrador."
 set "M_E_PYVER=Sua versao do Python nao e compativel com alguma biblioteca."
 set "M_E_OTRO=Causa nao reconhecida. O detalhe completo ficou em:"
 set "M_LOG=Detalhe tecnico:"
+set "M_DISCO_TITULO=  Em qual disco voce quer instalar? (tudo: ambiente, dados e banco)"
+set "M_DISCO_PREG=  Letra da unidade (Enter = ficar em "
+set "M_DISCO_INVAL=  Essa letra nao e um disco valido nesta PC. Vamos tentar de novo."
+set "M_DISCO_MOV=Copiando o programa para"
+set "M_DISCO_MOV2=Abre uma janela nova la assim que terminar. Esta voce pode fechar."
+set "M_DISCO_MOV_ERR=[X] Nao foi possivel copiar para esse disco. Seguindo a instalacao em"
 set "M_DEMO=Gerando o banco de dados de demonstracao..."
 set "M_DEMO_OK=Banco de demonstracao OK"
 set "M_DEMO_ERR=[*] Nao foi possivel gerar a demo (voce pode conectar seu proprio banco)"
@@ -197,9 +215,74 @@ if not defined PY (
     start https://www.python.org/downloads/
     exit /b 1
 )
-echo   [1/6] !M_PY! %PY%
+echo   [1/7] !M_PY! %PY%
 
-:: -- 2. Entorno virtual -------------------------------------------------
+:: -- 2. Disco de instalacion (se pregunta una sola vez) ------------------
+:: Instalar "en el disco que el usuario elija" significa TODO: el entorno
+:: virtual y las dependencias (paso 4, lo pesado) tienen que terminar en
+:: ese disco, no solo el .bat. Por eso esto corre ANTES de crear el venv,
+:: y si el usuario elige otro disco, se copia el arbol entero (todavia
+:: liviano) y se relanza desde alla.
+if exist ".disco_ok" goto :disco_listo
+
+set "MVSQL_DISCO_HOY="
+for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "(Get-Location).Drive.Name"`) do set "MVSQL_DISCO_HOY=%%D:"
+if not defined MVSQL_DISCO_HOY set "MVSQL_DISCO_HOY=C:"
+
+echo.
+echo   !M_DISCO_TITULO!
+echo.
+for /f "usebackq delims=" %%L in (`powershell -NoProfile -Command "Get-PSDrive -PSProvider FileSystem | Where-Object {$_.Free -gt 0} | ForEach-Object { '{0}: {1} GB libres' -f $_.Name, [math]::Round($_.Free/1GB,1) }" 2^>nul`) do echo     %%L
+echo.
+
+:disco_pedir
+set "MVSQL_DISCO_ELEGIDO="
+:: M_DISCO_PREG es solo el texto fijo -- si la letra actual se hubiera
+:: incrustado en su definicion de mas arriba, se habria expandido vacia:
+:: MVSQL_DISCO_HOY todavia no existia en ese punto de la ejecucion. Se
+:: arma el prompt completo aca, donde la variable ya tiene valor.
+set /p "MVSQL_DISCO_ELEGIDO=!M_DISCO_PREG!%MVSQL_DISCO_HOY%): "
+if not defined MVSQL_DISCO_ELEGIDO set "MVSQL_DISCO_ELEGIDO=%MVSQL_DISCO_HOY:~0,1%"
+set "MVSQL_DISCO_ELEGIDO=%MVSQL_DISCO_ELEGIDO:~0,1%"
+
+:: Se valida ANTES de mandarla a PowerShell: una sola letra A-Z, nada mas.
+:: Sin esto, un caracter raro tipeado por error viaja tal cual dentro de
+:: un comando de PowerShell mas abajo.
+echo %MVSQL_DISCO_ELEGIDO%| findstr /r /i "^[A-Z]$" >nul
+if errorlevel 1 (
+    echo   !M_DISCO_INVAL!
+    goto :disco_pedir
+)
+
+set "MVSQL_DISCO_OK="
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -Command "(Get-PSDrive -PSProvider FileSystem -Name '%MVSQL_DISCO_ELEGIDO%' -ErrorAction SilentlyContinue).Name" 2^>nul`) do set "MVSQL_DISCO_OK=%%V"
+if not defined MVSQL_DISCO_OK (
+    echo   !M_DISCO_INVAL!
+    goto :disco_pedir
+)
+
+echo ok> ".disco_ok"
+if /i "%MVSQL_DISCO_OK%:"=="%MVSQL_DISCO_HOY%" goto :disco_listo
+
+:: Eligio un disco distinto al actual. NO se borra el original -- mover un
+:: .bat mientras se ejecuta a si mismo es fragil, y esta carpeta sin venv
+:: pesa poco (unos KB). El original se puede borrar a mano despues.
+set "MVSQL_DESTINO=%MVSQL_DISCO_OK%:\MV SQL NLP"
+echo.
+echo   !M_DISCO_MOV! "%MVSQL_DESTINO%"...
+echo   !M_DISCO_MOV2!
+robocopy "%CD%" "%MVSQL_DESTINO%" /E /NFL /NDL /NJH /NJS /R:1 /W:1 >nul
+if not exist "%MVSQL_DESTINO%\INICIAR_MVSQL.bat" (
+    color 0C
+    echo   !M_DISCO_MOV_ERR! %MVSQL_DISCO_HOY%
+    goto :disco_listo
+)
+start "" "%MVSQL_DESTINO%\INICIAR_MVSQL.bat"
+exit /b 0
+
+:disco_listo
+
+:: -- 3. Entorno virtual -------------------------------------------------
 :: Si un intento anterior se corto a la mitad (tipico: se lleno el disco),
 :: queda un .venv incompleto: existe la carpeta pero no el python. Sin
 :: esto, el reintento lo daba por bueno y fallaba mas adelante con un
@@ -207,17 +290,17 @@ echo   [1/6] !M_PY! %PY%
 if exist ".venv" if not exist ".venv\Scripts\python.exe" rmdir /s /q ".venv" >nul 2>&1
 
 if not exist ".venv\Scripts\python.exe" (
-    echo   [2/6] !M_VENV_NEW!
+    echo   [3/7] !M_VENV_NEW!
     %PY% -m venv .venv || ( color 0C & echo   !M_VENV_ERR! & pause & exit /b 1 )
 ) else (
-    echo   [2/6] !M_VENV_OK!
+    echo   [3/7] !M_VENV_OK!
 )
 set "VPY=.venv\Scripts\python.exe"
 
-:: -- 3. Dependencias ------------------------------------------------------
+:: -- 4. Dependencias ------------------------------------------------------
 "%VPY%" -c "import streamlit, plotly, sklearn, openpyxl, reportlab" >nul 2>&1
 if not errorlevel 1 (
-    echo   [3/6] !M_DEPS_OK!
+    echo   [4/7] !M_DEPS_OK!
     goto :extras
 )
 
@@ -243,7 +326,7 @@ echo   !M_DISCO_COMO!
 pause & exit /b 1
 
 :disco_ok
-echo   [3/6] !M_DEPS!
+echo   [4/7] !M_DEPS!
 "%VPY%" -m pip install --upgrade pip --quiet --no-cache-dir >nul 2>&1
 :: --no-cache-dir: sin esto pip guarda una copia de cada wheel en
 :: %LocalAppData%\pip\Cache ademas de instalarla, casi duplicando el espacio
@@ -296,15 +379,15 @@ pause & exit /b 1
 
 :deps_listo
 
-:: -- 4. Base demo -----------------------------------------------------------
+:: -- 5. Base demo -----------------------------------------------------------
 if not exist "cartera_demo.db" (
-    echo   [4/6] !M_DEMO!
+    echo   [5/7] !M_DEMO!
     "%VPY%" generar_db_demo.py || echo   !M_DEMO_ERR!
 ) else (
-    echo   [4/6] !M_DEMO_OK!
+    echo   [5/7] !M_DEMO_OK!
 )
 
-:: -- 5. Accesos directos (opcional, solo la primera vez) ----------------
+:: -- 6. Accesos directos (opcional, solo la primera vez) ----------------
 :: Crea "MV SQL NLP" en el Escritorio y en el Menu Inicio, apuntando a
 :: este mismo launcher, con el icono de MV. Solo pregunta una vez.
 if not exist ".accesos_ok" (
@@ -327,24 +410,24 @@ if not exist ".accesos_ok" (
           "  $s.Description='MV SQL NLP';" ^
           "  $s.Save() }" >nul 2>&1
         if exist "%UserProfile%\Desktop\MV SQL NLP.lnk" (
-            echo   [5/6] !M_ACC_SI!
+            echo   [6/7] !M_ACC_SI!
         ) else (
-            echo   [5/6] !M_ACC_ONE!
+            echo   [6/7] !M_ACC_ONE!
             echo         !M_ACC_ONE2!
         )
     ) else (
-        echo   [5/6] !M_ACC_NO!
+        echo   [6/7] !M_ACC_NO!
     )
     echo ok> ".accesos_ok"
 ) else (
-    echo   [5/6] !M_ACC_OK!
+    echo   [6/7] !M_ACC_OK!
 )
 
-:: -- 6. Lanzar ----------------------------------------------------------------
+:: -- 7. Lanzar ----------------------------------------------------------------
 :: Puerto fijo poco comun (8791) para no chocar con otras apps que uses
 :: en tu PC (muchos programas usan el 8501 por defecto de Streamlit).
 set "MVSQL_PORT=8791"
-echo   [6/6] !M_INICIA! http://localhost:%MVSQL_PORT% ...
+echo   [7/7] !M_INICIA! http://localhost:%MVSQL_PORT% ...
 echo.
 echo   ================================================================
 echo    !M_ABRE!

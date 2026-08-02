@@ -33,6 +33,7 @@ licencia_mvsql.json
 .idioma
 .accesos_ok
 .extras_ok
+.disco_ok
 instalacion.log
 equipo.json
 auditoria.db

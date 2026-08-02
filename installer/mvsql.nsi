@@ -2,7 +2,11 @@
 ; mvsql.nsi — instalador profesional de Windows para MV SQL NLP
 ; ============================================================================
 ; Compila con NSIS 3 (makensis). Genera un .exe que:
-;   - deja elegir la carpeta de instalacion (paso obligatorio del pedido)
+;   - deja elegir la carpeta de instalacion EN CUALQUIER DISCO (paso
+;     obligatorio del pedido): MUI_PAGE_DIRECTORY, mas abajo, es un campo
+;     de texto libre -- tipear "D:\lo que sea" anda sin tocar nada mas.
+;     El flujo por zip (INICIAR_MVSQL.bat) tiene su propia pregunta de
+;     disco al principio, con el mismo objetivo.
 ;   - no necesita permisos de administrador (instala en el perfil del
 ;     usuario, como VS Code o Slack: muchas PCs de oficina no dan admin)
 ;   - crea accesos directos de Escritorio y Menu Inicio con el icono de MV
@@ -287,6 +291,7 @@ Section "Uninstall"
   ; arriba (uno empieza con punto, el otro es .log y no .txt), asi que
   ; sin estas dos lineas quedaba basura en la carpeta tras desinstalar.
   Delete "$INSTDIR\.extras_ok"
+  Delete "$INSTDIR\.disco_ok"
   Delete "$INSTDIR\instalacion.log"
   Delete "$INSTDIR\Uninstall.exe"
 

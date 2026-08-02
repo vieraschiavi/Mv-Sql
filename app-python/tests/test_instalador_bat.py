@@ -86,11 +86,19 @@ for _nombre in BATS:
 
     @test(f"{_nombre}: ningun '::' adentro de un bloque ( )")
     def _(n=_nombre):
+        # Fuera de un bloque, un comentario '::' es puro texto para cmd.exe:
+        # sus parentesis (si tiene, ej. "todavia) y se relanza (desde alla")
+        # no cuentan para nada. Adentro de un bloque ( ) ya abierto, en
+        # cambio, cmd.exe SI sigue buscando el ')' de cierre linea a linea
+        # aunque la linea empiece con '::' -- por eso ahi es un bug real.
         prof, malos = 0, []
         for i, l in enumerate(lineas(n), 1):
             s = l.strip()
-            if prof > 0 and s.startswith("::"):
+            es_comentario = s.startswith("::")
+            if prof > 0 and es_comentario:
                 malos.append(f"L{i}: {s[:55]}")
+            if es_comentario and prof == 0:
+                continue
             limpio = re.sub(r'"[^"]*"', "", re.sub(r"\^.", "", s))
             prof = max(0, prof + limpio.count("(") - limpio.count(")"))
         assert not malos, (
@@ -101,7 +109,10 @@ for _nombre in BATS:
     def _(n=_nombre):
         prof = 0
         for l in lineas(n):
-            s = re.sub(r'"[^"]*"', "", re.sub(r"\^.", "", l.strip()))
+            s = l.strip()
+            if s.startswith("::") and prof == 0:
+                continue    # comentario a nivel superior: cmd.exe no lo mira
+            s = re.sub(r'"[^"]*"', "", re.sub(r"\^.", "", s))
             prof = max(0, prof + s.count("(") - s.count(")"))
         assert prof == 0, f"quedan {prof} parentesis sin cerrar"
 
@@ -161,6 +172,23 @@ def _():
         usadas |= set(re.findall(r"!(M_[A-Z0-9_]+)!", l))
     faltan = sorted(usadas - definidas)
     assert not faltan, f"se usan pero no se definen: {', '.join(faltan)}"
+
+
+@test("INICIAR_MVSQL.bat: toda variable M_* que se define se usa")
+def _():
+    # El caso inverso del anterior: una variable de mensaje que se define y
+    # nunca se muestra es casi siempre un resto de un diseno anterior (paso
+    # por esto de verdad: M_DISCO_ACTUAL quedo asi al escribir este bloque).
+    ls = lineas("INICIAR_MVSQL.bat")
+    definidas = {m.group(1) for l in ls
+                 for m in [re.match(r'^set\s+"(M_[A-Z0-9_]+)=', l.strip())] if m}
+    usadas = set()
+    for l in ls:
+        if re.match(r'^\s*set\s+"M_', l):
+            continue
+        usadas |= set(re.findall(r"!(M_[A-Z0-9_]+)!", l))
+    sobran = sorted(definidas - usadas)
+    assert not sobran, f"se definen pero nunca se muestran: {', '.join(sobran)}"
 
 
 @test("INICIAR_MVSQL.bat: instala requirements.txt y los extras por separado")
