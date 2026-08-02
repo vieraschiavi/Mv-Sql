@@ -356,12 +356,53 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
     <div class="feat"><div class="ic">📊</div><h3 data-i="f4t">Resultados listos para presentar</h3>
       <p data-i="f4p">Gráficos profesionales con ejes etiquetados y valores legibles; formato a tu medida: decimales,
       separador de miles, porcentajes y moneda ($U, US$, R$…). Panel <b>Explorar</b>: correlación entre variables y cuáles influyen sobre cuál. Exportá a Excel, CSV, PDF y HTML.</p></div>
-    <div class="feat"><div class="ic">🔒</div><h3 data-i="f5t">Tus datos no viajan</h3>
-      <p data-i="f5p">RAG local: a la IA solo va el esquema (nombres de tablas y columnas), nunca tus datos. Conexión de
-      solo lectura: únicamente SELECT.</p></div>
+    <div class="feat"><div class="ic">🔒</div><h3 data-i="f5t">Tus datos, bajo tu control</h3>
+      <p data-i="f5p">Para generar el SQL viaja solo el esquema (nombres de tablas y columnas), nunca tus filas. El análisis
+      escrito usa una muestra de hasta 20 filas del resultado — y con el <b>modo privacidad estricta</b> (un clic) no viaja
+      ninguna. Con Ollama local, nada sale de tu máquina. Conexión de solo lectura, siempre. Detalle completo abajo, en
+      <a href="#seguridad" style="color:inherit">Seguridad</a>.</p></div>
     <div class="feat"><div class="ic">🧩</div><h3 data-i="f6t">Bonus: Claude Desktop directo a tu base (MCP)</h3>
       <p data-i="f6p">Incluye un instalador de un clic que conecta tu Claude Desktop a tu base por MCP: le preguntás a
       Claude y consulta la base solo, desde el chat.</p></div>
+  </div>
+</div></section>
+
+<!-- SEGURIDAD: las respuestas que un comprador de empresa pide antes de
+     conectar nada a su base. Cada afirmacion de aca esta respaldada por
+     codigo del repo (y varias, por tests publicos): no prometer nada que
+     el codigo no haga es la regla de esta seccion. -->
+<section id="seguridad" class="panel"><div class="wrap">
+  <div class="eyebrow" data-i="sey">Seguridad y precisión</div>
+  <h2 class="h2" data-i="sh">Las preguntas que hace tu equipo de sistemas, respondidas</h2>
+  <p class="lead-d" data-i="sl">Sin promesas vagas: qué viaja, qué no, qué puede salir mal y qué pasa cuando sale mal.
+  Todo lo de abajo está implementado en el código — y lo central, cubierto por tests públicos.</p>
+  <div class="fgrid">
+    <div class="feat"><div class="ic">🏠</div><h3 data-i="s1t">¿Dónde se procesan mis datos?</h3>
+      <p data-i="s1p">En tu PC o tu servidor: el programa corre local. No hay servidor nuestro procesando tus consultas.
+      Con tu propia API key, tu máquina habla directo por HTTPS con el proveedor de IA que elegiste; en modo créditos
+      pasa por nuestra función de cobro, que descuenta 1 crédito y no almacena tu consulta.</p></div>
+    <div class="feat"><div class="ic">📤</div><h3 data-i="s2t">¿Qué viaja exactamente a la IA?</h3>
+      <p data-i="s2p">Para generar el SQL: tu pregunta más los nombres de tablas y columnas de las ~4 tablas relevantes.
+      Ninguna fila. Para el análisis escrito (opcional): una muestra de hasta 20 filas del resultado. Con el
+      <b>modo privacidad estricta</b> no viaja ninguna fila, nunca. Con <b>Ollama local</b>, nada sale de tu máquina —
+      ni el esquema.</p></div>
+    <div class="feat"><div class="ic">🛑</div><h3 data-i="s3t">¿Puede escribir en mi base?</h3>
+      <p data-i="s3p">No. La conexión se abre en modo solo lectura y todo lo que no sea SELECT/WITH se bloquea en el punto
+      de ejecución — no en un filtro de superficie. Hay un test público de inyección directa en el repositorio:
+      ejecutar('DROP TABLE clientes') no borra la tabla.</p></div>
+    <div class="feat"><div class="ic">🎯</div><h3 data-i="s4t">¿Y si el SQL está mal?</h3>
+      <p data-i="s4p">Antes de ejecutarse se valida contra tu esquema real: lo que no existe se rechaza y se autocorrige.
+      El SQL siempre queda visible para auditarlo, y el porcentaje de confianza (autoevaluación del modelo + señal RAG +
+      validación estructural) es una guía de cuándo mirar dos veces — no una garantía. El peor caso posible es un número
+      mal en pantalla; nunca un dato modificado.</p></div>
+    <div class="feat"><div class="ic">👥</div><h3 data-i="s5t">Accesos y auditoría</h3>
+      <p data-i="s5p">PIN por usuario, guardado con PBKDF2-SHA256 y sal — nunca en texto plano. Cada rol ve solo sus
+      tablas: la IA ni se entera de que las demás existen, así no puede consultarlas ni por error. Quién preguntó qué,
+      con qué SQL y qué resultado queda en un registro local exportable a CSV.</p></div>
+    <div class="feat"><div class="ic">📜</div><h3 data-i="s6t">¿Certificaciones?</h3>
+      <p data-i="s6p">Todavía no tenemos certificaciones formales, y preferimos decírtelo antes que esquivarlo. La
+      arquitectura reduce lo que habría que certificar: nunca recibimos ni almacenamos tus datos. El código de la
+      barrera de solo lectura y de la validación es público y auditable en GitHub.</p></div>
   </div>
 </div></section>
 
@@ -570,7 +611,8 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
     </div>
   </div>
   <p class="legal" data-i="legal">MV SQL NLP · Tu base de datos, en tu idioma. Consultas en lenguaje natural con IA a
-  elección del cliente. Conexión de solo lectura; los datos nunca salen de tu red. Datos de demostración 100% sintéticos.</p>
+  elección del cliente. Conexión de solo lectura. A la IA viaja el esquema y, solo si activás el análisis, una muestra
+  del resultado — nunca tu base; con Ollama local no sale nada. Datos de demostración 100% sintéticos.</p>
 </div></footer>
 
 <script src="/assets/purchase.js" defer></script>
@@ -594,7 +636,22 @@ var I18N={
     f3t:"SQL de nível sênior",f3p:"CTEs com nomes claros, filtros antecipados, sem SELECT *. Validado contra o catálogo real: se a IA inventa uma coluna, é rejeitado e auto-corrigido.",
     f3a:"Intervalo de confiança em cada resposta (ex. 94% ±5)",f3b:"Consultas salvas + stored procedures",f3c:"Re-otimizador de SQL existente",
     f4t:"Resultados prontos para apresentar",f4p:"Gráficos profissionais com eixos rotulados e valores legíveis; formato sob medida: decimais, separador de milhares, porcentagens e moeda ($U, US$, R$…). Painel <b>Explorar</b>: correlação entre variáveis e quais influenciam qual. Exporte para Excel, CSV, PDF e HTML.",
-    f5t:"Seus dados não viajam",f5p:"RAG local: para a IA vai só o esquema (nomes de tabelas e colunas), nunca seus dados. Conexão somente leitura: apenas SELECT.",
+    f5t:"Seus dados, sob o seu controle",f5p:"Para gerar o SQL viaja só o esquema (nomes de tabelas e colunas), nunca as suas linhas. A análise escrita usa uma amostra de até 20 linhas do resultado — e com o <b>modo privacidade estrita</b> (um clique) nenhuma viaja. Com Ollama local, nada sai da sua máquina. Conexão somente leitura, sempre. Detalhe completo abaixo, em <a href='#seguridad' style='color:inherit'>Segurança</a>.",
+    sey:"Segurança e precisão",
+    sh:"As perguntas que a sua equipe de TI faz, respondidas",
+    sl:"Sem promessas vagas: o que viaja, o que não viaja, o que pode dar errado e o que acontece quando dá. Tudo abaixo está implementado no código — e o essencial, coberto por testes públicos.",
+    s1t:"Onde os meus dados são processados?",
+    s1p:"No seu PC ou no seu servidor: o programa roda local. Não existe servidor nosso processando as suas consultas. Com a sua própria API key, a sua máquina fala direto por HTTPS com o provedor de IA escolhido; no modo créditos passa pela nossa função de cobrança, que desconta 1 crédito e não armazena a sua consulta.",
+    s2t:"O que exatamente viaja para a IA?",
+    s2p:"Para gerar o SQL: a sua pergunta mais os nomes de tabelas e colunas das ~4 tabelas relevantes. Nenhuma linha. Para a análise escrita (opcional): uma amostra de até 20 linhas do resultado. Com o <b>modo privacidade estrita</b> nenhuma linha viaja, nunca. Com <b>Ollama local</b>, nada sai da sua máquina — nem o esquema.",
+    s3t:"Pode escrever no meu banco?",
+    s3p:"Não. A conexão abre em modo somente leitura e tudo que não for SELECT/WITH é bloqueado no ponto de execução — não em um filtro de superfície. Há um teste público de injeção direta no repositório: ejecutar('DROP TABLE clientes') não apaga a tabela.",
+    s4t:"E se o SQL estiver errado?",
+    s4p:"Antes de executar, valida contra o seu esquema real: o que não existe é rejeitado e autocorrigido. O SQL fica sempre visível para auditoria, e o percentual de confiança (autoavaliação do modelo + sinal RAG + validação estrutural) é um guia de quando olhar duas vezes — não uma garantia. O pior caso possível é um número errado na tela; nunca um dado modificado.",
+    s5t:"Acessos e auditoria",
+    s5p:"PIN por usuário, guardado com PBKDF2-SHA256 e sal — nunca em texto puro. Cada papel vê só as suas tabelas: a IA nem fica sabendo que as outras existem, então não pode consultá-las nem por engano. Quem perguntou o quê, com qual SQL e com qual resultado fica em um registro local exportável para CSV.",
+    s6t:"Certificações?",
+    s6p:"Ainda não temos certificações formais, e preferimos dizer isso a esquivar. A arquitetura reduz o que haveria para certificar: nunca recebemos nem armazenamos os seus dados. O código da barreira somente leitura e da validação é público e auditável no GitHub.",
     f6t:"Bônus: Claude Desktop direto no seu banco (MCP)",f6p:"Inclui um instalador de um clique que conecta seu Claude Desktop ao seu banco via MCP: você pergunta ao Claude e ele consulta o banco sozinho, do chat.",
     svtag:"O mais pedido",svt:"Implementação no seu banco de dados ou ERP",
     svp:"Levantamento do seu esquema, conexão somente leitura, mapeamento das tabelas que importam, as consultas de negócio que sua equipe usa toda semana já carregadas, e treinamento da equipe. Você sai rodando, não com um instalador.",
@@ -634,7 +691,7 @@ var I18N={
     rcta:"✍️ Deixar minha avaliação",rhint:"Abre seu e-mail; publicamos depois de verificar.",
     eyc:"Contato",stc:"Dúvidas? Escreva para nós",slc:"Preencha o formulário: seu e-mail abre com a mensagem pronta para nos enviar.",
     cfn:"Nome",cfe:"Seu e-mail",cft:"Telefone",cfa:"Assunto",cfp:"Dúvida / pergunta",cfb:"Enviar consulta",cfh:"Abre seu app de e-mail com a mensagem pronta.",
-    legal:"MV SQL NLP · Seu banco de dados, no seu idioma. Consultas em linguagem natural com IA à escolha do cliente. Conexão somente leitura; os dados nunca saem da sua rede. Dados de demonstração 100% sintéticos."
+    legal:"MV SQL NLP · Seu banco de dados, no seu idioma. Consultas em linguagem natural com IA à escolha do cliente. Conexão somente leitura. Para a IA viaja o esquema e, só se você ativar a análise, uma amostra do resultado — nunca o seu banco; com Ollama local nada sai. Dados de demonstração 100% sintéticos."
   },
   en:{
     nav1:"Features",nav2:"Video",nav3:"Plans",nav4:"Downloads",navr:"Reviews",navc:"Contact",navbuy:"Buy",
@@ -654,7 +711,22 @@ var I18N={
     f3t:"Senior-level SQL",f3p:"CTEs with clear names, early filters, no SELECT *. Validated against the real catalog: if the AI invents a column, it gets rejected and self-repaired.",
     f3a:"Confidence interval on every answer (e.g. 94% ±5)",f3b:"Saved queries + stored procedures",f3c:"Re-optimizer for existing SQL",
     f4t:"Presentation-ready results",f4p:"Professional charts with labeled axes and readable values; formatting your way: decimals, thousands separator, percentages and currency ($U, US$, R$…). <b>Explore</b> panel: correlation between variables and which drives which. Export to Excel, CSV, PDF and HTML.",
-    f5t:"Your data never travels",f5p:"Local RAG: only the schema (table and column names) goes to the AI — never your data. Read-only connection: SELECT only.",
+    f5t:"Your data, under your control",f5p:"To generate the SQL, only the schema travels (table and column names) — never your rows. The written analysis uses a sample of up to 20 result rows — and with <b>strict privacy mode</b> (one click) none travels at all. With local Ollama, nothing leaves your machine. Read-only connection, always. Full detail below, under <a href='#seguridad' style='color:inherit'>Security</a>.",
+    sey:"Security and accuracy",
+    sh:"The questions your IT team will ask, answered",
+    sl:"No vague promises: what travels, what doesn't, what can go wrong and what happens when it does. Everything below is implemented in the code — and the critical parts are covered by public tests.",
+    s1t:"Where is my data processed?",
+    s1p:"On your PC or your server: the program runs locally. There is no server of ours processing your queries. With your own API key, your machine talks directly over HTTPS to the AI provider you chose; in credits mode it goes through our billing function, which deducts 1 credit and does not store your query.",
+    s2t:"What exactly travels to the AI?",
+    s2p:"To generate the SQL: your question plus the table and column names of the ~4 relevant tables. No rows. For the written analysis (optional): a sample of up to 20 result rows. With <b>strict privacy mode</b> no row ever travels. With <b>local Ollama</b>, nothing leaves your machine — not even the schema.",
+    s3t:"Can it write to my database?",
+    s3p:"No. The connection opens in read-only mode and anything that is not SELECT/WITH is blocked at the point of execution — not by a surface filter. There is a public direct-injection test in the repository: ejecutar('DROP TABLE clientes') does not drop the table.",
+    s4t:"What if the SQL is wrong?",
+    s4p:"Before running, it is validated against your real schema: anything that doesn't exist is rejected and auto-corrected. The SQL always stays visible for auditing, and the confidence percentage (model self-assessment + RAG signal + structural validation) is a guide for when to look twice — not a guarantee. The worst possible case is a wrong number on screen; never a modified row.",
+    s5t:"Access control and audit",
+    s5p:"A PIN per user, stored with PBKDF2-SHA256 and a salt — never in plain text. Each role sees only its own tables: the AI is never even told the others exist, so it can't query them even by mistake. Who asked what, with which SQL and which outcome, is kept in a local log exportable to CSV.",
+    s6t:"Certifications?",
+    s6p:"We don't hold formal certifications yet, and we'd rather tell you than dodge it. The architecture shrinks what there would be to certify: we never receive or store your data. The code for the read-only barrier and the validation is public and auditable on GitHub.",
     f6t:"Bonus: Claude Desktop straight to your database (MCP)",f6p:"Includes a one-click installer that connects your Claude Desktop to your database via MCP: you ask Claude and it queries the database itself, from chat.",
     svtag:"Most requested",svt:"Implementation on your database or ERP",
     svp:"We survey your schema, set up the read-only connection, map the tables that matter, load the business questions your team asks every week, and train the team. You end up running, not with an installer.",
@@ -694,7 +766,7 @@ var I18N={
     rcta:"✍️ Leave my review",rhint:"Opens your email app; we publish it after verifying.",
     eyc:"Contact",stc:"Questions? Write to us",slc:"Fill out the form: your email opens with the message ready to send us.",
     cfn:"Name",cfe:"Your email",cft:"Phone",cfa:"Subject",cfp:"Question / inquiry",cfb:"Send inquiry",cfh:"Opens your email app with the message ready.",
-    legal:"MV SQL NLP · Your database, in your language. Natural-language queries with the customer's choice of AI. Read-only connection; data never leaves your network. 100% synthetic demo data."
+    legal:"MV SQL NLP · Your database, in your language. Natural-language queries with the customer's choice of AI. Read-only connection. The schema travels to the AI and, only if you enable the analysis, a sample of the result — never your database; with local Ollama nothing leaves. 100% synthetic demo data."
   }
 };
 var ORIG={};
