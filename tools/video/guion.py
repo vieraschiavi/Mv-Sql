@@ -70,10 +70,16 @@ GUION = {
          "Y cada persona entra con su PIN y ve solamente las tablas de su rol. "
          "El de cobranzas no ve sueldos: la inteligencia artificial ni se entera "
          "de que esas tablas existen."),
-        (None, "Tus datos nunca salen de tu red",
-         "Tus datos nunca salen de tu red: a la inteligencia artificial solo "
-         "viajan los nombres de las tablas. Probalo gratis siete días en "
-         "mvsqlnlp.com."),
+        # El cierre dice EXACTAMENTE lo que hace el producto — ni más:
+        # antes prometía "tus datos nunca salen de tu red", pero el
+        # análisis escrito manda una muestra del resultado (ver
+        # tests/test_privacidad.py). Sobre-prometer acá cuesta la venta
+        # cuando el equipo de sistemas del cliente lee el código.
+        (None, "Vos decidís qué viaja. Solo lectura, siempre",
+         "Y vos decidís qué viaja a la inteligencia artificial: el esquema "
+         "para generar el SQL, y ni una sola fila de tus datos si activás el "
+         "modo privacidad. Solo lectura, siempre: no puede tocar tu base. "
+         "Probalo gratis siete días en mvsqlnlp.com."),
     ],
     "en": [
         (None, "MV SQL NLP",
@@ -104,9 +110,11 @@ GUION = {
          "And each person logs in with their PIN and sees only the tables for "
          "their role. Collections doesn't see payroll — the AI never even learns "
          "those tables exist."),
-        (None, "Your data never leaves your network",
-         "Your data never leaves your network: only the table names travel to the "
-         "AI. Try it free for seven days at mvsqlnlp.com."),
+        (None, "You decide what travels. Read-only, always",
+         "And you decide what travels to the AI: the schema to generate the SQL, "
+         "and not a single row of your data if you turn on strict privacy mode. "
+         "Read-only, always: it cannot touch your database. Try it free for "
+         "seven days at mvsqlnlp.com."),
     ],
     "pt": [
         (None, "MV SQL NLP",
@@ -138,9 +146,10 @@ GUION = {
          "E cada pessoa entra com o seu PIN e vê somente as tabelas do seu papel. "
          "Quem é da cobrança não vê a folha: a inteligência artificial nem fica "
          "sabendo que essas tabelas existem."),
-        (None, "Seus dados nunca saem da sua rede",
-         "Seus dados nunca saem da sua rede: para a inteligência artificial viajam "
-         "apenas os nomes das tabelas. Teste grátis por sete dias em "
-         "mvsqlnlp.com."),
+        (None, "Você decide o que viaja. Somente leitura, sempre",
+         "E você decide o que viaja para a inteligência artificial: o esquema "
+         "para gerar o SQL, e nenhuma linha dos seus dados se ativar o modo "
+         "privacidade. Somente leitura, sempre: não pode tocar no seu banco. "
+         "Teste grátis por sete dias em mvsqlnlp.com."),
     ],
 }
