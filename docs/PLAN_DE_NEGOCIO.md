@@ -92,6 +92,58 @@ gráficos, confianza, exportes) con costo de venta LATAM.
   YouTube (el video demo + tutoriales "consultá tu SQL Server sin saber SQL"),
   LinkedIn, grupos de contadores/consultores, TikTok técnico.
 
+### Unidad económica de los créditos de IA (¿riesgo de margen negativo?)
+
+La objeción razonable: "si vendés créditos de IA a precio fijo y el consumo
+es variable, podés quedar en margen negativo". La respuesta está en el
+diseño, no en una promesa — todo lo de abajo es verificable en el código:
+
+- **1 crédito = 1 llamada a la IA** (`web/api/ai-proxy.js`: `kv.incr` por
+  request). Una pregunta con análisis activado consume 2 créditos (SQL +
+  análisis); con el modo privacidad estricta, 1.
+- **El costo por llamada está acotado por diseño**: el modelo es fijo
+  (Claude Haiku 4.5), la salida está topeada (`max_tokens ≤ 1500`) y la
+  entrada también, porque el RAG manda solo las ~4 tablas relevantes
+  (`motor.py`, `k=4`) — nunca el catálogo entero, por grande que sea la base.
+- **Números** (precios API Haiku 4.5: US$ 1/M tokens entrada, US$ 5/M salida):
+
+  | Pack | Precio | ¢/crédito | Costo típico/crédito¹ | Margen bruto |
+  |---|---|---|---|---|
+  | 100 créditos | US$ 9 | 9,0¢ | ~1,3–1,8¢ | ~80–86% |
+  | 500 créditos | US$ 35 | 7,0¢ | ~1,3–1,8¢ | ~74–81% |
+  | 2000 créditos | US$ 110 | 5,5¢ | ~1,3–1,8¢ | ~67–76% |
+
+  ¹ Entrada ~5–10k tokens (esquema de 4 tablas + pregunta) + salida tope
+  1500. Peor caso extremo (esquemas gigantes por tabla): ~6¢/crédito —
+  todavía margen positivo en todos los packs. Restaría la comisión de
+  MercadoPago (~8%) sobre el precio del pack.
+- **Sin cola infinita**: si el contador de créditos (Vercel KV) no está
+  disponible, el proxy **rechaza el pedido en vez de servir IA sin tope**
+  (fail-closed, testeado en `web/tests/suscripcion.test.js`). El crédito se
+  descuenta *antes* de llamar a la IA: pedidos en paralelo no pueden
+  consumir de más.
+- El pack es **pago único, no suscripción**: agotados los créditos, el
+  cliente compra otro pack o pasa a su propia API key. No existe el caso
+  "cliente que consume para siempre a costo nuestro".
+
+### Precisión y responsabilidad (la otra objeción de compra)
+
+- Lo que el producto **garantiza por construcción**: el SQL se valida contra
+  el esquema real antes de ejecutarse (lo inexistente se rechaza y se
+  autocorrige), la conexión es de solo lectura al nivel del conector (test
+  público de inyección directa en `app-python/tests/test_solo_lectura.py`),
+  y el SQL ejecutado siempre queda visible para auditarlo.
+- Lo que **no se promete**: una tasa de acierto medida. El % de confianza
+  que muestra cada respuesta (autoevaluación del modelo + señal RAG +
+  validación estructural) es una guía de cuándo revisar, no una métrica
+  auditada — decirlo así en la venta evita la sobre-promesa que después
+  cuesta el contrato. El peor caso posible es un número incorrecto en
+  pantalla; nunca un dato modificado.
+- Responsabilidad: el EULA (punto 4, en los 3 idiomas) establece que el
+  software se provee "tal cual" y que el usuario debe revisar las consultas
+  antes de decidir con ellas. La aceptación del EULA es obligatoria y
+  queda registrada (`app-python/eula.py`).
+
 ## 4. Escenarios de facturación neta (12 meses)
 
 Supuestos: mezcla 60% suscripción (ticket promedio US$ 25) + 40% créditos
@@ -150,3 +202,19 @@ días con créditos nuestros puede abusarse — limitar por email verificado + d
 - [ ] Monotributo + facturación electrónica
 - [ ] 5 clientes beta (gratis 1 mes a cambio de testimonio)
 - [ ] Lanzamiento: YouTube + LinkedIn + US$ 300 ads
+
+## 7. Estado actual, sin maquillar (para quien evalúe el negocio)
+
+Quien mire este proyecto con ojos de comprador o inversor va a preguntar
+esto; mejor que la respuesta esté escrita y sea verificable:
+
+| Pregunta | Respuesta honesta hoy |
+|---|---|
+| ¿Clientes actuales? | Ninguno público todavía. Las reseñas de la landing arrancan vacías **a propósito** (`web/assets/resenas.json` = `[]`): cero contenido inventado. El primer objetivo comercial son los 5 beta del checklist. |
+| ¿Tracción? | Producto completo y testeado (suite pública en CI), web de pago funcionando (MercadoPago), instalador Windows. Ingresos: aún no. |
+| ¿Equipo? | Fundador único (Martín Viera). El riesgo de bus factor es real; lo compensa parcialmente que el código, los tests y este plan están documentados para transferirse. |
+| ¿Financiamiento? | Autofinanciado. Sin deuda ni inversores; los costos fijos de arranque son ~US$ 85–200/mes (sección 3). |
+| ¿Canal de venta? | Directo: demo en video + trial de 7 días autoservicio en la web, e implementación como servicio (el material de venta en 3 idiomas está en `docs/VENTA_*`). Sin partners todavía. |
+| ¿"Siete países"? | La cobertura idiomática (ES/EN/PT) y el cobro vía MercadoPago habilitan LATAM; no hay operación ni clientes en múltiples países hoy. Es mercado direccionable, no presencia — no venderlo como lo segundo. |
+| ¿Margen de los créditos? | Acotado por diseño, no por promesa (sección 3, unidad económica): 1 crédito = 1 llamada, entrada y salida topeadas, proxy fail-closed. |
+| ¿Certificaciones? | Ninguna todavía (ISO/SOC2 no aplican al tamaño actual). La arquitectura local minimiza qué habría que certificar: los datos del cliente nunca pasan por servidores propios, salvo el tránsito de la consulta en modo créditos, que no se almacena. |

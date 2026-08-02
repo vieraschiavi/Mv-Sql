@@ -39,6 +39,8 @@ reportlab>=4.0
 #     python3 tests/test_equipo_auditoria.py
 #     python3 tests/test_cuadernos_esquema.py
 #     python3 tests/test_licencia.py
+#     python3 tests/test_privacidad.py
+#     python3 tests/test_instalador_bat.py
 #
 # O toda la suite del repo (Node + Python) con un solo comando, desde
 # la raiz:  npm test

@@ -44,6 +44,9 @@ T = {
         "titulo": "MV SQL NLP", "sub": "Tu base de datos, en tu idioma. Preguntá en lenguaje natural — la IA genera SQL optimizado, lo valida contra tu esquema y te devuelve tablas, gráficos y análisis.",
         "config": "Configuración", "idioma": "Idioma", "ia": "Proveedor de IA",
         "modelo": "Modelo", "apikey": "API key", "probar": "Probar conexión",
+        "privacidad": "Modo privacidad estricta",
+        "privacidad_ayuda": "Activado: ninguna fila de tus datos viaja a la IA — solo tu pregunta y los nombres de tablas/columnas relevantes. Te quedás sin el análisis escrito del resultado (la tabla y el gráfico siguen igual). Desactivado: para el análisis viaja una muestra de hasta 20 filas del resultado. Con Ollama local nada sale de tu máquina en ningún caso.",
+        "privacidad_nota": "🔒 Modo privacidad estricta: el análisis escrito está desactivado para que ninguna fila viaje a la IA. La tabla y el gráfico no cambian.",
         "bd": "Base de datos", "motor_bd": "Motor", "conectar": "Conectar",
         "tablas_ok": "tablas cargadas", "ver_esquema": "Ver esquema",
         "pregunta_ph": "Ej: ¿cuánto facturamos por mes este año, por sucursal?",
@@ -139,6 +142,9 @@ T = {
         "titulo": "MV SQL NLP", "sub": "Your database, in your language. Ask in plain words — AI generates optimized SQL, validates it against your schema, and returns tables, charts and analysis.",
         "config": "Settings", "idioma": "Language", "ia": "AI provider",
         "modelo": "Model", "apikey": "API key", "probar": "Test connection",
+        "privacidad": "Strict privacy mode",
+        "privacidad_ayuda": "On: no row of your data ever travels to the AI — only your question and the relevant table/column names. You give up the written analysis of the result (table and chart stay the same). Off: a sample of up to 20 result rows travels for the analysis. With local Ollama nothing leaves your machine either way.",
+        "privacidad_nota": "🔒 Strict privacy mode: the written analysis is off so that no row travels to the AI. Table and chart are unaffected.",
         "bd": "Database", "motor_bd": "Engine", "conectar": "Connect",
         "tablas_ok": "tables loaded", "ver_esquema": "View schema",
         "pregunta_ph": "E.g.: monthly revenue this year, by branch?",
@@ -234,6 +240,9 @@ T = {
         "titulo": "MV SQL NLP", "sub": "Seu banco de dados, no seu idioma. Pergunte em linguagem natural — a IA gera SQL otimizado, valida contra seu esquema e devolve tabelas, gráficos e análises.",
         "config": "Configuração", "idioma": "Idioma", "ia": "Provedor de IA",
         "modelo": "Modelo", "apikey": "API key", "probar": "Testar conexão",
+        "privacidad": "Modo privacidade estrita",
+        "privacidad_ayuda": "Ativado: nenhuma linha dos seus dados viaja para a IA — só a sua pergunta e os nomes das tabelas/colunas relevantes. Você abre mão da análise escrita do resultado (a tabela e o gráfico continuam iguais). Desativado: para a análise viaja uma amostra de até 20 linhas do resultado. Com Ollama local nada sai da sua máquina em nenhum caso.",
+        "privacidad_nota": "🔒 Modo privacidade estrita: a análise escrita está desativada para que nenhuma linha viaje para a IA. Tabela e gráfico não mudam.",
         "bd": "Banco de dados", "motor_bd": "Motor", "conectar": "Conectar",
         "tablas_ok": "tabelas carregadas", "ver_esquema": "Ver esquema",
         "pregunta_ph": "Ex.: quanto faturamos por mês este ano, por filial?",
@@ -1022,6 +1031,15 @@ with st.sidebar:
     ia_cfg = {"proveedor": proveedor, "api_key": api_key,
               "modelo": modelo, "base_url": base_url}
 
+    # Modo privacidad estricta: con esto activo, responder() corre con
+    # explicar=False y NINGUNA fila del resultado viaja al proveedor de IA
+    # (sin esto, el análisis escrito manda una muestra de hasta 20 filas —
+    # ver motor._explicar_resultado / _muestra_texto). Es la diferencia
+    # entre "solo viaja el esquema" como promesa y como hecho.
+    ss.modo_privado = st.toggle(f"🔒 {t['privacidad']}",
+                                value=ss.get("modo_privado", False),
+                                help=t["privacidad_ayuda"])
+
     st.divider()
     st.subheader(f"🗄️ {t['bd']}")
     motor_bd = st.selectbox(t["motor_bd"], ["archivo"] + list(MOTORES.keys()),
@@ -1313,7 +1331,8 @@ if ejecutar and pregunta:
         try:
             ss.resultado = ss.motor.responder(
                 pregunta, contexto=contexto_formato(),
-                limite=PERM.get("limite_filas", 5000))
+                limite=PERM.get("limite_filas", 5000),
+                explicar=not ss.get("modo_privado", False))
             r_ = ss.resultado
             # Segunda barrera: aunque la IA solo conozca las tablas permitidas,
             # se vuelve a chequear el SQL que realmente se generó.
@@ -1445,7 +1464,14 @@ if r:
             else:
                 st.info(t["sin_grafico"])
         with tab3:
-            st.write(r["explicacion"] or "—")
+            if r["explicacion"]:
+                st.write(r["explicacion"])
+            elif ss.get("modo_privado"):
+                # Que el analisis vacio no parezca un bug: es la decision
+                # de privacidad del usuario, y se le recuerda por que.
+                st.info(t["privacidad_nota"])
+            else:
+                st.write("—")
         with tab5:
             # EDA: sobre el resultado actual o sobre una tabla completa
             fuentes = [t["eda_resultado"]]

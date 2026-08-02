@@ -1,5 +1,14 @@
 # 🎬 Video de demo — cómo se regenera
 
+> ⚠️ **Pendiente de regenerar.** El cierre del guion cambió (antes decía
+> "tus datos nunca salen de tu red", que era impreciso: el análisis manda
+> una muestra del resultado — ver `app-python/tests/test_privacidad.py`).
+> `guion.py` ya dice lo correcto, pero los `web/assets/video/demo_*.mp4`
+> publicados todavía tienen la narración vieja. Regenerarlos corriendo los
+> pasos de abajo en una máquina con salida a internet directa (edge-tts usa
+> WebSockets, que no pasan por proxies corporativos). Borrar este aviso al
+> regenerarlos.
+
 Los tres videos de la landing (`web/assets/video/demo_es.mp4`, `demo_en.mp4`,
 `demo_pt.mp4`) no se editan a mano: se generan desde acá. Si cambia la app o
 cambia el mensaje comercial, se corre esto y quedan los tres al día.
