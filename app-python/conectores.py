@@ -295,7 +295,11 @@ class ConexionBD:
         else:
             cur.execute(sql)
         cols = [d[0] for d in cur.description]
-        filas = [tuple(r) for r in cur.fetchall()]
+        # fetchmany(limite+1) en vez de fetchall: red de seguridad si el tope
+        # no se pudo inyectar en el SQL. _aplicar_limite no puede meter TOP en
+        # una consulta que empieza con WITH (SQL Server) y el prompt pide CTEs,
+        # así que sin esto una consulta con CTE traía la tabla entera a memoria.
+        filas = [tuple(r) for r in cur.fetchmany(limite)]
         if self.motor == "postgres":
             self._con.rollback()  # cerrar la transacción read-only
         return cols, filas, sql

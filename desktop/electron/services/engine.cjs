@@ -82,18 +82,42 @@ function parseResponse(text) {
   return { sql, confLLM: conf != null ? Math.min(100, +conf) : null, assumptions };
 }
 
-const FORBIDDEN = ["insert ", "update ", "delete ", "drop ", "alter ", "truncate ",
-  "create ", "exec ", "execute ", "merge ", "grant ", "revoke ", "xp_"];
 const SQL_WORDS = new Set(["select", "where", "group", "order", "having", "limit",
   "offset", "union", "unnest", "generate_series", "dual", "values", "lateral"]);
 
+// Barrera de solo-lectura, alineada con app-python/conectores.py. La versión
+// vieja hacía s.includes("delete ") con espacio: "SELECT 1; DELETE\nFROM t"
+// la evadía (salto de línea, no espacio) y borraba datos en SQL Server, que
+// acepta batches. Ahora: se sacan comentarios y literales, se exige un solo
+// statement y prefijo SELECT/WITH, y la denylist usa límite de palabra y
+// cubre las escrituras/lecturas al filesystem (INTO OUTFILE, load_file, …).
+const FORBIDDEN = new RegExp(
+  "\\b(insert|update|delete|drop|alter|truncate|create|exec|execute|merge|" +
+  "grant|revoke|attach|detach|vacuum|reindex|pragma|into|" +
+  "load_file|outfile|dumpfile|pg_read_file|pg_read_binary_file|pg_ls_dir|" +
+  "lo_export|lo_import|openrowset|opendatasource|xp_cmdshell|utl_file|dbms_)\\b" +
+  "|\\bxp_|\\bsp_executesql", "i");
+
+function stripForCheck(sql) {
+  return String(sql || "")
+    .replace(/\/\*[\s\S]*?\*\//g, " ")   // comentarios de bloque
+    .replace(/--[^\n]*/g, " ")           // comentarios de línea
+    .replace(/'(?:[^']|'')*'/g, "''");   // literales de texto
+}
+
 function assertReadOnly(sql) {
-  const s = sql.toLowerCase();
-  for (const w of FORBIDDEN) if (s.includes(w)) throw new Error(`Operación no permitida: '${w.trim()}' — MV SQL NLP es solo lectura.`);
-  const start = s.trimStart().slice(0, 8);
+  if (!sql || !sql.trim()) throw new Error("La consulta está vacía.");
+  const s = stripForCheck(sql).trim();
+  // un solo statement: un ';' con algo después es encadenamiento
+  if (s.replace(/;+\s*$/, "").includes(";")) {
+    throw new Error("No se permite ejecutar varias sentencias en una sola consulta.");
+  }
+  const start = s.toLowerCase().trimStart().slice(0, 8);
   if (!start.startsWith("select") && !start.startsWith("with")) {
     throw new Error("Solo se permiten consultas SELECT (o WITH...SELECT).");
   }
+  const m = s.match(FORBIDDEN);
+  if (m) throw new Error(`Operación no permitida: '${m[0].trim()}' — MV SQL NLP es solo lectura.`);
 }
 
 function validate(sql, catalog) {
