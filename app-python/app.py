@@ -1346,7 +1346,7 @@ if ejecutar and pregunta:
             ss.resultado = ss.motor.responder(
                 pregunta, contexto=contexto_formato(),
                 limite=PERM.get("limite_filas", 5000),
-                explicar=not ss.get("modo_privado", False))
+                privado=ss.get("modo_privado", False))
             r_ = ss.resultado
             # Segunda barrera: se chequea el SQL que REALMENTE se generó, no
             # las tablas que el RAG le mostró a la IA. Antes esto miraba

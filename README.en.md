@@ -28,7 +28,7 @@ charts and analysis exportable to Excel, CSV, PDF and HTML.
 - 🚀 **CTE optimisation**: structured queries with `WITH … AS`, early filters, no `SELECT *`; re-optimiser for existing SQL
 - 📐 **Confidence interval** on every answer (e.g. 92% ±5), combining the model's self-assessment, the RAG signal and structural validation
 - 🛡️ **Anti-hallucination**: the SQL is validated against the real catalogue; anything that doesn't exist is rejected and self-repaired
-- 🔒 **Security**: read-only connection, `SELECT`/`WITH` only. To generate the SQL only the schema travels (table/column names of the relevant tables), never your rows; the written analysis uses a sample of up to 20 result rows, switchable off with **strict privacy mode** — and with local Ollama nothing leaves your machine (invariants covered by `tests/test_privacidad.py`)
+- 🔒 **Security**: read-only connection, `SELECT`/`WITH` only. To generate the SQL the schema travels (table/column names) with a few example values from the text columns; the written analysis uses a sample of up to 20 result rows. **Strict privacy mode** sends only names (no examples, no rows), and with local Ollama nothing leaves your machine (invariants covered by `tests/test_privacidad.py`)
 - 👥 **Team and permissions**: each user logs in with their PIN and sees **only the tables for their role** — the AI never learns the others exist
 - 🛡️ **Audit trail**: who queried what, when, with which SQL and with what result — exportable to CSV for compliance
 - ⭐ **Saved queries** with a name + conversion into production **stored procedures**

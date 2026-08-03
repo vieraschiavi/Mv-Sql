@@ -28,7 +28,7 @@ análises exportáveis para Excel, CSV, PDF e HTML.
 - 🚀 **Otimização com CTE**: consultas estruturadas com `WITH … AS`, filtros antecipados, sem `SELECT *`; reotimizador de SQL existente
 - 📐 **Intervalo de confiança** em cada resposta (ex.: 92% ±5), combinando autoavaliação do modelo, sinal do RAG e validação estrutural
 - 🛡️ **Anti-alucinação**: o SQL é validado contra o catálogo real; se algo não existe, é rejeitado e corrigido sozinho (self-repair)
-- 🔒 **Segurança**: conexão somente leitura, apenas `SELECT`/`WITH`. Para gerar o SQL viaja só o esquema (nomes de tabelas/colunas das tabelas relevantes), nunca as suas linhas; a análise escrita usa uma amostra de até 20 linhas do resultado, desativável com o **modo privacidade estrita** — e com Ollama local nada sai da sua máquina (invariantes cobertos por `tests/test_privacidad.py`)
+- 🔒 **Segurança**: conexão somente leitura, apenas `SELECT`/`WITH`. Para gerar o SQL viaja o esquema (nomes de tabelas/colunas) com alguns poucos valores de exemplo das colunas de texto; a análise escrita usa uma amostra de até 20 linhas do resultado. O **modo privacidade estrita** manda só nomes (nem exemplos nem linhas), e com Ollama local nada sai da sua máquina (invariantes cobertos por `tests/test_privacidad.py`)
 - 👥 **Equipe e permissões**: cada usuário entra com o seu PIN e vê **só as tabelas do seu papel** — a IA nem fica sabendo que as outras existem
 - 🛡️ **Auditoria**: quem consultou o quê, quando, com qual SQL e com qual resultado — exportável para CSV para conformidade
 - ⭐ **Consultas salvas** com nome + conversão em **stored procedures** de produção

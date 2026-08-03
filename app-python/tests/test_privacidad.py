@@ -36,6 +36,7 @@ sys.modules["sklearn.metrics.pairwise"].cosine_similarity = lambda *a, **k: None
 sys.modules.setdefault("requests", types.ModuleType("requests"))
 
 import motor  # noqa: E402
+import catalogo  # noqa: E402  (stdlib puro: sqlite3, json — no necesita stubs)
 
 pasadas = falladas = 0
 
@@ -53,34 +54,54 @@ def test(nombre):
     return deco
 
 
-# Valores centinela: si CUALQUIERA aparece en un prompt donde no debe,
-# el test lo nombra. Son raros a propósito para que no haya coincidencias.
-FILA_1 = ("ACME_CONFIDENCIAL_771", 98765.43)
-FILA_2 = ("CLIENTE_RESERVADO_909", 12345.67)
-CENTINELAS = [str(v) for fila in (FILA_1, FILA_2) for v in fila]
+# Dos clases de dato del cliente, con centinelas distintos para saber CUÁL
+# se filtró y por qué camino:
+#   - MUESTRA: valores reales de una columna de texto que catalogo.py toma del
+#     esquema y mete en la ficha. Es el que el agente encontró viajando en la
+#     GENERACIÓN del SQL, y que el test viejo no veía porque usaba una ficha
+#     escrita a mano en vez de catalogo_a_fichas.
+#   - FILA: valores del resultado de la consulta, que van en el ANÁLISIS.
+CANARIO_MUESTRA = "ACME_CONFIDENCIAL_771"
+FILA_1 = ("Cliente Uno", 98765.43)
+FILA_2 = ("Cliente Dos", 12345.67)
+CENTINELAS_FILA = [str(v) for fila in (FILA_1, FILA_2) for v in fila]
 
 SQL_CANONICO = "SELECT nombre, saldo FROM clientes"
-
-
-class RecuperadorFalso:
-    def recuperar(self, pregunta, k=4):
-        return ([{"tabla": "clientes",
-                  "texto": "Tabla clientes: columnas id, nombre, saldo"}], [0.9])
 
 
 class ConexionFalsa:
     dialecto = "sqlite"
 
-    def ejecutar(self, sql, limite=5000):
+    def ejecutar(self, sql, limite=5000, params=None):
         return (["nombre", "saldo"], [list(FILA_1), list(FILA_2)], sql)
 
 
 def armar_motor():
+    """Motor real, pero con las fichas armadas por catalogo_a_fichas DE VERDAD
+    (con muestras), no un doble a mano. Es la única forma de que el test vea el
+    camino donde vivía la fuga."""
     m = motor.MotorMVSQL.__new__(motor.MotorMVSQL)
     m.cx = ConexionFalsa()
-    m.recuperador = RecuperadorFalso()
-    m.catalogo = {"tablas": {"clientes": {"columnas": [
-        {"columna": "id"}, {"columna": "nombre"}, {"columna": "saldo"}]}}}
+
+    # Catálogo con una MUESTRA de columna de texto que lleva el centinela:
+    # exactamente lo que catalogo.py produce para una base real.
+    cat = {"tablas": {"clientes": {
+        "n_filas": 2,
+        "columnas": [
+            {"columna": "id", "tipo": "INTEGER", "pk": True, "nullable": False},
+            {"columna": "nombre", "tipo": "TEXT", "pk": False, "nullable": True},
+            {"columna": "saldo", "tipo": "REAL", "pk": False, "nullable": True},
+        ],
+        "muestras": {"nombre": [CANARIO_MUESTRA, "Otro Cliente"]},
+    }}, "fks": [], "joins_inferidos": {}}
+    fichas = catalogo.catalogo_a_fichas(cat)          # <- la función real
+
+    class RecuperadorReal:
+        def recuperar(self, pregunta, k=4):
+            return (fichas, [0.9])
+
+    m.recuperador = RecuperadorReal()
+    m.catalogo = cat
     llamadas = []
 
     def completar_falso(system, user, max_tokens=1500):
@@ -93,65 +114,88 @@ def armar_motor():
     return m, llamadas
 
 
-print("\n== Generación del SQL: viaja el esquema, no los datos ==")
+print("\n== catalogo_a_fichas: separa esquema de datos de ejemplo ==")
+
+
+@test("la ficha normal lleva los valores de ejemplo; la 'min' no")
+def _():
+    cat = {"tablas": {"t": {
+        "n_filas": 1, "muestras": {"c": [CANARIO_MUESTRA]},
+        "columnas": [{"columna": "c", "tipo": "TEXT", "pk": False, "nullable": True}],
+    }}, "fks": [], "joins_inferidos": {}}
+    f = catalogo.catalogo_a_fichas(cat)[0]
+    assert CANARIO_MUESTRA in f["texto"], "la versión normal usa ejemplos (mejor calidad)"
+    assert CANARIO_MUESTRA not in f["texto_min"], "la versión privada NO puede llevar datos"
+    assert "c (TEXT)" in f["texto_min"], "pero sí los nombres de columna"
+
+
+print("\n== Generación del SQL: qué viaja según el modo ==")
 
 
 @test("el prompt de generación lleva la pregunta y los nombres de tablas/columnas")
 def _():
     m, llamadas = armar_motor()
-    m.responder("total de saldo por cliente", explicar=False)
+    m.responder("total de saldo por cliente")
     gen = llamadas[0]
     assert "clientes" in gen["system"] and "saldo" in gen["system"]
     assert "total de saldo por cliente" in gen["user"]
 
 
-@test("ningún valor de fila aparece en el prompt de generación")
+@test("modo NORMAL: los valores de ejemplo del esquema SÍ viajan (hay que declararlo)")
+def _():
+    # DOCUMENTA la realidad, no la celebra: en modo normal, catalogo_a_fichas
+    # mete unos pocos valores reales de las columnas de texto en el prompt de
+    # generación, para mejor calidad. La landing tiene que decirlo así. Si
+    # esto cambia, el test avisa para actualizar el texto público.
+    m, llamadas = armar_motor()
+    m.responder("total de saldo")
+    assert CANARIO_MUESTRA in llamadas[0]["system"], \
+        "en modo normal el ejemplo de columna viaja (es lo declarado)"
+
+
+print("\n== Modo privacidad estricta: NI ejemplos NI filas ==")
+
+
+@test("modo PRIVADO: el valor de ejemplo del esquema NO viaja en la generación")
+def _():
+    # El bug real que la auditoría encontró: antes esto viajaba SIEMPRE.
+    m, llamadas = armar_motor()
+    m.responder("total de saldo", privado=True)
+    assert CANARIO_MUESTRA not in llamadas[0]["system"], \
+        "en modo privado ningún dato real de la base puede viajar, ni al generar"
+    assert "saldo" in llamadas[0]["system"], "pero los nombres de columna sí"
+
+
+@test("modo PRIVADO: exactamente UNA llamada, sin análisis, pero la tabla vuelve entera")
 def _():
     m, llamadas = armar_motor()
-    m.responder("total de saldo", explicar=True)
-    gen = llamadas[0]
-    for c in CENTINELAS:
-        assert c not in gen["system"] and c not in gen["user"], \
-            f"se filtró el valor {c!r} en la generación"
-
-
-print("\n== Modo privacidad estricta (explicar=False) ==")
-
-
-@test("exactamente UNA llamada a la IA, y sin explicación")
-def _():
-    m, llamadas = armar_motor()
-    r = m.responder("total de saldo", explicar=False)
+    r = m.responder("total de saldo", privado=True)
     assert len(llamadas) == 1, f"hubo {len(llamadas)} llamadas, se esperaba 1"
     assert r["explicacion"] is None
     assert r["filas"] == [list(FILA_1), list(FILA_2)], \
-        "la tabla igual tiene que volver completa: la privacidad no recorta el resultado"
+        "la privacidad no recorta el resultado: la tabla vuelve completa"
 
 
-@test("ningún centinela viaja en NINGÚN prompt con explicar=False")
+@test("modo PRIVADO: ninguna fila del resultado viaja en NINGÚN prompt")
 def _():
     m, llamadas = armar_motor()
-    m.responder("total de saldo", explicar=False)
+    m.responder("total de saldo", privado=True)
     for i, ll in enumerate(llamadas):
-        for c in CENTINELAS:
+        for c in CENTINELAS_FILA:
             assert c not in ll["system"] and c not in ll["user"], \
-                f"llamada {i}: se filtró {c!r}"
+                f"llamada {i}: se filtró la fila {c!r}"
 
 
-print("\n== Análisis escrito (explicar=True): qué viaja exactamente ==")
+print("\n== Análisis escrito (modo normal): qué viaja exactamente ==")
 
 
 @test("la muestra del resultado SÍ viaja en la 2ª llamada (esto es lo que hay que declarar)")
 def _():
-    # Este caso DOCUMENTA el comportamiento, no lo celebra: si el análisis
-    # está activado, una muestra del resultado viaja al proveedor. La landing
-    # y el video tienen que decirlo así. Si alguien lo cambia (p. ej. deja de
-    # mandar filas), este test avisa para actualizar el texto público.
     m, llamadas = armar_motor()
-    r = m.responder("total de saldo", explicar=True)
+    r = m.responder("total de saldo")
     assert len(llamadas) == 2
-    assert r["explicacion"], "con explicar=True tiene que haber análisis"
-    assert any(c in llamadas[1]["user"] for c in CENTINELAS), \
+    assert r["explicacion"], "en modo normal tiene que haber análisis"
+    assert any(c in llamadas[1]["user"] for c in CENTINELAS_FILA), \
         "se esperaba la muestra del resultado en el prompt del análisis"
 
 
@@ -165,15 +209,15 @@ def _():
     assert "80 filas más" in texto, "debe declarar cuántas quedaron afuera"
 
 
-@test("si la consulta falló (sin filas), no hay 2ª llamada ni con explicar=True")
+@test("si la consulta falló (sin filas), no hay 2ª llamada aunque el análisis esté activo")
 def _():
     m, llamadas = armar_motor()
 
-    def ejecutar_roto(sql, limite=5000):
+    def ejecutar_roto(sql, limite=5000, params=None):
         raise RuntimeError("tabla bloqueada")
 
     m.cx.ejecutar = ejecutar_roto
-    r = m.responder("total de saldo", explicar=True)
+    r = m.responder("total de saldo")
     assert r["error"], "el error tiene que reportarse"
     assert len(llamadas) == 1, "sin resultado no hay nada para explicar ni mandar"
 

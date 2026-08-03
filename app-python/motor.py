@@ -202,12 +202,19 @@ class MotorMVSQL:
                          system, user, modelo=self.ia.get("modelo"),
                          base_url=self.ia.get("base_url"), max_tokens=max_tokens)
 
-    def responder(self, pregunta, k=4, limite=5000, explicar=True, contexto=""):
+    def responder(self, pregunta, k=4, limite=5000, explicar=True, contexto="",
+                  privado=False):
         """
         contexto: preferencias del usuario (moneda, decimales, etc.) que se
         pasan a la IA como instrucción adicional — no forman parte de la
         pregunta guardada ni del historial.
+        privado: modo privacidad estricta. Con True, al proveedor de IA se le
+        manda el esquema SIN valores de ejemplo de las columnas (texto_min) y
+        no se genera análisis del resultado (explicar se fuerza a False): así
+        NINGUN dato real de la base sale, ni al generar el SQL ni después.
         """
+        if privado:
+            explicar = False
         resultado = {
             "pregunta": pregunta, "tablas_recuperadas": [], "sql": None,
             "valido": False, "problemas": [], "advertencias": [],
@@ -221,8 +228,10 @@ class MotorMVSQL:
         resultado["tablas_recuperadas"] = [f["tabla"] for f in relevantes]
         sim_top = sims[0] if sims else 0.0
 
-        # 2) generación
-        esquema = "\n\n".join(f["texto"] for f in relevantes)
+        # 2) generación. En modo privado se usa texto_min (sin valores de
+        # ejemplo): al proveedor de IA solo van nombres de tablas y columnas.
+        _clave = "texto_min" if privado else "texto"
+        esquema = "\n\n".join(f.get(_clave, f["texto"]) for f in relevantes)
         _system_sql = """Sos un experto en SQL que traduce preguntas en lenguaje natural a consultas SQL de nivel profesional. La pregunta puede venir en español, inglés o portugués.
 
 REGLAS ESTRICTAS:
