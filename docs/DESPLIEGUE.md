@@ -46,22 +46,42 @@ deliberado: se corta el servicio, nunca la billetera.
    no lo tiene habilitado, `/api/create-subscription` devuelve error de
    MercadoPago — pedilo por soporte antes de publicar precios mensuales.
 
-## 4. Release en GitHub (el .exe y el .zip)
+## 4. Release en GitHub (el .exe y el .zip) — 🚨 BLOQUEANTE DE VENTA
 
-La web enlaza a `releases/latest`. Si no hay Release publicado, esos botones
-llevan a una página vacía.
+Los tres botones de descarga de la landing apuntan a
+`releases/latest/download/...`. **Sin un Release PUBLICADO, todos dan 404**:
+el cliente paga, llega a `/gracias`, hace clic en descargar y no baja nada.
 
-`Actions → "Build MV SQL NLP releases" → Run workflow` (rama `main`).
-Compila el instalador de Windows en un runner Windows real y sube el zip
-autoinstalable al mismo Release.
+Ojo con la trampa: **un Release en borrador (draft) no cuenta.** GitHub no
+lo resuelve en `/releases/latest`, así que el 404 es idéntico a no tener
+ninguno. Tener "un release" en la lista no alcanza: tiene que estar
+publicado.
+
+Comprobación (son URLs públicas, se pueden correr desde cualquier lado):
+
+```bash
+for f in MV-SQL-NLP-Setup.exe mvsql-nlp-app.zip; do
+  echo "$(curl -sS -o /dev/null -w '%{http_code}' -L \
+    https://github.com/vieraschiavi/Mv-Sql/releases/latest/download/$f) $f"
+done
+# 302 o 200 = OK.  404 = los botones de la web están rotos.
+```
+
+Para arreglarlo: `Actions → "Build MV SQL NLP releases" → Run workflow`
+(rama `main`), o empujar un tag `v*`. Compila el instalador en un runner
+Windows real —con los módulos Cython, que un build de Linux no produce— y
+sube el zip autoinstalable al mismo Release. Después volvé a correr el
+chequeo de arriba: no des el paso por hecho porque el workflow terminó en
+verde.
 
 > Este paso lo tiene que disparar una persona: la integración de Claude no
-> tiene permiso de `workflow_dispatch` (responde 403).
+> tiene permiso de `workflow_dispatch` (responde 403 — verificado).
 
 ## 5. Probar de punta a punta antes de publicitar
 
 ```bash
-cd web && npm test        # 36 pruebas, deben pasar todas
+npm ci && npm test   # desde la raíz: 14 archivos de test (web + app-python)
+npm run lint         # sin salida = sin errores
 ```
 
 Y una compra real con tarjeta propia, del monto más barato:
