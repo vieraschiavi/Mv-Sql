@@ -1076,6 +1076,15 @@ with st.sidebar:
                     cx = ConexionBD("sqlite", ruta=ruta_db).conectar()
                 else:
                     cx = ConexionBD(motor_bd, **params).conectar()
+                # Cerrar la conexión anterior antes de reemplazarla: sin esto,
+                # cada clic en "Conectar" dejaba una sesión ODBC/SSH abierta
+                # contra la base del cliente (cerrar() no lo llamaba nadie), y
+                # el túnel SSH deja un puerto escuchando en la máquina.
+                if ss.motor is not None and hasattr(ss.motor.cx, "cerrar"):
+                    try:
+                        ss.motor.cx.cerrar()
+                    except Exception:
+                        pass
                 ss.motor = MotorMVSQL(cx, ia_cfg)
                 # El usuario solo ve —y la IA solo conoce— las tablas de su rol.
                 if PERM.get("tablas") != "*":

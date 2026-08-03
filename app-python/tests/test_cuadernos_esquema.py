@@ -240,9 +240,26 @@ def _():
 @test("un motor sin EXPLAIN soportado no rompe nada")
 def _():
     class Cx:
-        dialecto = "mssql"
+        motor = "sqlserver"
+        dialecto = "SQL Server (T-SQL)"
         conn = None
     assert ev.plan_de_ejecucion(Cx, "SELECT 1") == ([], [])
+
+
+@test("PostgreSQL SÍ tiene plan (el lookup por motor, no por dialecto)")
+def _():
+    # El bug: se buscaba por dialecto.lower() = 'postgresql' contra la clave
+    # 'postgres', así que Postgres nunca encontraba su plantilla y el cliente
+    # veía "no disponible". Ahora la clave es el motor.
+    assert ev.SQL_EXPLAIN.get("postgres"), "postgres debe tener plantilla"
+    # y aunque venga solo el dialecto real, el fallback lo infiere
+    class Cx:
+        dialecto = "PostgreSQL"
+    motor = "postgres" if not getattr(Cx, "motor", "") else Cx.motor
+    d = Cx.dialecto.lower()
+    inferido = ("sqlserver" if "server" in d else "postgres" if "postgre" in d
+                else "mysql" if "mysql" in d else "sqlite" if "sqlite" in d else "")
+    assert inferido == "postgres", f"el fallback debía inferir postgres, dio {inferido}"
 
 
 @test("SQL vacío o inválido no rompe nada")

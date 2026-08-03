@@ -160,6 +160,15 @@ def completar(proveedor, api_key, system, user, modelo=None, max_tokens=1500,
                 "No se encontró licencia_mvsql.json. Este proveedor solo funciona en el "
                 "zip descargado con el plan de créditos embebidos — comprá uno en "
                 "mvsqlnlp.com o elegí otro proveedor y pon tu propia API key.")
+        # Una licencia de plan 'own_ai' (API key propia) no trae proxy_url ni
+        # token: sin este chequeo, elegir "MV SQL Créditos" con esa licencia
+        # —y es la primera opción del selector— tiraba un KeyError crudo en
+        # vez de un mensaje que diga qué hacer.
+        if not licencia.get("proxy_url") or not licencia.get("token"):
+            raise ErrorProveedor(
+                "Tu licencia no incluye créditos de IA (es un plan con tu propia API key). "
+                "Elegí tu proveedor en la barra lateral y poné tu clave, o comprá un "
+                "paquete de créditos en mvsqlnlp.com.")
         data = _post(
             licencia["proxy_url"], {"content-type": "application/json"},
             {"token": licencia["token"], "system": system, "user": user,
