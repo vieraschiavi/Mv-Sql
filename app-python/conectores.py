@@ -44,8 +44,21 @@ class SQLNoPermitido(Exception):
 # aparecer como statement con las dos reglas de arriba puestas.
 _PROHIBIDAS = re.compile(
     r"\b(insert|update|delete|drop|alter|truncate|create|"
-    r"exec|execute|merge|grant|revoke|attach|detach|vacuum|reindex|pragma)\b"
-    r"|\breplace\s+into\b"
+    r"exec|execute|merge|grant|revoke|attach|detach|vacuum|reindex|pragma|"
+    # 'into' cubre las tres formas de ESCRITURA que arrancan con SELECT y
+    # pasarían el prefijo: 'SELECT ... INTO OUTFILE/DUMPFILE' (MySQL escribe
+    # un archivo en el server → RCE), 'REPLACE INTO', y 'SELECT ... INTO
+    # tabla' (SQL Server/Postgres crean una tabla). Un 'into' dentro de un
+    # literal de texto no dispara: los literales se sacan antes de buscar.
+    r"into|"
+    # Funciones de lectura/escritura del filesystem del server. Son SELECT
+    # puros, así que la barrera vieja los dejaba pasar y filtraban /etc/passwd
+    # o escribían archivos con las credenciales del cliente.
+    r"load_file|outfile|dumpfile|"                       # MySQL
+    r"pg_read_file|pg_read_binary_file|pg_ls_dir|lo_export|lo_import|"  # Postgres
+    r"openrowset|opendatasource|xp_cmdshell|"            # SQL Server
+    r"utl_file|dbms_)"                                   # Oracle (por si acaso)
+    r"\b"
     r"|\bxp_|\bsp_executesql",
     re.IGNORECASE,
 )
@@ -55,9 +68,20 @@ _PROHIBIDAS = re.compile(
 _COMENTARIO_BLOQUE = re.compile(r"/\*.*?\*/", re.DOTALL)
 _COMENTARIO_LINEA = re.compile(r"--[^\n]*")
 
+# Literal de texto SQL: comilla simple, con '' como comilla escapada adentro.
+# Se reemplaza por una cadena vacía ('') ANTES de buscar operaciones y ';':
+# así "SELECT ';' AS sep" o "SELECT 'algo into algo'" no disparan la alarma
+# (eran falsos positivos), y a la vez nada de lo que un atacante esconda
+# DENTRO de un string puede evadir la barrera — no lo mira.
+_LITERAL = re.compile(r"'(?:[^']|'')*'")
+
 
 def _sin_comentarios(sql):
     return _COMENTARIO_LINEA.sub(" ", _COMENTARIO_BLOQUE.sub(" ", sql))
+
+
+def _sin_literales(sql):
+    return _LITERAL.sub("''", sql)
 
 
 def asegurar_solo_lectura(sql):
@@ -75,19 +99,23 @@ def asegurar_solo_lectura(sql):
         raise SQLNoPermitido("La consulta está vacía.")
 
     limpio = _sin_comentarios(sql).strip()
+    # Sobre la versión sin literales se buscan ';' y operaciones: un ';' o un
+    # 'into' escondido dentro de un string de datos ni ayuda a un atacante ni
+    # debe frenar una consulta legítima que solo lo lleva como texto.
+    sin_lit = _sin_literales(limpio)
 
     # Un solo statement: un ";" con algo después es encadenamiento
     # ("SELECT 1; DROP TABLE x"). El ";" final suelto es inofensivo.
-    if ";" in limpio.rstrip().rstrip(";"):
+    if ";" in sin_lit.rstrip().rstrip(";"):
         raise SQLNoPermitido(
             "No se permite ejecutar varias sentencias en una sola consulta.")
 
-    if not re.match(r"^\s*(select|with)\b", limpio, re.IGNORECASE):
+    if not re.match(r"^\s*(select|with)\b", sin_lit, re.IGNORECASE):
         raise SQLNoPermitido(
             "MV SQL NLP es de solo lectura: la consulta debe empezar con "
             "SELECT o WITH.")
 
-    hallada = _PROHIBIDAS.search(limpio)
+    hallada = _PROHIBIDAS.search(sin_lit)
     if hallada:
         raise SQLNoPermitido(
             f"Operación no permitida: '{hallada.group(0).strip()}'. "

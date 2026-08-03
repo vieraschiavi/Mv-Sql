@@ -53,38 +53,59 @@ module.exports = async (req, res) => {
     // licencia): es estable y único aunque se re-emita el mismo token.
     const idLicencia = license.jti || token.slice(-24);
     const key = `mvsql:credits:${idLicencia}`;
-    const used = Number((await kv.get(key)) || 0);
-    const remaining = license.credits - used;
-    if (remaining <= 0) {
+    // incr atómico PRIMERO, y el retorno es el número de crédito de ESTE
+    // pedido. Antes se hacía get -> comparar -> incr: dos pedidos en paralelo
+    // cerca del límite leían el mismo `used` y los dos pasaban, sirviendo IA
+    // de más contra la billetera del dueño. Con el retorno de incr, cada
+    // pedido concurrente recibe un número distinto y solo uno puede ser el
+    // que cruza el tope.
+    const usado = await kv.incr(key);
+    if (usado > license.credits) {
+      // Se pasó del tope: se devuelve el crédito que este incr tomó de más
+      // (para que un burst rechazado no deje el contador inflado) y se corta.
+      await kv.decr(key);
       return res.status(402).json({
         error: "Sin créditos restantes. Comprá otro paquete en mvsqlnlp.com.",
       });
     }
-    // Se descuenta ANTES de llamar a la IA: si la llamada falla el cliente
-    // pierde un crédito, pero nunca se puede consumir de más lanzando
-    // pedidos en paralelo.
-    await kv.incr(key);
+    const remaining = license.credits - usado;
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: "Falta configurar ANTHROPIC_API_KEY en el servidor (Vercel)." });
 
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: max_tokens || 1500,
-        system: system || "",
-        messages: [{ role: "user", content: user }],
-      }),
-    });
-    const data = await r.json();
+    // Si la IA no responde, se devuelve el crédito: que Anthropic esté caído
+    // no es culpa del cliente y no debería costarle un crédito.
+    let r, data;
+    try {
+      r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: max_tokens || 1500,
+          system: system || "",
+          messages: [{ role: "user", content: user }],
+        }),
+      });
+      data = await r.json();
+    } catch {
+      await kv.decr(key);
+      return res.status(502).json({ error: "El proveedor de IA no está disponible ahora mismo. Probá de nuevo." });
+    }
     if (!r.ok) {
-      return res.status(r.status).json({ error: data?.error?.message || "Error del proveedor de IA." });
+      await kv.decr(key);
+      return res.status(r.status === 429 ? 429 : 502).json({
+        error: data?.error?.message || "Error del proveedor de IA." });
     }
     const text = (data.content || []).map((b) => b.text || "").join("");
-    res.status(200).json({ text, remaining: remaining - 1 });
+    res.status(200).json({ text, remaining });
   } catch (e) {
-    res.status(401).json({ error: e.message });
+    // 401 solo para la falla de verifyLicense (token inválido/vencido), que
+    // es la única que significa "tu licencia no sirve". Cualquier otra cosa
+    // acá es un error nuestro, no un problema de la licencia del cliente:
+    // devolverlo como 401 le decía "comprá de nuevo" por un bug del servidor.
+    const esLicencia = /jwt|token|licen|signature|expired|malformed/i.test(e.message || "");
+    res.status(esLicencia ? 401 : 500).json({
+      error: esLicencia ? "Licencia inválida o vencida." : "Error interno. Probá de nuevo en un momento." });
   }
 };

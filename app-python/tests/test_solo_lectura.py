@@ -146,6 +146,41 @@ def _():
     assert rechaza("ATTACH DATABASE '/tmp/otra.db' AS otra")
 
 
+@test("ESCRITURA AL FILESYSTEM: SELECT ... INTO OUTFILE / INTO DUMPFILE (MySQL)")
+def _():
+    # Empiezan con SELECT, son un solo statement, no llevaban ninguna palabra
+    # de la denylist vieja: escribian un archivo en el server con las
+    # credenciales del cliente (authorized_keys, webshell) -> RCE. Es la
+    # falla directa del argumento de venta "solo lectura".
+    assert rechaza(
+        "SELECT 'ssh-rsa AAAA' AS k FROM clientes LIMIT 1 "
+        "INTO OUTFILE '/root/.ssh/authorized_keys'")
+    assert rechaza(
+        "SELECT 0x3c3f706870 INTO DUMPFILE '/var/www/html/s.php' FROM clientes")
+
+
+@test("SELECT ... INTO tabla (SQL Server/Postgres crean una tabla)")
+def _():
+    assert rechaza("SELECT * INTO evil FROM clientes")
+
+
+@test("LECTURA DEL FILESYSTEM: load_file, pg_read_file, OPENROWSET")
+def _():
+    assert rechaza("SELECT load_file('/etc/passwd')")
+    assert rechaza("SELECT pg_read_file('/etc/passwd')")
+    assert rechaza("SELECT lo_export(16384, '/tmp/pwn')")
+    assert rechaza("SELECT * FROM OPENROWSET(BULK N'C:\\win.ini', SINGLE_CLOB) AS x")
+
+
+@test("un 'into' o un ';' DENTRO de un literal de texto no es un falso positivo")
+def _():
+    # El fix no puede romper consultas legitimas que solo llevan esas
+    # palabras como dato: se sacan los literales antes de buscar.
+    assert not rechaza("SELECT ';' AS separador")
+    assert not rechaza("SELECT nombre FROM clientes WHERE nombre = 'push into cart'")
+    assert not rechaza("SELECT 'outfile es una palabra' AS nota")
+
+
 @test("consulta vacía")
 def _():
     assert rechaza("") and rechaza("   ")

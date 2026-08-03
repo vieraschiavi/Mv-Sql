@@ -119,6 +119,25 @@ def _():
     assert set(visto["tablas"]) == {"clientes", "sueldos"}
 
 
+@test("una FK a una tabla prohibida no filtra su nombre a la IA")
+def _():
+    # La FK lleva el nombre de la tabla destino al system prompt (como
+    # "Relaciones"): recortar solo la tabla no alcanza si la relación
+    # sobrevive. Las dos puntas tienen que estar permitidas.
+    catalogo = {
+        "tablas": {"cuotas": {}, "gestiones": {}, "sueldos": {}},
+        "fks": [{"tabla_origen": "cuotas", "columna_origen": "emp_id",
+                 "tabla_destino": "sueldos", "columna_destino": "id"}],
+        "joins_inferidos": {"emp_id": ["cuotas", "sueldos"]},
+    }
+    u = equipo.autenticar("Lucia", "5678")   # ve solo cuotas y gestiones
+    visto = equipo.tablas_visibles(catalogo, equipo.permisos(u))
+    assert visto["fks"] == [], "la FK a 'sueldos' no debe sobrevivir"
+    assert visto["joins_inferidos"] == {}, "el join inferido a 'sueldos' tampoco"
+    # y el catálogo original queda intacto
+    assert len(catalogo["fks"]) == 1
+
+
 @test("bloquea el SQL que toca una tabla prohibida")
 def _():
     p = equipo.permisos(equipo.autenticar("Lucia", "5678"))
@@ -126,6 +145,34 @@ def _():
     assert ok and not prohibidas
     ok, prohibidas = equipo.puede_consultar_tablas(["cuotas", "sueldos"], p)
     assert not ok and prohibidas == ["sueldos"]
+
+
+@test("BYPASS DE ROL: SQL escrito a mano contra una tabla prohibida se frena")
+def _():
+    # El exploit real: un lector con permiso solo sobre 'cuotas' escribe
+    # 'SELECT * FROM sueldos' en una celda de cuaderno. puede_consultar_sql
+    # extrae la tabla del SQL crudo y la frena, sin depender de que la IA
+    # "conozca" o no la tabla.
+    p = equipo.permisos(equipo.autenticar("Lucia", "5678"))
+    ok, prohibidas = equipo.puede_consultar_sql("SELECT * FROM sueldos", p)
+    assert not ok and prohibidas == ["sueldos"], "el lector leyó una tabla prohibida"
+
+
+@test("tablas_en_sql: extrae FROM/JOIN reales y descarta los CTE")
+def _():
+    ts = equipo.tablas_en_sql(
+        "WITH t AS (SELECT * FROM sueldos) SELECT * FROM t JOIN cuotas ON 1=1")
+    # 'sueldos' y 'cuotas' son reales; 't' es un CTE, no cuenta.
+    assert "sueldos" in ts and "cuotas" in ts and "t" not in ts, ts
+    # esquema.tabla -> se queda con la tabla
+    assert equipo.tablas_en_sql("SELECT * FROM dbo.secretos") == ["secretos"]
+
+
+@test("un SELECT sin FROM (no toca tablas) lo deja pasar cualquier rol")
+def _():
+    p = equipo.permisos(equipo.autenticar("Lucia", "5678"))
+    ok, prohibidas = equipo.puede_consultar_sql("SELECT 1 AS uno", p)
+    assert ok and not prohibidas
 
 
 @test("no se puede eliminar al último administrador")

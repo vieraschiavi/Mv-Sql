@@ -20,6 +20,7 @@ hasheados con PBKDF2-SHA256 y sal por usuario — nunca en texto plano.
 import hashlib
 import json
 import os
+import re
 import secrets
 from datetime import datetime
 
@@ -161,6 +162,25 @@ def tablas_visibles(catalogo: dict, perm: dict) -> dict:
     filtrado = dict(catalogo)
     filtrado["tablas"] = {k: v for k, v in catalogo.get("tablas", {}).items()
                           if k.lower() in permitidas}
+    # Las FKs y los joins inferidos también se recortan: una FK a una tabla
+    # prohibida lleva su NOMBRE al system prompt (catalogo_a_fichas la escribe
+    # como "Relaciones"), así que la IA se enteraba de que 'nomina_sueldos'
+    # existe aunque la tabla no estuviera en el catálogo. Solo sobreviven las
+    # relaciones donde las dos puntas están permitidas.
+    def _ok(fk):
+        return (fk.get("tabla_origen", "").lower() in permitidas and
+                fk.get("tabla_destino", "").lower() in permitidas)
+    filtrado["fks"] = [fk for fk in catalogo.get("fks", []) if _ok(fk)]
+    # joins_inferidos es {columna: [tablas que la comparten]}: se recorta cada
+    # lista a tablas permitidas y se descarta la columna si quedan menos de 2
+    # (un join necesita dos puntas). Así no se filtra el nombre de una tabla
+    # prohibida por la puerta de atrás de una relación inferida.
+    ji_recortado = {}
+    for col, tablas in catalogo.get("joins_inferidos", {}).items():
+        visibles = [t for t in tablas if t.lower() in permitidas]
+        if len(visibles) > 1:
+            ji_recortado[col] = visibles
+    filtrado["joins_inferidos"] = ji_recortado
     return filtrado
 
 
@@ -171,3 +191,39 @@ def puede_consultar_tablas(tablas_usadas, perm: dict) -> tuple:
     permitidas = {t.lower() for t in perm.get("tablas", [])}
     prohibidas = [t for t in tablas_usadas if t.lower() not in permitidas]
     return (not prohibidas), prohibidas
+
+
+# CTEs definidos con WITH: son tablas "virtuales" de la propia consulta, no
+# tablas reales del esquema, así que no cuentan para el chequeo de permisos.
+_CTE = re.compile(r"(?:with|,)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+as\s*\(", re.IGNORECASE)
+_TABLA = re.compile(r"(?:from|join)\s+[\[`\"]?([a-zA-Z_][a-zA-Z0-9_.]*)", re.IGNORECASE)
+
+
+def tablas_en_sql(sql: str) -> list:
+    """Tablas que un SQL referencia de verdad (FROM/JOIN), sin los CTE.
+
+    Es lo que hay que chequear contra los permisos: no alcanza con mirar
+    qué tablas conoce la IA (eso solo limita lo que puede GENERAR), porque
+    una celda SQL de cuaderno la escribe el usuario a mano y puede nombrar
+    cualquier tabla. Se extrae acá, en el módulo de permisos, para que el
+    control sea el mismo venga el SQL de la IA o del teclado del usuario.
+    """
+    if not sql:
+        return []
+    ctes = {c.lower() for c in _CTE.findall(sql)}
+    vistas = []
+    for t in _TABLA.findall(sql):
+        simple = t.split(".")[-1]              # esquema.tabla -> tabla
+        if simple.lower() not in ctes and simple not in vistas:
+            vistas.append(simple)
+    return vistas
+
+
+def puede_consultar_sql(sql: str, perm: dict) -> tuple:
+    """(permitido, tablas_prohibidas) a partir del SQL crudo.
+
+    Combina la extracción de tablas reales con el chequeo de permisos: es
+    la barrera correcta para cualquier SQL que se vaya a ejecutar, sin
+    depender de que quien llama sepa qué tablas toca.
+    """
+    return puede_consultar_tablas(tablas_en_sql(sql), perm)
