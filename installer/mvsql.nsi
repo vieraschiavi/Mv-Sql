@@ -91,7 +91,16 @@ VIAddVersionKey "LegalCopyright" "(c) 2026 ${PRODUCT_PUBLISHER}"
 !define MUI_ICON "${APP_SRC}\mvsql.ico"
 !define MUI_UNICON "${APP_SRC}\mvsql.ico"
 !define MUI_ABORTWARNING
+; Panel lateral de marca en Bienvenida/Finalizar (el look de asistente
+; moderno de Windows). Sin esto MUI2 pone su imagen gris generica.
+; El BMP se genera con tools/generar_bmp_instalador.py y SE COMMITEA:
+; makensis corre en CI sin Python. Tiene que ser BMP de 24 bits y
+; 164x314 exactos — un PNG renombrado o un BMP de 32 bits se ve negro
+; o no carga, y falla en silencio.
+!define MUI_WELCOMEFINISHPAGE_BITMAP "lateral.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "lateral.bmp"
 !define MUI_WELCOMEFINISHPAGE_BITMAP_NOSTRETCH
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP_NOSTRETCH
 
 ; -- Paginas del instalador --
 ; MUI_PAGE_LICENSE solo referencia "$(LICENSE_TEXT)" por nombre aca: el
