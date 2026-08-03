@@ -204,7 +204,8 @@ def diagrama_dot(catalogo: dict, tablas=None, max_columnas=8) -> str:
 
     L = ['digraph esquema {',
          '  graph [rankdir=LR, bgcolor="transparent", pad=0.3, nodesep=0.5];',
-         '  node  [shape=plaintext, fontname="Helvetica", fontsize=10];',
+         '  node  [shape=plaintext, fontname="Helvetica", fontsize=10,'
+         ' fontcolor="#e2e8f0"];',
          '  edge  [color="#64748b", fontname="Helvetica", fontsize=8,'
          ' arrowhead=crow, arrowtail=none];']
 
