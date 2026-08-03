@@ -33,16 +33,22 @@ function rutaDelZip() {
 
 module.exports = async (req, res) => {
   if (!limitar(req, res, { max: 20, ventanaMs: 60_000, nombre: "download" })) return;
+
+  const { token } = req.query;
+  if (!token) return res.status(400).send("Falta el token de descarga. Comprá desde mvsqlnlp.com.");
+
+  // La licencia se valida aparte: es la ÚNICA falla que justifica un 401
+  // ("tu licencia no sirve"). Antes cualquier error posterior —zip faltante,
+  // fallo al generar— salía como 401 y le decía al que pagó que comprara de
+  // nuevo por un problema del servidor.
+  let license;
   try {
-    const { token } = req.query;
-    if (!token) return res.status(400).send("Falta el token de descarga. Comprá desde mvsqlnlp.com.");
+    license = verifyLicense(token);
+  } catch {
+    return res.status(401).send("Tu enlace de descarga no es válido o venció. Escribinos a vieraschiavi@gmail.com con tu comprobante.");
+  }
 
-    const license = verifyLicense(token);
-    const baseZip = fs.readFileSync(rutaDelZip());
-
-    res.setHeader("Content-Disposition", 'attachment; filename="MV-SQL-NLP.zip"');
-    res.setHeader("Content-Type", "application/zip");
-
+  try {
     const esCredits = license.mode === "credits";
     const licenciaJson = esCredits
       ? {
@@ -67,11 +73,24 @@ module.exports = async (req, res) => {
           nota: "No compartas este archivo: acredita tu licencia paga. Configurá tu propia API key en 'Proveedor de IA' — este archivo solo te exime del límite de la prueba gratuita.",
         };
 
+    // Todo el trabajo que puede fallar ocurre ANTES de tocar los headers:
+    // leer el zip base y generar el zip final. Antes se seteaba
+    // Content-Type: application/zip primero, así que si loadAsync/generateAsync
+    // fallaban, el cliente descargaba un "MV-SQL-NLP.zip" que en realidad era
+    // el texto del error — un archivo corrupto que no abre.
+    const baseZip = fs.readFileSync(rutaDelZip());
     const zip = await JSZip.loadAsync(baseZip);
     zip.file("nl2sql_rag/licencia_mvsql.json", JSON.stringify(licenciaJson, null, 2));
     const out = await zip.generateAsync({ type: "nodebuffer" });
+
+    // Recién acá, con el zip ya en mano, se declaran los headers de descarga.
+    res.setHeader("Content-Disposition", 'attachment; filename="MV-SQL-NLP.zip"');
+    res.setHeader("Content-Type", "application/zip");
     res.status(200).send(out);
   } catch (e) {
-    res.status(401).send(`No se pudo validar la descarga: ${e.message}`);
+    // Error del servidor, no de la licencia: 500 y en texto plano (los headers
+    // de zip todavía no se pusieron, así que esto no sale como archivo).
+    console.error("[download]", e.message);
+    res.status(500).send("No pudimos preparar tu descarga en este momento. Probá de nuevo en unos minutos o escribinos a vieraschiavi@gmail.com.");
   }
 };

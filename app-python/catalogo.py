@@ -163,24 +163,41 @@ def catalogo_a_fichas(catalogo):
     """
     Convierte el catalogo en una lista de fichas de texto.
     Cada ficha describe una tabla en lenguaje natural -> se embebe para el RAG.
+
+    Cada ficha trae DOS textos:
+      - "texto":     con valores de ejemplo de las columnas de texto. Ayuda a
+                     la IA a entender los dominios y a matchear mejor en el RAG.
+      - "texto_min": SIN esos valores. Es lo que viaja al proveedor de IA
+                     cuando el usuario activa el modo privacidad estricta, para
+                     que NINGUN dato real de la base salga ni siquiera al
+                     generar el SQL — solo nombres de tablas y columnas.
+
+    Los "valores de ejemplo" son datos reales del cliente (hasta 8 valores
+    distintos por columna de texto). Que existan las dos versiones es lo que
+    hace honesta la promesa de la landing: en modo normal viajan para dar
+    mejor calidad; en modo privacidad estricta, no viaja ninguno.
     """
     fichas = []
     for tabla, info in catalogo["tablas"].items():
-        lineas = [f"TABLA: {tabla}"]
+        cabecera = [f"TABLA: {tabla}"]
         if info.get("n_filas") is not None:
-            lineas.append(f"Cantidad de filas: {info['n_filas']:,}")
+            cabecera.append(f"Cantidad de filas: {info['n_filas']:,}")
+        cabecera.append("Columnas:")
 
-        lineas.append("Columnas:")
+        cols_con, cols_sin = [], []
         for c in info["columnas"]:
             marca = " [PK]" if c["pk"] else ""
             null = "" if c["nullable"] else " NOT NULL"
-            extra = ""
+            base = f"  - {c['columna']} ({c['tipo']}){null}{marca}"
+            cols_sin.append(base)
             if c["columna"] in info.get("muestras", {}):
                 vals = ", ".join(str(v) for v in info["muestras"][c["columna"]])
-                extra = f"  (valores ejemplo: {vals})"
-            lineas.append(f"  - {c['columna']} ({c['tipo']}){null}{marca}{extra}")
+                cols_con.append(base + f"  (valores ejemplo: {vals})")
+            else:
+                cols_con.append(base)
 
-        # relaciones de esta tabla
+        # relaciones de esta tabla (nombres de tablas/columnas, no datos:
+        # van en las dos versiones)
         rels = []
         for fk in catalogo["fks"]:
             if fk["tabla_origen"] == tabla:
@@ -189,11 +206,13 @@ def catalogo_a_fichas(catalogo):
             if fk["tabla_destino"] == tabla:
                 rels.append(f"  {fk['tabla_origen']}.{fk['columna_origen']} -> "
                             f"{tabla}.{fk['columna_destino']}")
-        if rels:
-            lineas.append("Relaciones (JOINs):")
-            lineas.extend(rels)
+        cola = (["Relaciones (JOINs):"] + rels) if rels else []
 
-        fichas.append({"tabla": tabla, "texto": "\n".join(lineas)})
+        fichas.append({
+            "tabla": tabla,
+            "texto": "\n".join(cabecera + cols_con + cola),
+            "texto_min": "\n".join(cabecera + cols_sin + cola),
+        })
 
     return fichas
 

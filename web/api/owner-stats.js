@@ -38,17 +38,31 @@ module.exports = async (req, res) => {
   try {
     const desde = new Date();
     desde.setMonth(desde.getMonth() - 12);
+    const rango = `&begin_date=${desde.toISOString()}&end_date=NOW`;
 
-    const r = await fetch(
-      "https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&limit=200" +
-      `&begin_date=${desde.toISOString()}&end_date=NOW`,
-      { headers: { Authorization: `Bearer ${mpToken}` } }
-    );
-    if (!r.ok) {
-      return res.status(r.status).json({ error: `MercadoPago respondió ${r.status}.` });
+    // Paginado real: la búsqueda de MercadoPago devuelve como máximo 200 por
+    // página. Sin recorrer las páginas, a partir del pago 201 los totales, el
+    // conteo de clientes y la serie mensual dejaban de crecer EN SILENCIO — y
+    // es el tablero con el que se decide el negocio. Se recorre con offset
+    // hasta agotar, con un tope de seguridad para no hacer un loop infinito.
+    const pagos = [];
+    const PAGINA = 200;
+    const TOPE = 10000;   // 50 páginas: mucho más que cualquier volumen real de arranque
+    for (let offset = 0; offset < TOPE; offset += PAGINA) {
+      const r = await fetch(
+        "https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc" +
+        `&limit=${PAGINA}&offset=${offset}${rango}`,
+        { headers: { Authorization: `Bearer ${mpToken}` } }
+      );
+      if (!r.ok) {
+        return res.status(r.status).json({ error: `MercadoPago respondió ${r.status}.` });
+      }
+      const data = await r.json();
+      const lote = data.results || [];
+      pagos.push(...lote);
+      const total = data.paging?.total ?? pagos.length;
+      if (lote.length < PAGINA || pagos.length >= total) break;
     }
-    const data = await r.json();
-    const pagos = data.results || [];
 
     const aprobados = pagos.filter((p) => p.status === "approved");
     const ahora = new Date();

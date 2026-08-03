@@ -105,9 +105,13 @@ def tablas_sin_relacion(catalogo: dict) -> list:
 # ──────────────────────────────────────────────────────────────
 # 2. Plan de ejecución, interpretado
 # ──────────────────────────────────────────────────────────────
+# Claves = nombre de motor (conexion.motor), NO el dialecto: antes se buscaba
+# por dialecto.lower() ("postgresql", "sql server (t-sql)") contra claves que
+# decían "postgres"/"mssql", así que el plan de ejecución de PostgreSQL nunca
+# se encontraba y el cliente veía siempre "no disponible" sin explicación.
 SQL_EXPLAIN = {
     "sqlite": "EXPLAIN QUERY PLAN {sql}",
-    "mssql": None,          # requiere SET SHOWPLAN_ALL, sesión aparte
+    "sqlserver": None,      # requiere SET SHOWPLAN_ALL, sesión aparte
     "mysql": "EXPLAIN FORMAT=TRADITIONAL {sql}",
     "postgres": "EXPLAIN (ANALYZE false, VERBOSE false) {sql}",
 }
@@ -141,8 +145,14 @@ def plan_de_ejecucion(conexion, sql: str):
     Nunca ejecuta la consulta real: solo pide el plan. Si el motor no lo
     soporta desde acá, devuelve ([], []) sin romper nada.
     """
-    dialecto = getattr(conexion, "dialecto", "").lower()
-    plantilla = SQL_EXPLAIN.get(dialecto)
+    # Por motor (identificador canónico), con caída a inferirlo del dialecto
+    # por si algún llamador pasa una conexión sin .motor.
+    motor = getattr(conexion, "motor", "") or ""
+    if not motor:
+        d = getattr(conexion, "dialecto", "").lower()
+        motor = ("sqlserver" if "server" in d else "postgres" if "postgre" in d
+                 else "mysql" if "mysql" in d else "sqlite" if "sqlite" in d else "")
+    plantilla = SQL_EXPLAIN.get(motor)
     if not plantilla:
         return [], []
 

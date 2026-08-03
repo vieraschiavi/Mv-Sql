@@ -1076,6 +1076,15 @@ with st.sidebar:
                     cx = ConexionBD("sqlite", ruta=ruta_db).conectar()
                 else:
                     cx = ConexionBD(motor_bd, **params).conectar()
+                # Cerrar la conexión anterior antes de reemplazarla: sin esto,
+                # cada clic en "Conectar" dejaba una sesión ODBC/SSH abierta
+                # contra la base del cliente (cerrar() no lo llamaba nadie), y
+                # el túnel SSH deja un puerto escuchando en la máquina.
+                if ss.motor is not None and hasattr(ss.motor.cx, "cerrar"):
+                    try:
+                        ss.motor.cx.cerrar()
+                    except Exception:
+                        pass
                 ss.motor = MotorMVSQL(cx, ia_cfg)
                 # El usuario solo ve —y la IA solo conoce— las tablas de su rol.
                 if PERM.get("tablas") != "*":
@@ -1288,6 +1297,20 @@ if ss.cuaderno_activo:
             if not ss.motor:
                 st.caption(t["falta_bd"])
                 continue
+            # Control de rol sobre el SQL que el usuario escribió a mano: sin
+            # esto, un 'lector' con permiso solo sobre 'clientes' podía leer
+            # cualquier tabla escribiendo 'SELECT * FROM salarios' en una
+            # celda. El recorte de catálogo solo limita lo que la IA GENERA,
+            # no lo que se tipea en un cuaderno.
+            _ok_c, _prohib_c = equipo.puede_consultar_sql(_cont, PERM)
+            if not _ok_c:
+                st.error(t["sin_permiso"].format(tablas=", ".join(_prohib_c)))
+                auditoria.registrar(
+                    usuario=PERM["nombre_usuario"] or "(sin usuario)", rol=PERM["rol"],
+                    pregunta=f"[cuaderno] {_cua['nombre']}", sql=_sqlp,
+                    tablas=_prohib_c, resultado="rechazado",
+                    detalle="sin permiso sobre: " + ", ".join(_prohib_c))
+                continue
             try:
                 _cols_c, _filas_c, _ = ss.motor.cx.ejecutar(
                     _sqlp, limite=PERM.get("limite_filas", 5000), params=_params)
@@ -1332,12 +1355,15 @@ if ejecutar and pregunta:
             ss.resultado = ss.motor.responder(
                 pregunta, contexto=contexto_formato(),
                 limite=PERM.get("limite_filas", 5000),
-                explicar=not ss.get("modo_privado", False))
+                privado=ss.get("modo_privado", False))
             r_ = ss.resultado
-            # Segunda barrera: aunque la IA solo conozca las tablas permitidas,
-            # se vuelve a chequear el SQL que realmente se generó.
-            ok_perm, prohibidas = equipo.puede_consultar_tablas(
-                r_.get("tablas_recuperadas", []), PERM)
+            # Segunda barrera: se chequea el SQL que REALMENTE se generó, no
+            # las tablas que el RAG le mostró a la IA. Antes esto miraba
+            # tablas_recuperadas — la salida del RAG, que por construcción ya
+            # solo trae tablas permitidas: la comprobación era una tautología
+            # que siempre daba OK. Ahora se extraen las tablas del SQL emitido.
+            ok_perm, prohibidas = equipo.puede_consultar_sql(
+                r_.get("sql_ejecutado") or r_.get("sql", ""), PERM)
             if not ok_perm:
                 auditoria.registrar(
                     usuario=PERM["nombre_usuario"] or "(sin usuario)", rol=PERM["rol"],

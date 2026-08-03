@@ -1,7 +1,11 @@
 // MV SQL NLP — conector universal de bases (proceso principal)
 // Motores: sqlite (better-sqlite3), sqlserver (mssql), mysql (mysql2), postgres (pg)
 // Toda conexión es de solo lectura a nivel de uso: run() solo acepta SELECT/WITH
-// (la validación fuerte está en engine.assertReadOnly).
+// (la validación fuerte está en engine.assertReadOnly, que run() aplica en el
+// PUNTO DE EJECUCIÓN — no solo en el pipeline NL, para que ningún camino,
+// tampoco una consulta guardada, llegue al driver sin pasar por la barrera).
+
+const { assertReadOnly } = require("./engine.cjs");
 
 let current = null; // { motor, exec(sql), close(), dialect }
 
@@ -74,7 +78,13 @@ async function connect(cfg) {
     const conn = await mysql.createConnection({
       host: cfg.servidor, port: cfg.puerto ? Number(cfg.puerto) : 3306,
       database: cfg.base, user: cfg.usuario, password: cfg.password,
+      // multipleStatements queda en false (default): defensa en profundidad
+      // contra el encadenamiento con ';' además de la barrera de engine.
+      multipleStatements: false,
     });
+    // Sesión de solo lectura, best-effort (misma idea que conectores.py). Si
+    // el server no lo soporta, la barrera de engine sigue siendo la defensa.
+    try { await conn.query("SET SESSION TRANSACTION READ ONLY"); } catch { /* best-effort */ }
     current = {
       motor,
       exec: async (sql) => {
@@ -121,10 +131,21 @@ async function close() {
 
 async function run(sql, limit = 5000) {
   if (!current) throw new Error("No hay base de datos conectada.");
+  // Barrera en el punto de ejecución: tira si el SQL no es una lectura pura.
+  // Antes solo el pipeline NL validaba; una consulta guardada con
+  // "SELECT 1; DELETE\nFROM t" llegaba acá sin control y en SQL Server (que
+  // acepta batches, sin readonly de sesión) borraba la tabla del cliente.
+  assertReadOnly(sql);
   sql = applyLimit(sql, current.motor, limit);
   const t0 = Date.now();
   const { columns, rows } = await current.exec(sql);
-  return { columns, rows, sql, ms: Date.now() - t0 };
+  // Red de seguridad en el cliente: applyLimit no puede inyectar TOP en una
+  // consulta que empieza con WITH (SQL Server), y el system prompt justamente
+  // pide CTEs — así que una consulta con CTE volvía sin tope y podía traer
+  // millones de filas a memoria del proceso. El corte acá evita que el render
+  // reviente aunque la BD haya devuelto de más.
+  const capped = rows.length > limit ? rows.slice(0, limit) : rows;
+  return { columns, rows: capped, sql, ms: Date.now() - t0 };
 }
 
 function applyLimit(sql, motor, limit) {

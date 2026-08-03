@@ -30,9 +30,13 @@ def a_excel(df, titulo="Consulta MV SQL NLP", sql=""):
             c = ws.cell(row=2, column=col_idx)
             c.font = Font(bold=True, color="FFFFFF")
             c.fill = header_fill
-        # ancho de columnas
+        # ancho de columnas. El max() incluye el largo del encabezado como
+        # semilla: sin eso, con un DataFrame de 0 filas el generador queda
+        # vacío y `max()` sin argumentos tira TypeError — cualquier consulta
+        # válida que devuelva 0 filas ("ventas de un mes futuro") tumbaba la
+        # exportación entera con un traceback.
         for i, col in enumerate(df.columns, start=1):
-            ancho = max(len(str(col)), *(len(str(v)) for v in df[col].head(200))) + 2
+            ancho = max([len(str(col))] + [len(str(v)) for v in df[col].head(200)]) + 2
             ws.column_dimensions[ws.cell(row=2, column=i).column_letter].width = min(40, ancho)
         if len(df):
             ws.auto_filter.ref = f"A2:{ws.cell(row=2, column=len(df.columns)).column_letter}{len(df) + 2}"
