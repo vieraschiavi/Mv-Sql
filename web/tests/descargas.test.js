@@ -32,15 +32,30 @@ const RAIZ = path.join(__dirname, "..", "..");
 const LANDING = fs.readFileSync(path.join(RAIZ, "web", "index.html"), "utf-8");
 const WORKFLOW = fs.readFileSync(
   path.join(RAIZ, ".github", "workflows", "build-desktop.yml"), "utf-8");
+const EBUILDER = fs.readFileSync(
+  path.join(RAIZ, "desktop", "electron-builder.yml"), "utf-8");
 
 // Lo que la landing le pide al Release.
 const ENLAZADOS = [...new Set(
   [...LANDING.matchAll(/releases\/latest\/download\/([^"'\s]+)/g)].map((m) => m[1]))];
 
-// Lo que el workflow sube de verdad (gh release upload <tag> <ruta>).
-const SUBIDOS = [...new Set(
-  [...WORKFLOW.matchAll(/gh release upload[^\n]*?([\w.-]+\.(?:exe|zip))/g)]
-    .map((m) => m[1]))];
+// El Release recibe assets por DOS vías, no una:
+//   a) los 'gh release upload <tag> <ruta>' explícitos del workflow (el
+//      producto Python: zip autoinstalable + instalador .exe NSIS).
+//   b) electron-builder con --publish=always sube el instalador de la app
+//      Electron con el nombre que fija su artifactName en electron-builder.yml.
+// Mirar solo (a) daba un falso 404 para el .exe nativo, que sí termina en el
+// Release aunque ningún 'gh release upload' lo nombre.
+const SUBIDOS_GH = [...WORKFLOW.matchAll(/gh release upload[^\n]*?([\w.-]+\.(?:exe|zip))/g)]
+  .map((m) => m[1]);
+const SUBIDOS_EBUILDER = [...EBUILDER.matchAll(/artifactName:\s*["']([^"']+)["']/g)]
+  .map((m) => m[1])
+  // Los nombres con ${version} no se pueden enlazar de forma estable desde la
+  // web (cambian en cada release); electron-builder los sube igual, pero la
+  // landing nunca los referencia, así que no aportan a este chequeo.
+  .filter((n) => !n.includes("${version}"))
+  .map((n) => n.replace("${ext}", "exe"));
+const SUBIDOS = [...new Set([...SUBIDOS_GH, ...SUBIDOS_EBUILDER])];
 
 (async () => {
   console.log("\n== Botones de descarga vs assets del Release ==");
