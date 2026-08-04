@@ -27,7 +27,7 @@ assets del Release de GitHub.
 
 ```bash
 npm install
-npm run dist         # → release/MV-SQL-NLP-Setup-1.0.0.exe (instalador NSIS)
+npm run dist         # → release/MV-SQL-NLP-App-Setup.exe (instalador NSIS)
 npm run dist:portable  # → .exe portable, sin instalación
 ```
 

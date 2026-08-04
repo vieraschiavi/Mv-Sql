@@ -45,7 +45,12 @@ nsis:
   installerLanguages: [es_ES, en_US, pt_BR]
   license: build/LICENSE.txt
   runAfterFinish: true
-  artifactName: "MV-SQL-NLP-Setup-${version}.${ext}"
+  # Nombre ESTABLE (sin la versión): la web enlaza directo a este archivo
+  # con releases/latest/download/<nombre>, sin mandar al usuario a la página
+  # de Releases. Distinto de "MV-SQL-NLP-Setup.exe" (el instalador del
+  # producto Python/Streamlit): los dos conviven en el mismo Release y no
+  # se pisan. Distinto también del portable, que sí lleva versión.
+  artifactName: "MV-SQL-NLP-App-Setup.${ext}"
 
 portable:
   artifactName: "MV-SQL-NLP-Portable-${version}.${ext}"
