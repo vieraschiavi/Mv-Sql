@@ -128,6 +128,22 @@ const SUBIDOS = [...new Set([...SUBIDOS_GH, ...SUBIDOS_EBUILDER])];
       "la landing pública sirve la versión sin restricciones del dueño");
   });
 
+  await test("el .exe del dueño NO se sube al Release (el repo es público)", () => {
+    // La build del propietario lleva licencia embebida hasta 2099 y exenta
+    // del trial. Un Release de un repo público lo deja a un clic de
+    // cualquiera: sería regalar el producto pago, sin vencimiento.
+    // Mientras electron-builder dejaba los Releases en borrador esto era
+    // privado de hecho; releaseType: release lo volvió público sin tocar
+    // el 'gh release upload'. Va como artefacto de Actions, que sí exige
+    // acceso al repo.
+    const subeOwner = [...WORKFLOW.matchAll(/gh release upload[^\n]*/g)]
+      .map((m) => m[0])
+      .filter((l) => /OWNER/i.test(l));
+    assert.deepStrictEqual(subeOwner, [],
+      "build-desktop.yml sube la versión sin trial a un Release público: " +
+      subeOwner.join(" | "));
+  });
+
   await test("el .exe del dueño NO se ofrece en la web pública", () => {
     // La build OWNER no tiene límite de prueba: se distribuye solo como asset
     // de GitHub para uso propio, nunca desde la landing.

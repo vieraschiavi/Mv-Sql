@@ -116,9 +116,9 @@ jobs:
         # idéntico a este runner, antes de que rompiera en un release real.
         run: makensis "-DVERSION=${{ steps.version.outputs.version }}" installer/mvsql.nsi
       - name: Compilar instalador Windows (NSIS) — versión del propietario, sin límite de prueba
-        # Para uso personal del dueño del producto: no se ofrece en la web
-        # pública (mvsqlnlp.com), solo queda como asset de este Release en
-        # GitHub. Ver installer/mvsql.nsi, bloque "!ifdef PROPIETARIO".
+        # Para uso personal del dueño del producto. Ver installer/mvsql.nsi,
+        # bloque "!ifdef PROPIETARIO": lleva embebida una licencia con
+        # "vence":"2099-12-31" y exenta del trial de 7 días.
         run: makensis "-DVERSION=${{ steps.version.outputs.version }}" -DPROPIETARIO=1 installer/mvsql.nsi
       - name: Subir zip autoinstalable (.bat) al Release
         run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/mvsql-nlp-app.zip --clobber
@@ -128,7 +128,22 @@ jobs:
         run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/MV-SQL-NLP-Setup.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Subir instalador del propietario (.exe, sin trial) al Release
-        run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/MV-SQL-NLP-Setup-OWNER.exe --clobber
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Guardar el instalador del propietario como artefacto privado
+        # NO va al Release. Este repo es público, y desde que
+        # electron-builder publica con releaseType: release los Releases
+        # dejaron de ser borradores: subir acá el .exe sin trial lo dejaba
+        # a un clic de cualquiera, con licencia embebida hasta 2099. O sea
+        # que el producto pago quedaba disponible gratis y sin vencimiento.
+        #
+        # Cuando el asset se agregó, los Releases SÍ eran borradores y solo
+        # los veía quien tiene acceso al repo; el cambio a releaseType
+        # arregló las descargas y de paso rompió ese supuesto, sin tocar
+        # esta línea. Como artefacto de Actions vuelve a requerir acceso al
+        # repositorio para bajarlo, que es lo que se quería desde el
+        # principio.
+        uses: actions/upload-artifact@v4
+        with:
+          name: mvsql-setup-owner
+          path: web/downloads/MV-SQL-NLP-Setup-OWNER.exe
+          retention-days: 90
+          if-no-files-found: error
