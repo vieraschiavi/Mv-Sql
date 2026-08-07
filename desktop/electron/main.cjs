@@ -1,13 +1,119 @@
 // MV SQL NLP — proceso principal de Electron
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
 const db = require("./services/db.cjs");
 const engine = require("./services/engine.cjs");
 const store = require("./services/store.cjs");
+const licencia = require("./services/licencia.cjs");
 
 let win;
+
+// ── Puerta de acceso ───────────────────────────────────────────
+// Los textos van acá y no en src/i18n.js porque el diálogo se muestra
+// ANTES de que exista ventana: no hay React todavía para traducirlo.
+const T = {
+  es: {
+    titulo: "Se terminó la prueba",
+    cuerpo: "Los 7 días de prueba de MV SQL NLP terminaron.",
+    detalle: "Comprá tu licencia en mvsqlnlp.com y, cuando la recibas por email, " +
+      "elegí \"Ya tengo una licencia\" para activarla.",
+    comprar: "Comprar licencia",
+    tengo: "Ya tengo una licencia",
+    salir: "Salir",
+    elegir: "Elegir el archivo de licencia",
+    malaTitulo: "Esa licencia no sirve",
+    malaFormato: "El archivo no es una licencia válida de MV SQL NLP.",
+    malaVencida: "Esa licencia está vencida.",
+  },
+  en: {
+    titulo: "Your trial has ended",
+    cuerpo: "The 7-day MV SQL NLP trial has ended.",
+    detalle: "Buy your licence at mvsqlnlp.com and, once it arrives by email, " +
+      "choose \"I already have a licence\" to activate it.",
+    comprar: "Buy a licence",
+    tengo: "I already have a licence",
+    salir: "Quit",
+    elegir: "Choose the licence file",
+    malaTitulo: "That licence doesn't work",
+    malaFormato: "The file is not a valid MV SQL NLP licence.",
+    malaVencida: "That licence has expired.",
+  },
+  pt: {
+    titulo: "Seu teste terminou",
+    cuerpo: "Os 7 dias de teste do MV SQL NLP terminaram.",
+    detalle: "Compre sua licença em mvsqlnlp.com e, quando ela chegar por email, " +
+      "escolha \"Já tenho uma licença\" para ativá-la.",
+    comprar: "Comprar licença",
+    tengo: "Já tenho uma licença",
+    salir: "Sair",
+    elegir: "Escolher o arquivo de licença",
+    malaTitulo: "Essa licença não serve",
+    malaFormato: "O arquivo não é uma licença válida do MV SQL NLP.",
+    malaVencida: "Essa licença está vencida.",
+  },
+};
+
+function textos() {
+  const guardado = store.get("lang");
+  return T[guardado] || T.es;
+}
+
+/**
+ * Corre antes de abrir la ventana. Devuelve false si hay que cerrar.
+ *
+ * Es un diálogo nativo y no una pantalla de React a propósito: si el
+ * acceso se chequeara adentro de la ventana, la app ya estaría cargada
+ * y bastaría con no pedirle nada al backend para seguir usándola.
+ */
+async function puertaDeAcceso() {
+  let estado = licencia.verificarAcceso();
+  while (!estado.permitido) {
+    const t = textos();
+    const r = await dialog.showMessageBox({
+      type: "warning",
+      title: "MV SQL NLP",
+      message: t.cuerpo,
+      detail: t.detalle,
+      buttons: [t.comprar, t.tengo, t.salir],
+      defaultId: 0,
+      cancelId: 2,
+    });
+
+    if (r.response === 2) return false;
+
+    if (r.response === 0) {
+      await shell.openExternal("https://mvsqlnlp.com/#precios");
+      // No se corta: al volver de comprar, el usuario sigue con el
+      // diálogo abierto para activar la licencia que le llegó.
+      continue;
+    }
+
+    const elegido = await dialog.showOpenDialog({
+      title: t.elegir,
+      filters: [{ name: "Licencia MV SQL NLP", extensions: ["json"] }],
+      properties: ["openFile"],
+    });
+    if (elegido.canceled) continue;
+
+    let res;
+    try {
+      res = licencia.instalarLicencia(fs.readFileSync(elegido.filePaths[0], "utf8"));
+    } catch {
+      res = { ok: false, motivo: "formato" };
+    }
+    if (!res.ok) {
+      await dialog.showMessageBox({
+        type: "error",
+        title: t.malaTitulo,
+        message: res.motivo === "vencida" ? t.malaVencida : t.malaFormato,
+      });
+    }
+    estado = licencia.verificarAcceso();
+  }
+  return true;
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -32,9 +138,16 @@ function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(async () => {
+  if (await puertaDeAcceso()) createWindow();
+  else app.quit();
+});
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });
 app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+
+// La UI lo usa para el aviso de "te quedan N días" y para el botón de
+// comprar. No vuelve a chequear nada: la puerta ya se cruzó arriba.
+ipcMain.handle("licencia:estado", () => licencia.verificarAcceso());
 
 // ── IPC: base de datos ─────────────────────────────────────────
 ipcMain.handle("db:connect", async (_e, cfg) => {

@@ -20,8 +20,30 @@ function dialect() {
   return current ? DIALECTS[current.motor] : "SQLite";
 }
 
+// Campos sin los que el driver no puede ni intentar conectar. Se validan
+// ANTES de llamarlo porque los errores que tira cuando le falta algo
+// describen su estado interno, no lo que el usuario tiene que hacer: con
+// la ruta vacía, better-sqlite3 entiende que se le pide una base
+// temporal en memoria y contesta "In-memory/temporary databases cannot be
+// readonly", que no le dice a nadie que lo que falta es elegir el .db.
+const REQUERIDOS = {
+  sqlite: [["ruta", "Elegí el archivo .db antes de conectar."]],
+  sqlserver: [["servidor", "Falta el servidor."], ["base", "Falta el nombre de la base."]],
+  mysql: [["servidor", "Falta el servidor."], ["base", "Falta el nombre de la base."]],
+  postgres: [["servidor", "Falta el servidor."], ["base", "Falta el nombre de la base."]],
+};
+
+function validar(cfg) {
+  const pedidos = REQUERIDOS[cfg.motor];
+  if (!pedidos) throw new Error(`Motor desconocido: ${cfg.motor}`);
+  for (const [campo, mensaje] of pedidos) {
+    if (!String(cfg[campo] ?? "").trim()) throw new Error(mensaje);
+  }
+}
+
 async function connect(cfg) {
   await close();
+  validar(cfg);
   const { motor } = cfg;
 
   if (motor === "sqlite") {

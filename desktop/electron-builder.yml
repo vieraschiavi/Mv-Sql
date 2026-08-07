@@ -22,6 +22,21 @@ files:
 asarUnpack:
   - "**/node_modules/better-sqlite3/**"
 
+# La licencia del propietario, cuando existe, viaja como recurso de solo
+# lectura al lado del asar — ahí la busca services/licencia.cjs. El
+# archivo NO está en el repo (está en .gitignore) y lo escribe el
+# workflow solo para la build owner, así que en la build de clientes el
+# glob no matchea nada y el instalador sale sin licencia adentro.
+# Esa es toda la diferencia entre las dos builds.
+#
+# Va en la raíz de desktop/ y no en build/ por cómo copia electron-builder:
+# un patrón suelto conserva la ruta relativa, así que "build/licencia..."
+# terminaría en resources/build/licencia_owner.json y licencia.cjs lo
+# busca en resources/licencia_owner.json. Desde la raíz, la ruta relativa
+# es el nombre solo y cae donde tiene que caer.
+extraResources:
+  - "licencia_owner.json"
+
 win:
   target:
     - target: nsis

@@ -90,10 +90,37 @@ jobs:
       - name: Compilar frontend (Vite)
         run: npm run build
 
-      - name: Generar instalador Windows (NSIS + portable + zip)
+      # ORDEN CRITICO: esta build va PRIMERA, cuando licencia_owner.json
+      # todavia no existe. El extraResources de electron-builder.yml es un
+      # glob que no matchea nada, y el instalador sale sin licencia
+      # adentro — o sea, con trial de 7 dias, que es lo que tiene que
+      # tener el cliente. Si se generara la licencia antes de este paso,
+      # el instalador PUBLICO saldria con acceso hasta 2099.
+      - name: Generar instalador Windows para clientes (NSIS + portable + zip)
         run: npx electron-builder --win nsis portable zip --x64 --publish=always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generar la licencia del propietario
+        # Recien ahora, con la build de clientes ya publicada.
+        run: |
+          '{"producto":"MV SQL NLP","plan":"propietario","emitida":"2026-01-01T00:00:00+00:00","vence":"2099-12-31T00:00:00+00:00","nota":"Version del propietario: sin limite de prueba."}' | Set-Content -Encoding utf8 licencia_owner.json
+
+      - name: Generar instalador del propietario (Electron, sin trial)
+        # --publish=never: este .exe NO va al Release. El repo es publico y
+        # abre sin pedir nada, asi que publicarlo seria regalar el producto
+        # — el mismo error que ya se corrigio con el .exe del producto
+        # Python. Sale como artefacto, que exige acceso al repositorio.
+        run: npx electron-builder --win nsis --x64 -c.nsis.artifactName=MV-SQL-NLP-App-Setup-OWNER.exe --publish=never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mvsql-app-owner
+          # Relativo a la raiz del workspace: upload-artifact no hereda el
+          # working-directory del job.
+          path: desktop/release/MV-SQL-NLP-App-Setup-OWNER.exe
+          retention-days: 90
+          if-no-files-found: error
 
   build-cython-windows:
     needs: decidir

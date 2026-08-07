@@ -11,4 +11,7 @@ contextBridge.exposeInMainWorld("mvsql", {
   storeGet: (key) => ipcRenderer.invoke("store:get", key),
   storeSet: (key, value) => ipcRenderer.invoke("store:set", { key, value }),
   saveFile: (payload) => ipcRenderer.invoke("file:save", payload),
+  // Solo para mostrar "te quedan N días": la puerta de acceso ya se
+  // resolvió en el proceso principal antes de que existiera esta ventana.
+  licenciaEstado: () => ipcRenderer.invoke("licencia:estado"),
 });
