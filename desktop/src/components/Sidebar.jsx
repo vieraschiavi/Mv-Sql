@@ -6,6 +6,7 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
                                   catalog, saved, onRunSaved, onDeleteSaved }) {
   const [motor, setMotor] = useState("sqlite");
   const [ruta, setRuta] = useState("");
+  const [archivos, setArchivos] = useState([]);
   const [srv, setSrv] = useState({ servidor: "", puerto: "", base: "", usuario: "", password: "" });
   const [testMsg, setTestMsg] = useState(null);
   const [connMsg, setConnMsg] = useState(null);
@@ -22,7 +23,9 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
     setBusy(true);
     setConnMsg(null);
     try {
-      const cfg = motor === "sqlite" ? { motor, ruta } : { motor, ...srv };
+      const cfg = motor === "archivos" ? { motor, archivos }
+                : motor === "sqlite" ? { motor, ruta }
+                : { motor, ...srv };
       const r = await onConnect(cfg);
       setConnMsg({ ok: true, message: `✓ ${r.tables} ${t.connected}` });
     } catch (e) {
@@ -86,7 +89,30 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
         <select value={motor} onChange={(e) => setMotor(e.target.value)}>
           {Object.entries(ENGINES).map(([k, n]) => <option key={k} value={k}>{n}</option>)}
         </select>
-        {motor === "sqlite" ? (
+        {motor === "archivos" ? (
+          <>
+            <label>{t.files}</label>
+            <button className="ghost small" onClick={async () => {
+              const p = await window.mvsql.pickArchivos();
+              if (p) setArchivos(p);
+            }}>{t.pick_files}</button>
+            <div style={{ fontSize: ".75rem", color: "var(--muted)", marginTop: ".4rem" }}>
+              {archivos.length ? t.files_n(archivos.length) : t.files_none}
+            </div>
+            {archivos.length > 0 && (
+              <div className="schema-tables" style={{ marginTop: ".35rem" }}>
+                {archivos.map((a) => (
+                  <div key={a} style={{ fontSize: ".72rem" }} title={a}>
+                    {a.split(/[\\/]/).pop()}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ fontSize: ".72rem", color: "var(--muted)", marginTop: ".4rem" }}>
+              {t.files_hint}
+            </div>
+          </>
+        ) : motor === "sqlite" ? (
           <>
             <label>{t.file}</label>
             <div className="btn-row" style={{ marginTop: 0 }}>

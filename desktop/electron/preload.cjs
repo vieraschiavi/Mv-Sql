@@ -3,6 +3,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("mvsql", {
   connect: (cfg) => ipcRenderer.invoke("db:connect", cfg),
   pickSqlite: () => ipcRenderer.invoke("db:pick-sqlite"),
+  pickArchivos: () => ipcRenderer.invoke("db:pick-archivos"),
   ask: (payload) => ipcRenderer.invoke("query:ask", payload),
   runSql: (sql) => ipcRenderer.invoke("query:run-sql", { sql }),
   storedProcedure: (payload) => ipcRenderer.invoke("query:stored-procedure", payload),

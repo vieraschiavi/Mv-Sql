@@ -156,6 +156,20 @@ ipcMain.handle("db:connect", async (_e, cfg) => {
   return { tables: Object.keys(catalog.tablas).length, catalog };
 });
 
+ipcMain.handle("db:pick-archivos", async () => {
+  const r = await dialog.showOpenDialog(win, {
+    title: "Elegir archivos Excel o CSV",
+    filters: [
+      { name: "Excel y CSV", extensions: ["xlsx", "xls", "xlsm", "csv", "txt", "tsv"] },
+      { name: "Todos", extensions: ["*"] },
+    ],
+    // Varios a la vez: cada archivo queda como una tabla y así se pueden
+    // cruzar con JOIN, que es la diferencia entre esto y abrir la planilla.
+    properties: ["openFile", "multiSelections"],
+  });
+  return r.canceled ? null : r.filePaths;
+});
+
 ipcMain.handle("db:pick-sqlite", async () => {
   const r = await dialog.showOpenDialog(win, {
     title: "Elegir base SQLite",
