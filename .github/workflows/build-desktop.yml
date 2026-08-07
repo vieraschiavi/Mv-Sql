@@ -14,12 +14,23 @@ name: Build MV SQL NLP releases
 # puede producir) y el job de empaquetado usa el .pyd en vez del .py
 # fuente. Ver tools/build_cython.py para el detalle y las limitaciones.
 #
-# Se dispara al publicar un tag "v*" (ej. v1.0.0) o manualmente desde la
-# pestaña Actions ("Run workflow"). Los tres artefactos quedan en
-# https://github.com/<owner>/<repo>/releases
+# Se dispara de tres maneras, y las tres terminan en el mismo Release
+# (https://github.com/<owner>/<repo>/releases):
+#
+#   1. Al mergear a main, PERO solo si la versión de desktop/package.json
+#      todavía no tiene Release. Es el camino normal: subís la versión,
+#      mergeás, y sale solo. Sin esa condición, cada merge a main
+#      reintentaría publicar el mismo tag una y otra vez.
+#   2. Al pushear un tag "v*" (ej. v1.0.1).
+#   3. A mano desde la pestaña Actions ("Run workflow").
+#
+# En los casos 2 y 3 se compila siempre: el disparo es explícito, así que
+# rehacer un Release existente es justamente lo que se está pidiendo.
 
 on:
   push:
+    branches:
+      - main
     tags:
       - "v*"
   workflow_dispatch:
@@ -28,7 +39,38 @@ permissions:
   contents: write
 
 jobs:
+  # Decide si hay algo para publicar. Va en un job aparte y no en un "if"
+  # de cada job porque necesita leer la versión del repo y preguntarle a
+  # la API si ese Release ya existe — eso no entra en una expresión.
+  decidir:
+    runs-on: ubuntu-latest
+    outputs:
+      seguir: ${{ steps.d.outputs.seguir }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: d
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Tag y dispatch: siempre. Solo se evalúa el push a una rama.
+          if [ "${{ github.ref_type }}" = "tag" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Disparo explícito (${{ github.event_name }}): se compila."
+            echo "seguir=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          V=$(node -p "require('./desktop/package.json').version")
+          if gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "v$V ya tiene Release: no hay versión nueva para publicar."
+            echo "Para publicar, subí la versión en desktop/package.json." >> "$GITHUB_STEP_SUMMARY"
+            echo "seguir=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "v$V no tiene Release todavía: se compila y se publica."
+            echo "seguir=true" >> "$GITHUB_OUTPUT"
+          fi
+
   build-windows-exe:
+    needs: decidir
+    if: needs.decidir.outputs.seguir == 'true'
     runs-on: windows-latest
     defaults:
       run:
@@ -54,6 +96,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-cython-windows:
+    needs: decidir
+    if: needs.decidir.outputs.seguir == 'true'
     # Corre en windows-latest porque necesita el compilador de C de
     # Visual Studio (ya viene instalado en la imagen del runner) para
     # producir extensiones .pyd de verdad — un .so de Linux no le sirve
