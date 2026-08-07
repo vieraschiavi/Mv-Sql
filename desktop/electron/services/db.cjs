@@ -20,11 +20,52 @@ function dialect() {
   return current ? DIALECTS[current.motor] : "SQLite";
 }
 
+// Campos sin los que el driver no puede ni intentar conectar. Se validan
+// ANTES de llamarlo porque los errores que tira cuando le falta algo
+// describen su estado interno, no lo que el usuario tiene que hacer: con
+// la ruta vacía, better-sqlite3 entiende que se le pide una base
+// temporal en memoria y contesta "In-memory/temporary databases cannot be
+// readonly", que no le dice a nadie que lo que falta es elegir el .db.
+const REQUERIDOS = {
+  sqlite: [["ruta", "Elegí el archivo .db antes de conectar."]],
+  archivos: [["archivos", "Elegí al menos un archivo Excel o CSV."]],
+  sqlserver: [["servidor", "Falta el servidor."], ["base", "Falta el nombre de la base."]],
+  mysql: [["servidor", "Falta el servidor."], ["base", "Falta el nombre de la base."]],
+  postgres: [["servidor", "Falta el servidor."], ["base", "Falta el nombre de la base."]],
+};
+
+function validar(cfg) {
+  const pedidos = REQUERIDOS[cfg.motor];
+  if (!pedidos) throw new Error(`Motor desconocido: ${cfg.motor}`);
+  for (const [campo, mensaje] of pedidos) {
+    const v = cfg[campo];
+    const vacio = Array.isArray(v) ? v.length === 0 : !String(v ?? "").trim();
+    if (vacio) throw new Error(mensaje);
+  }
+}
+
+/**
+ * Excel/CSV: se importan a una base SQLite propia y a partir de ahí es
+ * una conexión SQLite común. La base importada vive en userData y se
+ * pisa en cada importación — es un derivado del archivo del usuario, no
+ * un dato que haya que conservar.
+ */
+async function conectarArchivos(cfg, Database) {
+  const archivos = require("./archivos.cjs");
+  const { app } = require("electron");
+  const destino = require("path").join(app.getPath("userData"), "importado.db");
+  const r = await archivos.importar(cfg.archivos, destino, cfg.avisar);
+  // Se reabre readonly: la barrera de solo-lectura vale igual acá, para
+  // que no haya un camino de ejecución con permisos distintos al resto.
+  return { conn: new Database(r.destino, { readonly: true, fileMustExist: true }), tablas: r.tablas };
+}
+
 async function connect(cfg) {
   await close();
+  validar(cfg);
   const { motor } = cfg;
 
-  if (motor === "sqlite") {
+  if (motor === "sqlite" || motor === "archivos") {
     let Database;
     try {
       Database = require("better-sqlite3");
@@ -35,7 +76,9 @@ async function connect(cfg) {
         "compilalo vos: abrí una terminal en la carpeta de la app y corré 'npm rebuild'."
       );
     }
-    const conn = new Database(cfg.ruta, { readonly: true, fileMustExist: true });
+    const conn = motor === "archivos"
+      ? (await conectarArchivos(cfg, Database)).conn
+      : new Database(cfg.ruta, { readonly: true, fileMustExist: true });
     current = {
       motor,
       exec: async (sql) => {

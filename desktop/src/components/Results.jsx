@@ -1,3 +1,4 @@
+import Icono from "./Icono.jsx";
 import React, { useMemo, useState } from "react";
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, ScatterChart, Scatter,
@@ -130,7 +131,7 @@ export default function Results({ r, t, onSave, onStoredProcedure, onOptimize })
     <div>
       <div className="result-grid">
         <div className="card">
-          <h4>🧾 {t.sql_gen}</h4>
+          <h4><Icono n="codigo" /> {t.sql_gen}</h4>
           <div className="chips" style={{ marginBottom: ".6rem" }}>
             {r.tablas.map((tb) => <span className="chip" key={tb}>{tb}</span>)}
           </div>
@@ -145,11 +146,11 @@ export default function Results({ r, t, onSave, onStoredProcedure, onOptimize })
           )}
         </div>
         <div className="card">
-          <h4>📐 {t.confidence}</h4>
+          <h4><Icono n="diana" /> {t.confidence}</h4>
           <Confidence conf={r.confianza} t={t} />
           {r.supuestos && !/^(ninguno|none|nenhum)/i.test(r.supuestos) && (
             <p style={{ color: "var(--muted)", fontSize: ".78rem", marginTop: ".6rem" }}>
-              💭 {t.assumptions}: {r.supuestos}
+              <Icono n="globo" /> {t.assumptions}: {r.supuestos}
             </p>
           )}
         </div>
@@ -162,13 +163,13 @@ export default function Results({ r, t, onSave, onStoredProcedure, onOptimize })
           <div className="metrics">
             <div className="metric"><b>{r.filas.length.toLocaleString()}</b><span>{t.rows}</span></div>
             <div className="metric"><b>{r.columnas.length}</b><span>{t.result}</span></div>
-            {r.ms != null && <div className="metric"><b>{(r.ms / 1000).toFixed(1)}s</b><span>⏱</span></div>}
+            {r.ms != null && <div className="metric"><b>{(r.ms / 1000).toFixed(1)}s</b><span><Icono n="reloj" /> </span></div>}
           </div>
 
           <div className="tabs">
             {["table", "chart", "analysis"].map((k) => (
               <button key={k} className={tab === k ? "active" : ""} onClick={() => setTab(k)}>
-                {k === "table" ? `📋 ${t.table}` : k === "chart" ? `📈 ${t.chart}` : `🧠 ${t.analysis}`}
+                <>{k === "table" ? <Icono n="tabla" /> : k === "chart" ? <Icono n="grafico" /> : <Icono n="analisis" />} {k === "table" ? t.table : k === "chart" ? t.chart : t.analysis}</>
               </button>
             ))}
           </div>
@@ -189,19 +190,19 @@ export default function Results({ r, t, onSave, onStoredProcedure, onOptimize })
           {tab === "analysis" && <p style={{ lineHeight: 1.7 }}>{r.explicacion || "—"}</p>}
 
           <div className="actions">
-            <button className="ghost small" onClick={() => doExport("excel")}>⬇ Excel</button>
-            <button className="ghost small" onClick={() => doExport("csv")}>⬇ CSV</button>
-            <button className="ghost small" onClick={() => doExport("pdf")}>⬇ PDF</button>
-            <button className="ghost small" onClick={() => doExport("html")}>⬇ HTML</button>
+            <button className="ghost small" onClick={() => doExport("excel")}><Icono n="bajar" /> Excel</button>
+            <button className="ghost small" onClick={() => doExport("csv")}><Icono n="bajar" /> CSV</button>
+            <button className="ghost small" onClick={() => doExport("pdf")}><Icono n="bajar" /> PDF</button>
+            <button className="ghost small" onClick={() => doExport("html")}><Icono n="bajar" /> HTML</button>
             <span style={{ flex: 1 }} />
             <input style={{ width: 190 }} placeholder={t.query_name} value={saveName}
                    onChange={(e) => setSaveName(e.target.value)} />
-            <button className="small" onClick={() => saveName && onSave(saveName)}>⭐ {t.save_query}</button>
+            <button className="small" onClick={() => saveName && onSave(saveName)}><Icono n="estrella" /> {t.save_query}</button>
             <button className="ghost small" disabled={busyAction === "sp"} onClick={() => runAction("sp")}>
-              🧱 {t.sp}
+              <Icono n="bloques" /> {t.sp}
             </button>
             <button className="ghost small" disabled={busyAction === "opt"} onClick={() => runAction("opt")}>
-              🚀 {t.optimize}
+              <Icono n="acelerar" /> {t.optimize}
             </button>
           </div>
           {savedPath && <div className="status-ok">✓ {t.saved_to}: {savedPath}</div>}
@@ -214,7 +215,7 @@ export default function Results({ r, t, onSave, onStoredProcedure, onOptimize })
             <h3>{modal.title}</h3>
             <pre className="sql">{modal.body}</pre>
             <div className="btn-row">
-              <button className="ghost" onClick={() => navigator.clipboard.writeText(modal.body)}>📋 Copy</button>
+              <button className="ghost" onClick={() => navigator.clipboard.writeText(modal.body)}><Icono n="tabla" /> Copy</button>
               <button onClick={() => setModal(null)}>OK</button>
             </div>
           </div>

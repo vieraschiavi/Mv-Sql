@@ -37,3 +37,8 @@ licencia_mvsql.json
 instalacion.log
 equipo.json
 auditoria.db
+
+# Licencia del propietario para la build owner de Electron: la escribe el
+# workflow en el runner y NUNCA se commitea. Si entrara al repo, cualquier
+# build (incluida la de clientes) saldria con acceso hasta 2099.
+desktop/licencia_owner.json

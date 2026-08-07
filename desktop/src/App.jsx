@@ -1,3 +1,4 @@
+import Icono from "./components/Icono.jsx";
 import React, { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
 import Results from "./components/Results.jsx";
@@ -95,7 +96,7 @@ export default function App() {
       <main className="main">
         {!catalog && !result ? (
           <div className="welcome">
-            <h1>⚡ <span className="grad-text">{t.welcome_t}</span></h1>
+            <h1><Icono n="bolt" /> <span className="grad-text">{t.welcome_t}</span></h1>
             <p>{t.welcome_s}</p>
           </div>
         ) : (
@@ -105,7 +106,7 @@ export default function App() {
                      onChange={(e) => setQuestion(e.target.value)}
                      onKeyDown={(e) => e.key === "Enter" && ask()} />
               <button onClick={() => ask()} disabled={busy} style={{ minWidth: 130 }}>
-                {busy ? <span className="spinner" /> : "⚡ "}{busy ? t.thinking : t.ask}
+                {busy ? <span className="spinner" /> : <Icono n="bolt" />} {busy ? t.thinking : t.ask}
               </button>
             </div>
             <div className="examples">
@@ -122,7 +123,7 @@ export default function App() {
             />
             {history.length > 1 && (
               <details className="card" style={{ marginTop: "1rem" }}>
-                <summary style={{ cursor: "pointer" }}>🕘 {t.history} ({history.length})</summary>
+                <summary style={{ cursor: "pointer" }}><Icono n="reloj" /> {t.history} ({history.length})</summary>
                 {history.map((h, i) => (
                   <div key={i} style={{ margin: ".6rem 0" }}>
                     <b style={{ fontSize: ".85rem" }}>{h.pregunta}</b>

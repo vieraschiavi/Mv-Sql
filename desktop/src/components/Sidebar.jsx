@@ -1,3 +1,4 @@
+import Icono from "./Icono.jsx";
 import React, { useState } from "react";
 import { PROVIDERS, ENGINES } from "../i18n.js";
 
@@ -5,6 +6,7 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
                                   catalog, saved, onRunSaved, onDeleteSaved }) {
   const [motor, setMotor] = useState("sqlite");
   const [ruta, setRuta] = useState("");
+  const [archivos, setArchivos] = useState([]);
   const [srv, setSrv] = useState({ servidor: "", puerto: "", base: "", usuario: "", password: "" });
   const [testMsg, setTestMsg] = useState(null);
   const [connMsg, setConnMsg] = useState(null);
@@ -21,7 +23,9 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
     setBusy(true);
     setConnMsg(null);
     try {
-      const cfg = motor === "sqlite" ? { motor, ruta } : { motor, ...srv };
+      const cfg = motor === "archivos" ? { motor, archivos }
+                : motor === "sqlite" ? { motor, ruta }
+                : { motor, ...srv };
       const r = await onConnect(cfg);
       setConnMsg({ ok: true, message: `✓ ${r.tables} ${t.connected}` });
     } catch (e) {
@@ -33,7 +37,7 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
 
   return (
     <aside className="sidebar">
-      <div className="logo">⚡ MV SQL <span className="grad-text">NLP</span></div>
+      <div className="logo"><Icono n="bolt" /> MV SQL <span className="grad-text">NLP</span></div>
 
       <div className="lang-row">
         {["es", "en", "pt"].map((l) => (
@@ -45,7 +49,7 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
 
       {/* ── IA ── */}
       <div className="side-section">
-        <h3>🤖 {t.provider}</h3>
+        <h3><Icono n="cpu" /> {t.provider}</h3>
         <select value={ai.provider}
                 onChange={(e) => setAi({ ...ai, provider: e.target.value, model: PROVIDERS[e.target.value].modelos[0] || "" })}>
           {Object.entries(PROVIDERS).map(([k, p]) => <option key={k} value={k}>{p.nombre}</option>)}
@@ -74,18 +78,41 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
           </>
         )}
         <div className="btn-row">
-          <button className="ghost small" onClick={testAI}>🔌 {t.test}</button>
+          <button className="ghost small" onClick={testAI}><Icono n="enchufe" /> {t.test}</button>
         </div>
         {testMsg && <div className={testMsg.ok ? "status-ok" : "status-err"}>{testMsg.message}</div>}
       </div>
 
       {/* ── Base de datos ── */}
       <div className="side-section">
-        <h3>🗄️ {t.db}</h3>
+        <h3><Icono n="base" /> {t.db}</h3>
         <select value={motor} onChange={(e) => setMotor(e.target.value)}>
           {Object.entries(ENGINES).map(([k, n]) => <option key={k} value={k}>{n}</option>)}
         </select>
-        {motor === "sqlite" ? (
+        {motor === "archivos" ? (
+          <>
+            <label>{t.files}</label>
+            <button className="ghost small" onClick={async () => {
+              const p = await window.mvsql.pickArchivos();
+              if (p) setArchivos(p);
+            }}>{t.pick_files}</button>
+            <div style={{ fontSize: ".75rem", color: "var(--muted)", marginTop: ".4rem" }}>
+              {archivos.length ? t.files_n(archivos.length) : t.files_none}
+            </div>
+            {archivos.length > 0 && (
+              <div className="schema-tables" style={{ marginTop: ".35rem" }}>
+                {archivos.map((a) => (
+                  <div key={a} style={{ fontSize: ".72rem" }} title={a}>
+                    {a.split(/[\\/]/).pop()}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ fontSize: ".72rem", color: "var(--muted)", marginTop: ".4rem" }}>
+              {t.files_hint}
+            </div>
+          </>
+        ) : motor === "sqlite" ? (
           <>
             <label>{t.file}</label>
             <div className="btn-row" style={{ marginTop: 0 }}>
@@ -111,13 +138,13 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
           </>
         )}
         <div className="btn-row">
-          <button onClick={connect} disabled={busy}>{busy ? "…" : `🔗 ${t.connect}`}</button>
+          <button onClick={connect} disabled={busy}>{busy ? "…" : <><Icono n="enlace" /> {t.connect}</>}</button>
         </div>
         {connMsg && <div className={connMsg.ok ? "status-ok" : "status-err"}>{connMsg.message}</div>}
         {catalog && (
           <details style={{ marginTop: ".6rem" }}>
             <summary style={{ cursor: "pointer", fontSize: ".8rem", color: "var(--muted)" }}>
-              📚 {t.schema}
+              <Icono n="libro" /> {t.schema}
             </summary>
             <div className="schema-tables" style={{ marginTop: ".5rem" }}>
               {Object.entries(catalog.tablas).map(([tb, info]) => (
@@ -133,15 +160,15 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
 
       {/* ── Consultas guardadas ── */}
       <div className="side-section">
-        <h3>⭐ {t.saved}</h3>
+        <h3><Icono n="estrella" /> {t.saved}</h3>
         {!saved.length && <p style={{ color: "var(--muted)", fontSize: ".78rem" }}>{t.none_saved}</p>}
         {saved.map((q) => (
           <div className="saved-item" key={q.nombre}>
-            <b>📌 {q.nombre}</b>
+            <b><Icono n="chincheta" /> {q.nombre}</b>
             <span>{q.pregunta}</span>
             <div style={{ display: "flex", gap: ".4rem" }}>
-              <button className="ghost small" onClick={() => onRunSaved(q)}>▶ {t.run}</button>
-              <button className="ghost small" onClick={() => onDeleteSaved(q.nombre)}>🗑 {t.del}</button>
+              <button className="ghost small" onClick={() => onRunSaved(q)}><Icono n="play" /> {t.run}</button>
+              <button className="ghost small" onClick={() => onDeleteSaved(q.nombre)}><Icono n="tacho" /> {t.del}</button>
             </div>
           </div>
         ))}
