@@ -225,8 +225,16 @@ def _():
                 return i
         return -1                              # ninguna causa reconocida
 
-    DISCO, PERMISOS, PYVER, RED, NINGUNA = 0, 1, 2, 3, -1
+    DISCO, PERMISOS, PYVER, RED, PIP, NINGUNA = 0, 1, 2, 3, 4, -1
     casos = [
+        # Reportado por un cliente en Windows: el .venv quedo con python.exe
+        # pero sin pip, y como el .bat solo verificaba python.exe, cada
+        # reintento daba el entorno por bueno y moria igual. Ahora el .bat
+        # repara pip antes de llegar aca; si aun asi aparece en el log, se
+        # nombra la causa en vez de contestar "causa no reconocida".
+        ("D:\\PROGRAMAS MV\\Mv-Sql-main\\app-python\\.venv\\Scripts"
+         "\\python.exe: No module named pip", PIP),
+        ("/usr/bin/python: No module named 'pip'", PIP),
         # El error exacto que reporto un cliente en Windows. Antes de esto,
         # el .bat contestaba "revisa tu conexion" a este mismo texto.
         ("ERROR: Could not install packages due to an OSError: "

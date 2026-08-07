@@ -22,7 +22,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from guion import CIERRE, GUION, RITMO, TITULO, VOCES  # noqa: E402
+from guion import AIRE, CIERRE, GUION, RITMO, TITULO, VOCES  # noqa: E402
 
 # edge-tts usa el bundle de certifi a secas; detrás del proxy hay que
 # agregarle la CA o toda petición falla con SSL.
@@ -271,7 +271,7 @@ def main():
     for i, (clave, rotulo, texto) in enumerate(beats):
         mp3 = os.path.join(trabajo, f"voz{i:02d}.mp3")
         asyncio.run(narrar(texto, voz, mp3))
-        d = duracion(mp3) + 0.65          # aire al final de cada frase
+        d = duracion(mp3) + AIRE          # aire al final de cada frase
         audios.append(mp3)
         duraciones.append(d)
 
@@ -287,19 +287,14 @@ def main():
         imagenes.append(png)
         print(f"  {i + 1:2}/{total}  {d:5.1f}s  {rotulo[:52]}")
 
-    # 1) pista de audio: las narraciones, una detrás de otra, con su aire
+    # 1) pista de audio. Cada narración se alarga con silencio hasta durar
+    # exactamente lo que su cuadro (whole_dur=d, o sea narración + AIRE), y
+    # recién ahí se pegan una detrás de otra. Hacerlo tramo por tramo, y no
+    # con un apad al final, es lo que mantiene el audio pegado al video: si
+    # se concatenaran los mp3 crudos, cada cuadro se adelantaría AIRE
+    # segundos respecto de su narración y el desfasaje se acumularía.
     lista_a = os.path.join(trabajo, "audio.txt")
-    with open(lista_a, "w", encoding="utf-8") as fh:
-        for mp3, d in zip(audios, duraciones):
-            fh.write(f"file '{mp3}'\n")
     audio_full = os.path.join(trabajo, "voz.m4a")
-    subprocess.run([ffmpeg(), "-y", "-v", "error", "-f", "concat", "-safe", "0",
-                    "-i", lista_a, "-af",
-                    "apad=pad_dur=0.65,aresample=44100", "-c:a", "aac", "-b:a", "128k",
-                    audio_full], check=True)
-
-    # El apad de arriba solo alarga el final; el aire entre frases se logra
-    # generando cada tramo por separado.
     tramos = []
     for i, (mp3, d) in enumerate(zip(audios, duraciones)):
         tramo = os.path.join(trabajo, f"tramo{i:02d}.m4a")

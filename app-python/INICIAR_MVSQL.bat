@@ -48,6 +48,9 @@ set "M_PY=Python detectado:"
 set "M_VENV_NEW=Creando entorno virtual aislado (solo la primera vez)..."
 set "M_VENV_OK=Entorno virtual OK"
 set "M_VENV_ERR=[X] Fallo creando .venv"
+set "M_PIP_REP=El entorno quedo sin pip. Reparando (puede tardar un minuto)..."
+set "M_PIP_ERR=[X] No se pudo reparar pip en el entorno virtual."
+set "M_PIP_ERR2=Reinstala Python desde python.org marcando pip y Add Python to PATH."
 set "M_DEPS=Instalando dependencias (2-5 min la primera vez)..."
 set "M_DEPS_OK=Dependencias OK"
 set "M_DEPS_ERR=[X] Fallo instalando dependencias."
@@ -62,6 +65,7 @@ set "M_E_RED=No se pudo conectar para descargar. Revisa tu conexion o el proxy/f
 set "M_E_PERM=Windows bloqueo la escritura. Proba mover la carpeta fuera de Archivos de programa,"
 set "M_E_PERM2=o ejecutar como administrador."
 set "M_E_PYVER=Tu version de Python no es compatible con alguna libreria."
+set "M_E_PIP=El entorno virtual quedo sin pip. Borra la carpeta .venv y volve a ejecutar."
 set "M_E_OTRO=Causa no reconocida. El detalle completo quedo en:"
 set "M_LOG=Detalle tecnico:"
 set "M_DISCO_TITULO=  En que disco queres instalar? (el programa entero: entorno, datos y base)"
@@ -96,6 +100,9 @@ set "M_PY=Python found:"
 set "M_VENV_NEW=Creating an isolated virtual environment (first run only)..."
 set "M_VENV_OK=Virtual environment OK"
 set "M_VENV_ERR=[X] Could not create .venv"
+set "M_PIP_REP=The environment has no pip. Repairing (may take a minute)..."
+set "M_PIP_ERR=[X] Could not repair pip inside the virtual environment."
+set "M_PIP_ERR2=Reinstall Python from python.org with pip and Add Python to PATH ticked."
 set "M_DEPS=Installing dependencies (2-5 min on the first run)..."
 set "M_DEPS_OK=Dependencies OK"
 set "M_DEPS_ERR=[X] Could not install dependencies."
@@ -110,6 +117,7 @@ set "M_E_RED=Could not connect to download. Check your connection or proxy/firew
 set "M_E_PERM=Windows blocked the write. Try moving the folder out of Program Files,"
 set "M_E_PERM2=or running as administrator."
 set "M_E_PYVER=Your Python version is not compatible with one of the libraries."
+set "M_E_PIP=The virtual environment has no pip. Delete the .venv folder and run again."
 set "M_E_OTRO=Cause not recognised. The full detail was saved to:"
 set "M_LOG=Technical detail:"
 set "M_DISCO_TITULO=  Which drive do you want to install on? (the whole thing: environment, data, database)"
@@ -144,6 +152,9 @@ set "M_PY=Python encontrado:"
 set "M_VENV_NEW=Criando ambiente virtual isolado (so na primeira vez)..."
 set "M_VENV_OK=Ambiente virtual OK"
 set "M_VENV_ERR=[X] Falha ao criar o .venv"
+set "M_PIP_REP=O ambiente ficou sem pip. Reparando (pode levar um minuto)..."
+set "M_PIP_ERR=[X] Nao foi possivel reparar o pip no ambiente virtual."
+set "M_PIP_ERR2=Reinstale o Python do python.org marcando pip e Add Python to PATH."
 set "M_DEPS=Instalando dependencias (2-5 min na primeira vez)..."
 set "M_DEPS_OK=Dependencias OK"
 set "M_DEPS_ERR=[X] Falha ao instalar dependencias."
@@ -158,6 +169,7 @@ set "M_E_RED=Nao foi possivel conectar para baixar. Verifique a conexao ou o pro
 set "M_E_PERM=O Windows bloqueou a escrita. Tente mover a pasta para fora de Arquivos de Programas,"
 set "M_E_PERM2=ou executar como administrador."
 set "M_E_PYVER=Sua versao do Python nao e compativel com alguma biblioteca."
+set "M_E_PIP=O ambiente virtual ficou sem pip. Apague a pasta .venv e execute de novo."
 set "M_E_OTRO=Causa nao reconhecida. O detalhe completo ficou em:"
 set "M_LOG=Detalhe tecnico:"
 set "M_DISCO_TITULO=  Em qual disco voce quer instalar? (tudo: ambiente, dados e banco)"
@@ -297,6 +309,46 @@ if not exist ".venv\Scripts\python.exe" (
 )
 set "VPY=.venv\Scripts\python.exe"
 
+:: Un .venv puede tener el python.exe y NO tener pip. Pasa si el bootstrap
+:: de pip se corto a la mitad, si el antivirus se llevo los archivos de pip,
+:: o si el Python del sistema vino sin ensurepip (tipico del Python de la
+:: Microsoft Store y de varias imagenes corporativas). Chequear solo que
+:: exista python.exe dejaba un bucle sin salida: el .venv roto pasaba el
+:: control de arriba en cada reintento, y la instalacion moria despues con
+:: "No module named pip", que al cliente no le dice nada.
+"%VPY%" -m pip --version >nul 2>&1
+if not errorlevel 1 goto :pip_listo
+echo         !M_PIP_REP!
+
+:: 1) Reinstalar pip adentro del venv. No necesita red: ensurepip trae la
+::    rueda de pip adentro del propio Python.
+"%VPY%" -m ensurepip --upgrade >nul 2>&1
+"%VPY%" -m pip --version >nul 2>&1
+if not errorlevel 1 goto :pip_listo
+
+:: 2) Rehacer el venv de cero: cubre el bootstrap cortado a la mitad, donde
+::    ensurepip solo no alcanza porque el venv ya quedo mal armado.
+rmdir /s /q ".venv" >nul 2>&1
+%PY% -m venv .venv >nul 2>&1
+"%VPY%" -m pip --version >nul 2>&1
+if not errorlevel 1 goto :pip_listo
+
+:: 3) Ultimo recurso: get-pip.py. Es el unico camino cuando el Python del
+::    sistema no trae ensurepip, y va al final porque necesita red.
+powershell -NoProfile -Command "try{Invoke-WebRequest -UseBasicParsing 'https://bootstrap.pypa.io/get-pip.py' -OutFile '%TEMP%\get-pip.py'}catch{exit 1}" >nul 2>&1
+if exist "%TEMP%\get-pip.py" "%VPY%" "%TEMP%\get-pip.py" --no-cache-dir >nul 2>&1
+del "%TEMP%\get-pip.py" >nul 2>&1
+"%VPY%" -m pip --version >nul 2>&1
+if not errorlevel 1 goto :pip_listo
+
+color 0C
+echo   !M_PIP_ERR!
+echo      !M_PIP_ERR2!
+echo.
+pause & exit /b 1
+
+:pip_listo
+
 :: -- 4. Dependencias ------------------------------------------------------
 "%VPY%" -c "import streamlit, plotly, sklearn, openpyxl, reportlab" >nul 2>&1
 if not errorlevel 1 (
@@ -367,6 +419,8 @@ findstr /i /c:"Could not find a version" /c:"requires a different Python" /c:"no
 if not errorlevel 1 ( echo   ^>^> !M_E_PYVER! & %PY% --version & goto :deps_fin )
 findstr /i /c:"ConnectionError" /c:"Temporary failure" /c:"Max retries" /c:"SSLError" /c:"ProxyError" /c:"Network is unreachable" "instalacion.log" >nul 2>&1
 if not errorlevel 1 ( echo   ^>^> !M_E_RED! & goto :deps_fin )
+findstr /i /c:"No module named pip" /c:"No module named 'pip'" "instalacion.log" >nul 2>&1
+if not errorlevel 1 ( echo   ^>^> !M_E_PIP! & goto :deps_fin )
 echo   ^>^> !M_E_OTRO!
 echo      %~dp0instalacion.log
 
