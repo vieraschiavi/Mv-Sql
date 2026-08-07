@@ -46,7 +46,7 @@ T = {
         "modelo": "Modelo", "apikey": "API key", "probar": "Probar conexión",
         "privacidad": "Modo privacidad estricta",
         "privacidad_ayuda": "Activado: ninguna fila de tus datos viaja a la IA — solo tu pregunta y los nombres de tablas/columnas relevantes. Te quedás sin el análisis escrito del resultado (la tabla y el gráfico siguen igual). Desactivado: para el análisis viaja una muestra de hasta 20 filas del resultado. Con Ollama local nada sale de tu máquina en ningún caso.",
-        "privacidad_nota": "🔒 Modo privacidad estricta: el análisis escrito está desactivado para que ninguna fila viaje a la IA. La tabla y el gráfico no cambian.",
+        "privacidad_nota": "Modo privacidad estricta: el análisis escrito está desactivado para que ninguna fila viaje a la IA. La tabla y el gráfico no cambian.",
         "bd": "Base de datos", "motor_bd": "Motor", "conectar": "Conectar",
         "tablas_ok": "tablas cargadas", "ver_esquema": "Ver esquema",
         "pregunta_ph": "Ej: ¿cuánto facturamos por mes este año, por sucursal?",
@@ -68,7 +68,7 @@ T = {
         "err_valid": "La validación encontró problemas:", "advertencias": "Advertencias",
         "sin_grafico": "No hay un gráfico automático para esta forma de datos.",
         "demo_hint": "¿Sin base propia? Usá la demo: motor SQLite, ruta cartera_demo.db (se genera con: python generar_db_demo.py).",
-        "creditos_activos": "✓ Créditos activos — {n} incluidos ({plan})",
+        "creditos_activos": "Créditos activos — {n} incluidos ({plan})",
         "creditos_licencia": "Licencia de {email} · vence {vence}",
         "creditos_falta": "No se encontró licencia_mvsql.json en esta carpeta. Este proveedor solo funciona en el zip comprado con créditos embebidos.",
         "creditos_comprar": "[Comprar créditos]({url})",
@@ -79,10 +79,10 @@ T = {
         "fmt_moneda_todas": "Aplicar moneda a todas las columnas numéricas",
         "fmt_hint": "Se aplica a tablas, gráficos y a la respuesta de la IA.",
         "tipo_grafico": "Tipo de gráfico", "eje_x": "Eje X", "eje_y": "Eje Y",
-        "g_auto": "✨ Automático (según los datos)", "g_barras": "Barras",
+        "g_auto": "Automático (según los datos)", "g_barras": "Barras",
         "g_barras_h": "Barras horizontales", "g_linea": "Línea", "g_area": "Área",
         "g_torta": "Torta", "g_dispersion": "Dispersión", "g_histo": "Histograma",
-        "archivo": "📄 Archivo (CSV / Excel / Parquet)",
+        "archivo": "Archivo (CSV / Excel / Parquet)",
         "subir_archivo": "Subí tu archivo",
         "archivo_hint": "El archivo se convierte a una base consultable al instante y queda en caché: la próxima carga es inmediata. Excel: cada hoja se vuelve una tabla.",
         "archivo_falta": "Subí un archivo primero.",
@@ -144,7 +144,7 @@ T = {
         "modelo": "Model", "apikey": "API key", "probar": "Test connection",
         "privacidad": "Strict privacy mode",
         "privacidad_ayuda": "On: no row of your data ever travels to the AI — only your question and the relevant table/column names. You give up the written analysis of the result (table and chart stay the same). Off: a sample of up to 20 result rows travels for the analysis. With local Ollama nothing leaves your machine either way.",
-        "privacidad_nota": "🔒 Strict privacy mode: the written analysis is off so that no row travels to the AI. Table and chart are unaffected.",
+        "privacidad_nota": "Strict privacy mode: the written analysis is off so that no row travels to the AI. Table and chart are unaffected.",
         "bd": "Database", "motor_bd": "Engine", "conectar": "Connect",
         "tablas_ok": "tables loaded", "ver_esquema": "View schema",
         "pregunta_ph": "E.g.: monthly revenue this year, by branch?",
@@ -166,7 +166,7 @@ T = {
         "err_valid": "Validation found problems:", "advertencias": "Warnings",
         "sin_grafico": "No automatic chart for this data shape.",
         "demo_hint": "No database yet? Use the demo: SQLite engine, path cartera_demo.db (generate it with: python generar_db_demo.py).",
-        "creditos_activos": "✓ Active credits — {n} included ({plan})",
+        "creditos_activos": "Active credits — {n} included ({plan})",
         "creditos_licencia": "License for {email} · expires {vence}",
         "creditos_falta": "licencia_mvsql.json not found in this folder. This provider only works in the zip purchased with embedded credits.",
         "creditos_comprar": "[Buy credits]({url})",
@@ -177,10 +177,10 @@ T = {
         "fmt_moneda_todas": "Apply currency to every numeric column",
         "fmt_hint": "Applies to tables, charts and the AI answer.",
         "tipo_grafico": "Chart type", "eje_x": "X axis", "eje_y": "Y axis",
-        "g_auto": "✨ Automatic (based on the data)", "g_barras": "Bars",
+        "g_auto": "Automatic (based on the data)", "g_barras": "Bars",
         "g_barras_h": "Horizontal bars", "g_linea": "Line", "g_area": "Area",
         "g_torta": "Pie", "g_dispersion": "Scatter", "g_histo": "Histogram",
-        "archivo": "📄 File (CSV / Excel / Parquet)",
+        "archivo": "File (CSV / Excel / Parquet)",
         "subir_archivo": "Upload your file",
         "archivo_hint": "The file becomes an instantly queryable base and is cached: the next load is immediate. Excel: each sheet becomes a table.",
         "archivo_falta": "Upload a file first.",
@@ -242,7 +242,7 @@ T = {
         "modelo": "Modelo", "apikey": "API key", "probar": "Testar conexão",
         "privacidad": "Modo privacidade estrita",
         "privacidad_ayuda": "Ativado: nenhuma linha dos seus dados viaja para a IA — só a sua pergunta e os nomes das tabelas/colunas relevantes. Você abre mão da análise escrita do resultado (a tabela e o gráfico continuam iguais). Desativado: para a análise viaja uma amostra de até 20 linhas do resultado. Com Ollama local nada sai da sua máquina em nenhum caso.",
-        "privacidad_nota": "🔒 Modo privacidade estrita: a análise escrita está desativada para que nenhuma linha viaje para a IA. Tabela e gráfico não mudam.",
+        "privacidad_nota": "Modo privacidade estrita: a análise escrita está desativada para que nenhuma linha viaje para a IA. Tabela e gráfico não mudam.",
         "bd": "Banco de dados", "motor_bd": "Motor", "conectar": "Conectar",
         "tablas_ok": "tabelas carregadas", "ver_esquema": "Ver esquema",
         "pregunta_ph": "Ex.: quanto faturamos por mês este ano, por filial?",
@@ -264,7 +264,7 @@ T = {
         "err_valid": "A validação encontrou problemas:", "advertencias": "Avisos",
         "sin_grafico": "Sem gráfico automático para este formato de dados.",
         "demo_hint": "Sem banco próprio? Use a demo: motor SQLite, caminho cartera_demo.db (gere com: python generar_db_demo.py).",
-        "creditos_activos": "✓ Créditos ativos — {n} incluídos ({plan})",
+        "creditos_activos": "Créditos ativos — {n} incluídos ({plan})",
         "creditos_licencia": "Licença de {email} · vence {vence}",
         "creditos_falta": "licencia_mvsql.json não encontrado nesta pasta. Este provedor só funciona no zip comprado com créditos embutidos.",
         "creditos_comprar": "[Comprar créditos]({url})",
@@ -275,10 +275,10 @@ T = {
         "fmt_moneda_todas": "Aplicar moeda a todas as colunas numéricas",
         "fmt_hint": "Aplica-se a tabelas, gráficos e à resposta da IA.",
         "tipo_grafico": "Tipo de gráfico", "eje_x": "Eixo X", "eje_y": "Eixo Y",
-        "g_auto": "✨ Automático (conforme os dados)", "g_barras": "Barras",
+        "g_auto": "Automático (conforme os dados)", "g_barras": "Barras",
         "g_barras_h": "Barras horizontais", "g_linea": "Linha", "g_area": "Área",
         "g_torta": "Pizza", "g_dispersion": "Dispersão", "g_histo": "Histograma",
-        "archivo": "📄 Arquivo (CSV / Excel / Parquet)",
+        "archivo": "Arquivo (CSV / Excel / Parquet)",
         "subir_archivo": "Envie seu arquivo",
         "archivo_hint": "O arquivo vira uma base consultável na hora e fica em cache: a próxima carga é imediata. Excel: cada planilha vira uma tabela.",
         "archivo_falta": "Envie um arquivo primeiro.",
@@ -406,15 +406,15 @@ ss.setdefault("lang", os.environ.get("MVSQL_LANG", "es")
 # ──────────────────────────────────────────────────────────────
 if not eula_aceptado():
     _TXT_EULA = {
-        "es": ("📄 Acuerdo de licencia (EULA)",
+        "es": ("Acuerdo de licencia (EULA)",
                "Para usar MV SQL NLP necesitás aceptar el acuerdo de licencia.",
                "Acepto los términos y condiciones", "Continuar",
                "Tenés que tildar la casilla para continuar."),
-        "en": ("📄 License agreement (EULA)",
+        "en": ("License agreement (EULA)",
                "To use MV SQL NLP you need to accept the license agreement.",
                "I accept the terms and conditions", "Continue",
                "You need to check the box to continue."),
-        "pt": ("📄 Contrato de licença (EULA)",
+        "pt": ("Contrato de licença (EULA)",
                "Para usar o MV SQL NLP você precisa aceitar o contrato de licença.",
                "Aceito os termos e condições", "Continuar",
                "Marque a caixa para continuar."),
@@ -931,9 +931,13 @@ def barra_confianza(conf, t):
 # SIDEBAR — idioma, IA, base de datos
 # ──────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown('<div class="mv-logo">⚡ MV SQL NLP</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mv-logo">'
+                '<svg viewBox="0 0 24 24" width="19" height="19" fill="#f2b441" '
+                'style="vertical-align:-.15em;margin-right:.25em">'
+                '<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>'
+                'MV SQL NLP</div>', unsafe_allow_html=True)
 
-    ss.lang = st.selectbox("🌐", ["es", "en", "pt"],
+    ss.lang = st.selectbox(t["idioma"], ["es", "en", "pt"],
                            index=["es", "en", "pt"].index(ss.lang),
                            format_func=lambda x: {"es": "Español", "en": "English",
                                                   "pt": "Português"}[x])
@@ -943,7 +947,7 @@ with st.sidebar:
     _cfg_equipo = equipo.cargar()
     if _cfg_equipo["activo"] and ss.usuario is None:
         st.divider()
-        st.subheader(f"👤 {t['login_titulo']}")
+        st.subheader(f"{t['login_titulo']}")
         _nombres = [u["nombre"] for u in _cfg_equipo["usuarios"]]
         _quien = st.selectbox(t["login_usuario"], _nombres, key="login_nombre")
         _pin = st.text_input(t["login_pin"], type="password", key="login_pin")
@@ -965,14 +969,14 @@ with st.sidebar:
     if ss.usuario:
         st.divider()
         c_u1, c_u2 = st.columns([3, 1])
-        c_u1.markdown(f"👤 **{ss.usuario['nombre']}** · {equipo.ROLES[ss.usuario['rol']]['nombre']}")
+        c_u1.markdown(f"**{ss.usuario['nombre']}** · {equipo.ROLES[ss.usuario['rol']]['nombre']}")
         if c_u2.button(t["login_salir"], key="btn_salir"):
             ss.usuario = None
             ss.motor = None
             ss.resultado = None
             st.rerun()
 
-    with st.expander(f"🔢 {t['fmt_titulo']}"):
+    with st.expander(f"{t['fmt_titulo']}"):
         c1, c2 = st.columns(2)
         c1.number_input(t["fmt_dec"], 0, 6, 2, key="fmt_dec")
         c2.number_input(t["fmt_pct_dec"], 0, 4, 1, key="fmt_pct_dec")
@@ -987,7 +991,7 @@ with st.sidebar:
         st.caption(t["fmt_hint"])
 
     st.divider()
-    st.subheader(f"🤖 {t['ia']}")
+    st.subheader(f"{t['ia']}")
     prov_keys = list(PROVEEDORES.keys())
     proveedor = st.selectbox(t["ia"], prov_keys, label_visibility="collapsed",
                              format_func=lambda k: PROVEEDORES[k]["nombre"])
@@ -1024,7 +1028,7 @@ with st.sidebar:
             if info_prov["url_keys"]:
                 st.caption(f"[Obtener API key]({info_prov['url_keys']})")
 
-    if st.button(f"🔌 {t['probar']}", use_container_width=True):
+    if st.button(f"{t['probar']}", use_container_width=True):
         ok, msg = probar_conexion(proveedor, api_key, modelo, base_url)
         (st.success if ok else st.error)(msg)
 
@@ -1036,12 +1040,12 @@ with st.sidebar:
     # (sin esto, el análisis escrito manda una muestra de hasta 20 filas —
     # ver motor._explicar_resultado / _muestra_texto). Es la diferencia
     # entre "solo viaja el esquema" como promesa y como hecho.
-    ss.modo_privado = st.toggle(f"🔒 {t['privacidad']}",
+    ss.modo_privado = st.toggle(f"{t['privacidad']}",
                                 value=ss.get("modo_privado", False),
                                 help=t["privacidad_ayuda"])
 
     st.divider()
-    st.subheader(f"🗄️ {t['bd']}")
+    st.subheader(f"{t['bd']}")
     motor_bd = st.selectbox(t["motor_bd"], ["archivo"] + list(MOTORES.keys()),
                             format_func=lambda k: t["archivo"] if k == "archivo"
                             else MOTORES[k]["nombre"])
@@ -1064,7 +1068,7 @@ with st.sidebar:
         params = dict(servidor=servidor, puerto=puerto or None, base=base,
                       usuario=usuario, password=password)
 
-    if st.button(f"🔗 {t['conectar']}", use_container_width=True, type="primary"):
+    if st.button(f"{t['conectar']}", use_container_width=True, type="primary"):
         try:
             with st.spinner("…"):
                 if motor_bd == "archivo":
@@ -1093,14 +1097,14 @@ with st.sidebar:
                     from motor import RecuperadorEsquema
                     ss.motor.fichas = catalogo_a_fichas(ss.motor.catalogo)
                     ss.motor.recuperador = RecuperadorEsquema(ss.motor.fichas)
-            st.success(f"✓ {len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
+            st.success(f"{len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
         except Exception as e:
             st.error(str(e))
 
     if ss.motor:
         ss.motor.ia = ia_cfg  # refrescar credenciales sin reconectar
-        st.success(f"✓ {len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
-        with st.expander(f"🕸️ {t['diagrama']}"):
+        st.success(f"{len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
+        with st.expander(f"{t['diagrama']}"):
             _cat = ss.motor.catalogo
             _rels = esquema_visual.resumen_relaciones(_cat)
             _sueltas = esquema_visual.tablas_sin_relacion(_cat)
@@ -1121,7 +1125,7 @@ with st.sidebar:
             if _sueltas:
                 st.caption(t["diagrama_sueltas"].format(tablas=", ".join(_sueltas)))
 
-        with st.expander(f"📚 {t['ver_esquema']}"):
+        with st.expander(f"{t['ver_esquema']}"):
             for tb, info in ss.motor.catalogo["tablas"].items():
                 n = info.get("n_filas")
                 st.markdown(f"**{tb}**" + (f" · {n:,} filas" if n else ""))
@@ -1131,12 +1135,12 @@ with st.sidebar:
 
     st.divider()
     # ── Cuadernos: informes reutilizables con variables ──
-    st.subheader(f"📓 {t['cua_titulo']}")
+    st.subheader(f"{t['cua_titulo']}")
     _cuads = cuadernos.listar()
     if not _cuads:
         st.caption(t["cua_vacio"])
     for _c in _cuads:
-        with st.expander(f"📓 {_c['nombre']}"):
+        with st.expander(f"{_c['nombre']}"):
             if _c.get("descripcion"):
                 st.caption(_c["descripcion"])
             _vars = cuadernos.variables_del_cuaderno(_c)
@@ -1155,11 +1159,11 @@ with st.sidebar:
                 cuadernos.guardar(_c["nombre"], _c["celdas"],
                                   _c.get("descripcion", ""), _vals)
                 st.rerun()
-            if _b2.button(f"🗑 {t['borrar']}", key=f"delc_{_c['nombre']}"):
+            if _b2.button(f"{t['borrar']}", key=f"delc_{_c['nombre']}"):
                 cuadernos.eliminar(_c["nombre"])
                 st.rerun()
 
-    with st.popover(f"➕ {t['cua_nuevo']}"):
+    with st.popover(f"{t['cua_nuevo']}"):
         _nc = st.text_input(t["cua_nombre"], key="cua_nombre")
         _dc = st.text_input(t["cua_desc"], key="cua_desc")
         st.caption(t["cua_ayuda"])
@@ -1180,7 +1184,7 @@ with st.sidebar:
     st.divider()
     # ── Gestión del equipo (solo administradores) ──
     if PERM.get("gestiona_equipo"):
-        with st.expander(f"👥 {t['eq_titulo']}"):
+        with st.expander(f"{t['eq_titulo']}"):
             _cfg = equipo.cargar()
             if not _cfg["activo"]:
                 st.info(t["eq_abierto"])
@@ -1198,7 +1202,7 @@ with st.sidebar:
                 _c1.markdown(f"**{_nombre_seguro}** · {equipo.ROLES[_u['rol']]['nombre']}  \n"
                              f"<span style='color:#94a3b8;font-size:.78rem'>{_detalle}</span>",
                              unsafe_allow_html=True)
-                if _c2.button("🗑", key=f"del_u_{_u['nombre']}", help=t["borrar"]):
+                if _c2.button("✕", key=f"del_u_{_u['nombre']}", help=t["borrar"]):
                     try:
                         equipo.eliminar_usuario(_u["nombre"])
                         st.rerun()
@@ -1230,19 +1234,19 @@ with st.sidebar:
 
     st.divider()
     # ── Biblioteca de consultas guardadas ──
-    st.subheader(f"⭐ {t['biblioteca']}")
+    st.subheader(f"{t['biblioteca']}")
     items = guardadas.listar()
     if not items:
         st.caption(t["sin_guardadas"])
     for it in items:
-        with st.expander(f"📌 {it['nombre']}"):
+        with st.expander(f"{it['nombre']}"):
             st.caption(it.get("pregunta", ""))
             st.code(it["sql"], language="sql")
             c1, c2 = st.columns(2)
             if c1.button(f"▶ {t['ejecutar']}", key=f"run_{it['nombre']}"):
                 ss.pregunta_precargada = it.get("pregunta", "")
                 ss.sql_directo = it["sql"]
-            if c2.button(f"🗑 {t['borrar']}", key=f"del_{it['nombre']}"):
+            if c2.button(f"{t['borrar']}", key=f"del_{it['nombre']}"):
                 guardadas.eliminar(it["nombre"])
                 st.rerun()
 
@@ -1273,8 +1277,8 @@ if ss.cuaderno_activo:
     if _cua:
         _vals = ss.cuaderno_valores or _cua.get("valores", {})
         _cc1, _cc2 = st.columns([4, 1])
-        _cc1.markdown(f"### 📓 {cuadernos.sustituir_texto(_cua['nombre'], _vals)}")
-        if _cc2.button(f"✕ {t['cua_cerrar']}"):
+        _cc1.markdown(f"### {cuadernos.sustituir_texto(_cua['nombre'], _vals)}")
+        if _cc2.button(f"{t['cua_cerrar']}"):
             ss.cuaderno_activo = None
             st.rerun()
         if _vals:
@@ -1334,14 +1338,14 @@ if ss.cuaderno_activo:
 
         if PERM.get("puede_exportar", True):
             st.download_button(
-                f"⬇️ {t['cua_exportar']}",
+                f"{t['cua_exportar']}",
                 cuadernos.a_markdown(_cua, _vals, _resultados).encode("utf-8"),
                 f"{_cua['nombre']}.md", "text/markdown")
         st.divider()
 
 pregunta = st.text_input(t["tu_pregunta"], value=ss.pregunta_precargada,
                          placeholder=t["pregunta_ph"])
-ejecutar = st.button(f"⚡ {t['consultar']}", type="primary")
+ejecutar = st.button(f"{t['consultar']}", type="primary")
 
 if ejecutar and pregunta:
     if ss.motor is None:
@@ -1394,31 +1398,31 @@ if ejecutar and pregunta:
 r = ss.resultado
 if r:
     st.write("")
-    st.markdown(f"##### 🎯 {t['tablas_rag']}")
+    st.markdown(f"##### {t['tablas_rag']}")
     st.write(" · ".join(f"`{tb}`" for tb in r["tablas_recuperadas"]))
 
     c_sql, c_conf = st.columns([3, 2])
     with c_sql:
-        st.markdown(f"##### 🧾 {t['sql_gen']}")
+        st.markdown(f"##### {t['sql_gen']}")
         st.code(r["sql"], language="sql")
         if r["valido"]:
-            st.success(f"✓ {t['validado']}")
+            st.success(f"{t['validado']}")
         else:
             st.error(t["err_valid"])
             for p in r["problemas"]:
                 st.write(f"- {p}")
         if r["advertencias"]:
-            with st.expander(f"⚠️ {t['advertencias']}"):
+            with st.expander(f"{t['advertencias']}"):
                 for a in r["advertencias"]:
                     st.write(f"- {a}")
     with c_conf:
-        st.markdown("##### 📐 " + t["confianza"])
+        st.markdown("##### " + t["confianza"])
         if r["confianza"]:
             barra_confianza(r["confianza"], t)
         if r["supuestos"] and r["supuestos"].lower() not in ("ninguno", "none", "nenhum"):
-            st.caption(f"💭 {t['supuestos']}: {r['supuestos']}")
+            st.caption(f"{t['supuestos']}: {r['supuestos']}")
 
-    with st.expander(f"⚙️ {t['plan_titulo']}"):
+    with st.expander(f"{t['plan_titulo']}"):
         _sql_plan = r.get("sql_ejecutado") or r.get("sql") or ""
         _filas_plan, _hallazgos = (
             esquema_visual.plan_de_ejecucion(ss.motor.cx, _sql_plan)
@@ -1427,10 +1431,15 @@ if r:
             st.caption(t["plan_no_disponible"])
         else:
             _costo = esquema_visual.costo_estimado(_filas_plan)
-            _icono = {"liviano": "🟢", "medio": "🟡", "pesado": "🔴"}.get(_costo, "⚪")
-            st.markdown(f"{_icono} **{t['plan_costo']}: {t['plan_' + _costo]}**")
+            _color = {"liviano": "#16a34a", "medio": "#d97706",
+                      "pesado": "#dc2626"}.get(_costo, "#94a3b8")
+            st.markdown(
+                f'<span style="color:{_color};font-size:1.1em">&#9679;</span> '
+                f'<b>{t["plan_costo"]}: {t["plan_" + _costo]}</b>',
+                unsafe_allow_html=True)
             for _h in _hallazgos:
-                st.warning(f"**{_h['titulo']}** — {_h['que_pasa']}  \n💡 {_h['que_hacer']}")
+                st.warning(f"**{_h['titulo']}** — {_h['que_pasa']}  \n"
+                           f"→ {_h['que_hacer']}")
             if not _hallazgos:
                 st.success(t["plan_sin_problemas"])
             st.dataframe(pd.DataFrame(_filas_plan), use_container_width=True,
@@ -1449,7 +1458,7 @@ if r:
                 except (ValueError, TypeError):
                     pass
 
-        st.markdown(f"##### 📊 {t['resultado']}")
+        st.markdown(f"##### {t['resultado']}")
         m1, m2, m3 = st.columns(3)
         m1.metric(t["filas"], fmt_numero(len(df), dec=0))
         m2.metric(t["columnas"], len(df.columns))
@@ -1460,10 +1469,10 @@ if r:
                       fmt_numero(df[nums[0]].sum(), pct=(tipo_c == "pct"),
                                  moneda=(tipo_c == "moneda")))
 
-        _titulos = [f"📋 {t['tabla']}", f"📈 {t['grafico']}", f"🧠 {t['analisis']}",
-                    f"🔍 {t['explorar']}", f"⬇️ {t['exportar']}"]
+        _titulos = [f"{t['tabla']}", f"{t['grafico']}", f"{t['analisis']}",
+                    f"{t['explorar']}", f"{t['exportar']}"]
         if PERM.get("ve_auditoria"):
-            _titulos.append(f"🛡️ {t['aud_titulo']}")
+            _titulos.append(f"{t['aud_titulo']}")
             tab1, tab2, tab3, tab5, tab4, tab6 = st.tabs(_titulos)
         else:
             tab1, tab2, tab3, tab5, tab4 = st.tabs(_titulos)
@@ -1515,14 +1524,14 @@ if r:
                     st.error(str(e))
                     df_eda = df
 
-            st.markdown(f"###### 🔗 {t['eda_corr']}")
+            st.markdown(f"###### {t['eda_corr']}")
             fig_corr = eda_correlacion(df_eda)
             if fig_corr:
                 st.plotly_chart(fig_corr, use_container_width=True)
             else:
                 st.info(t["eda_pocas"])
 
-            st.markdown(f"###### 🎯 {t['eda_infl']}")
+            st.markdown(f"###### {t['eda_infl']}")
             candidatas = [c for c in _sin_ids(df_eda).columns
                           if df_eda[c].nunique() > 1]
             if len(candidatas) >= 2:
@@ -1572,21 +1581,21 @@ if r:
                 m4.metric(t["aud_confianza"],
                           f"{_res['confianza_media']}%" if _res["confianza_media"] else "—")
                 if _res["por_usuario"]:
-                    st.markdown(f"###### 👥 {t['aud_por_usuario']}")
+                    st.markdown(f"###### {t['aud_por_usuario']}")
                     st.dataframe(pd.DataFrame(_res["por_usuario"],
                                               columns=[t["aud_usuario"], t["aud_consultas"]]),
                                  use_container_width=True, hide_index=True)
                 if _res["tablas_top"]:
-                    st.markdown(f"###### 🗄️ {t['aud_tablas']}")
+                    st.markdown(f"###### {t['aud_tablas']}")
                     st.dataframe(pd.DataFrame(_res["tablas_top"],
                                               columns=[t["tabla"], t["aud_consultas"]]),
                                  use_container_width=True, hide_index=True)
-                st.markdown(f"###### 🕘 {t['aud_ultimas']}")
+                st.markdown(f"###### {t['aud_ultimas']}")
                 _cols_a, _filas_a = auditoria.listar(limite=200)
                 if _filas_a:
                     st.dataframe(pd.DataFrame(_filas_a, columns=_cols_a),
                                  use_container_width=True, height=320, hide_index=True)
-                    st.download_button(f"⬇️ {t['aud_exportar']}", auditoria.a_csv(),
+                    st.download_button(f"{t['aud_exportar']}", auditoria.a_csv(),
                                        "auditoria_mvsql.csv", "text/csv")
                 else:
                     st.info(t["aud_vacio"])
@@ -1596,7 +1605,7 @@ if r:
         st.divider()
         a1, a2, a3 = st.columns(3)
         with a1:
-            with st.popover(f"⭐ {t['guardar']}"):
+            with st.popover(f"{t['guardar']}"):
                 nombre = st.text_input(t["nombre_consulta"],
                                        key="nombre_guardar")
                 if st.button("OK", key="btn_guardar") and nombre:
@@ -1605,9 +1614,9 @@ if r:
                     st.success(t["guardada"])
         with a2:
           if not PERM.get("puede_sp", True):
-            st.button(f"🧱 {t['sp']}", disabled=True, help=t["sin_sp"])
+            st.button(f"{t['sp']}", disabled=True, help=t["sin_sp"])
           else:
-            with st.popover(f"🧱 {t['sp']}"):
+            with st.popover(f"{t['sp']}"):
                 sp_nombre = st.text_input(t["sp_nombre"], value="sp_mvsql_reporte",
                                           key="sp_nombre")
                 if st.button("OK", key="btn_sp"):
@@ -1615,13 +1624,13 @@ if r:
                         codigo = ss.motor.generar_stored_procedure(r["sql"], sp_nombre)
                     st.code(codigo, language="sql")
         with a3:
-            if st.button(f"🚀 {t['optimizar']}"):
+            if st.button(f"{t['optimizar']}"):
                 with st.spinner("…"):
                     st.code(ss.motor.optimizar_sql(r["sql"]), language="sql")
 
 # historial
 if ss.historial:
-    with st.expander(f"🕘 {t['historial']} ({len(ss.historial)})"):
+    with st.expander(f"{t['historial']} ({len(ss.historial)})"):
         for h in ss.historial[:20]:
             st.markdown(f"**{h['pregunta']}**")
             st.code(h["sql"], language="sql")
