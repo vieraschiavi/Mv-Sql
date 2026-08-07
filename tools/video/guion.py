@@ -12,18 +12,32 @@ silencios o a cortar frases.
 ==================================================================
 """
 
-# Voz por idioma. Se eligieron tres voces masculinas con el mismo
-# registro (cálida, cercana, profesional) para que los tres videos
-# suenen a la misma marca. Mateo es rioplatense: es la que vende en
-# Uruguay y no suena a locutor de aeropuerto.
+# Voz por idioma. Las tres del mismo registro (cálida, cercana,
+# profesional) para que los tres videos suenen a la misma marca.
+# Valentina es rioplatense de Uruguay: es la que vende acá y no suena a
+# locutor de aeropuerto. Las de inglés y portugués son "Multilingual",
+# la generación más nueva del motor — se nota sobre todo en las
+# entonaciones largas, que es donde las viejas sonaban a lectura.
 VOCES = {
-    "es": "es-UY-MateoNeural",
-    "en": "en-US-AndrewMultilingualNeural",
-    "pt": "pt-BR-AntonioNeural",
+    "es": "es-UY-ValentinaNeural",
+    "en": "en-US-AvaMultilingualNeural",
+    "pt": "pt-BR-ThalitaMultilingualNeural",
 }
 
-# Ritmo: edge-tts habla rápido por defecto para un video de producto.
-RITMO = "-8%"
+# Ritmo: al natural. Antes iba a -8% para que no corriera, pero pedirle
+# al motor que cambie la velocidad es justo lo que delata que la voz es
+# sintética: estira las vocales sin recalcular la entonación. La voz
+# neuronal está afinada para su propio ritmo, así que sale más humana
+# sin tocarla, y el aire entre frases (AIRE, abajo) es el que maneja
+# que no se sienta apurada.
+RITMO = "+0%"
+
+# Silencio después de cada frase, en segundos. Cada cuadro dura lo que
+# su narración más este aire. Estaba en 0.65 y era demasiado: sumado
+# frase por frase, el video se sentía trabado — se escuchaba la pausa,
+# no el ritmo. 0.28 alcanza para separar ideas sin que parezca que el
+# audio se colgó.
+AIRE = 0.28
 
 TITULO = {
     "es": "Tu base de datos, en tu idioma",
