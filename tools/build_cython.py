@@ -51,6 +51,20 @@ import os
 import shutil
 import sys
 
+# La consola de Windows abre stdout en cp1252, que no sabe escribir ni el
+# "✓" ni el guión largo ni los acentos — y este archivo, como todo el
+# repo, está en castellano. Sin esto, el script compila los tres módulos
+# bien y recién MUERE al imprimir que le fue bien: UnicodeEncodeError en
+# el print final, exit 1, y el job de release se cae con los .pyd ya
+# generados. Pasó de verdad en el runner (run #3), y el error no dice
+# nada sobre encodings a primera vista: parece que falló la compilación.
+#
+# Se arregla acá y no sacando los acentos de cada print porque lo segundo
+# hay que acordárselo cada vez que alguien agrega un mensaje.
+for _flujo in (sys.stdout, sys.stderr):
+    if hasattr(_flujo, "reconfigure"):
+        _flujo.reconfigure(encoding="utf-8", errors="replace")
+
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 APP_PYTHON = os.path.join(RAIZ, "app-python")
 
