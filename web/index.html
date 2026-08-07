@@ -29,7 +29,11 @@
 <meta name="twitter:title" content="MV SQL NLP · Tu base de datos, en tu idioma">
 <meta name="twitter:description" content="Preguntale a tu base de datos en lenguaje natural. La IA escribe el SQL, lo valida contra tu esquema real y te devuelve tablas y graficos.">
 <meta name="twitter:image" content="https://mvsqlnlp.com/assets/og-image.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+<!-- Marca dibujada, no un emoji: el ⚡ de antes lo resolvía la fuente del
+     sistema, así que el favicon se veía distinto en cada máquina (y en
+     Windows salía la versión chata en blanco y negro). Los # de los colores
+     van escapados (%23) porque adentro de un data: URI cortan la URL. -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23081527'/><path d='M57 12L27 60h20l-4 28 30-46H53l4-30z' fill='%23f2b441'/></svg>">
 <style>
 :root{
   --navy:#081527; --navy2:#0c2137; --hero-a:#0d2440; --hero-b:#081324;
@@ -56,7 +60,10 @@ h1,h2,h3{margin:0;line-height:1.08;text-wrap:balance;letter-spacing:-.02em}
 nav{position:sticky;top:0;z-index:30;background:rgba(8,19,36,.82);backdrop-filter:blur(10px)}
 nav .wrap{display:flex;align-items:center;gap:14px;height:60px;min-width:0}
 .brand{display:flex;align-items:center;gap:9px;font-weight:800;flex:none;white-space:nowrap}
-.brand .bolt{font-size:22px}
+/* El rayo de la marca ya no es un emoji con colores propios: ahora es
+   trazo, así que el ámbar hay que pedirlo. Relleno además de trazo, para
+   que a 22px se lea como un sólido y no como un contorno hueco. */
+.brand .bolt{width:22px;height:22px;color:var(--amber);fill:currentColor;stroke:none}
 .brand b{font-size:15px}
 .nlinks{display:flex;gap:4px;margin-left:14px}
 .nlinks a{color:var(--muted);font-size:13.5px;font-weight:600;padding:7px 11px;border-radius:8px}
@@ -151,6 +158,16 @@ nav .wrap{display:flex;align-items:center;gap:14px;height:60px;min-width:0}
 .feat .ic{width:44px;height:44px;border-radius:11px;background:#fff;border:1px solid var(--line-d);
   display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:14px;
   box-shadow:0 2px 8px rgba(18,34,56,.05)}
+/* Un solo trazo para todos los iconos: sin relleno, redondeado y heredando
+   el color de quien los contiene, así el mismo símbolo sirve sobre la
+   tarjeta clara y sobre la banda oscura sin duplicar el dibujo. */
+.i{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;
+  stroke-linecap:round;stroke-linejoin:round;vertical-align:-.22em}
+.feat .ic .i{width:23px;height:23px;color:var(--ink-d)}
+/* En títulos y botones el icono acompaña al texto: va un poco más chico y
+   con su propio aire, para no empujar la línea base. */
+.i-t{width:18px;height:18px;margin-right:9px;color:var(--amber2)}
+.dl h3 .i-t,.feat h3 .i-t{color:var(--ink-d)}
 .feat h3{font-size:18px;color:var(--ink-d);margin-bottom:7px}
 .feat p{color:var(--muted-d);font-size:14.5px;margin:0}
 .feat ul{list-style:none;padding:0;margin:12px 0 0}
@@ -257,8 +274,38 @@ footer .legal{max-width:74ch;line-height:1.6}
 </head>
 <body>
 
+<!-- Iconos. Trazo de 1.75 sobre grilla de 24, todos con la misma familia
+     visual y heredando el color del texto (currentColor): un emoji cambia
+     de dibujo según el sistema operativo del que mira y le mete color de
+     otra paleta a la tarjeta. Definidos una sola vez acá y referenciados
+     con <use>, así el mismo candado en tres secciones pesa una vez. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-cpu" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></symbol>
+<symbol id="i-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 5v6c0 1.7-4 3-9 3s-9-1.3-9-3V5"/><path d="M21 11v6c0 1.7-4 3-9 3s-9-1.3-9-3v-6"/></symbol>
+<symbol id="i-code" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></symbol>
+<symbol id="i-plug" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6"/><path d="M6 8h12v3a6 6 0 01-12 0V8z"/><path d="M12 17v5"/></symbol>
+<symbol id="i-server" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="7" rx="2"/><rect x="3" y="14" width="18" height="7" rx="2"/><path d="M7 6.5h.01M7 17.5h.01"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M17 8l-5-5-5 5M12 3v13"/></symbol>
+<symbol id="i-shield-x" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 20v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="3.5"/><path d="M22 20v-2a4 4 0 00-3-3.9"/><path d="M16 3.6a4 4 0 010 6.8"/></symbol>
+<symbol id="i-certificate" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5-3.4 9.4-8 11-4.6-1.6-8-6-8-11V5l8-3z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 2v7L4 19a2 2 0 001.8 3h12.4A2 2 0 0020 19l-5-10V2"/><path d="M8 2h8M6.5 14h11"/></symbol>
+<symbol id="i-card" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h3"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="13" rx="2"/><path d="M8 21h8M12 16v5"/></symbol>
+<symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.5 5.5a4.5 4.5 0 005.9 5.9L21 12l-8.5 8.5a2.1 2.1 0 01-3-3L18 9l.6-.6a4.5 4.5 0 00-4.1-2.9z"/><path d="M6 6l3 3"/></symbol>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></symbol>
+<symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.8 12.2L21 2M17 6l3 3M14 9l3 3"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z" fill="currentColor" stroke="none"/></symbol>
+</defs></svg>
+
+
 <nav><div class="wrap">
-  <div class="brand"><span class="bolt">⚡</span><b>MV SQL <span class="am">NLP</span></b></div>
+  <div class="brand"><svg class="i bolt"><use href="#i-bolt"/></svg><b>MV SQL <span class="am">NLP</span></b></div>
   <div class="nlinks">
     <a href="#plataforma" data-i="nav1">Funciones</a>
     <a href="#video" data-i="nav2">Video</a>
@@ -294,7 +341,7 @@ footer .legal{max-width:74ch;line-height:1.6}
     contra tu esquema real y te devuelve tablas, gráficos y análisis exportables — con la IA que vos elijas:
     Claude, ChatGPT, Copilot, Gemini y más.</p>
     <div class="hcta">
-      <a href="#video" class="btn btn-a" data-i="hb1">▶ Ver el video demo</a>
+      <a href="#video" class="btn btn-a"><svg class="i i-t"><use href="#i-play"/></svg><span data-i="hb1">Ver el video demo</span></a>
       <a href="#descargas" class="btn btn-o" data-i="hb2">Probar gratis 7 días</a>
     </div>
     <div class="metrics">
@@ -304,7 +351,7 @@ footer .legal{max-width:74ch;line-height:1.6}
     </div>
   </div>
   <div class="chat" aria-hidden="true">
-    <div class="h"><span class="av">⚡</span><div><b>MV SQL NLP</b><span data-i="chs">conectado a tu base</span></div></div>
+    <div class="h"><span class="av"><svg class="i"><use href="#i-bolt"/></svg></span><div><b>MV SQL NLP</b><span data-i="chs">conectado a tu base</span></div></div>
     <div class="b in" data-i="cb1">¿Cuánto cobramos por mes en 2026?</div>
     <div class="b sqlbox">WITH cobros_2026 AS (
   SELECT fecha_cobro, monto
@@ -312,7 +359,7 @@ footer .legal{max-width:74ch;line-height:1.6}
 )
 SELECT mes, SUM(monto) AS total_cobrado ...</div>
     <div class="b out" data-i="cb2">El mejor mes fue mayo: <span class="hl">$U 31.033.659</span> cobrados.
-      La tendencia es creciente: +45% desde enero. 📈</div>
+      La tendencia es creciente: +45% desde enero.</div>
     <div class="b ok" data-i="cb3">✓ SQL validado contra tu esquema · confianza 94% (±5) · exportado a Excel</div>
   </div>
 </div></div></div></header>
@@ -339,29 +386,29 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   <p class="lead-d" data-i="pl">Preguntás en lenguaje natural; MV SQL NLP hace el resto: SQL optimizado, validación
   anti-alucinación, intervalo de confianza y resultados listos para presentar.</p>
   <div class="fgrid">
-    <div class="feat"><div class="ic">🤖</div><h3 data-i="f1t">La IA que vos elijas</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-cpu"/></svg></div><h3 data-i="f1t">La IA que vos elijas</h3>
       <p data-i="f1p">Usá tu propia API key del proveedor que prefieras — o nuestros créditos, sin configurar nada.</p>
       <div class="ia-badges"><span class="ia-badge">Claude</span><span class="ia-badge">ChatGPT</span>
       <span class="ia-badge">Copilot (Azure)</span><span class="ia-badge">Gemini</span><span class="ia-badge">Groq</span>
       <span class="ia-badge">Mistral</span><span class="ia-badge">DeepSeek</span><span class="ia-badge">Grok</span>
       <span class="ia-badge">Ollama (local, gratis)</span></div></div>
-    <div class="feat"><div class="ic">🗄️</div><h3 data-i="f2t">Cualquier base — y también archivos</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-database"/></svg></div><h3 data-i="f2t">Cualquier base — y también archivos</h3>
       <p data-i="f2p">SQL Server, MySQL/MariaDB, PostgreSQL y SQLite: se adapta a tu esquema solo. ¿No tenés base? Subí
       un CSV, Excel o Parquet y consultalo igual — carga rápida con caché.</p></div>
-    <div class="feat"><div class="ic">🚀</div><h3 data-i="f3t">SQL de nivel senior</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-code"/></svg></div><h3 data-i="f3t">SQL de nivel senior</h3>
       <p data-i="f3p">CTEs con nombres claros, filtros tempranos, sin SELECT *. Validado contra el catálogo real: si la IA
       inventa una columna, se rechaza y se auto-corrige.</p>
       <ul><li data-i="f3a">Intervalo de confianza en cada respuesta (ej. 94% ±5)</li>
       <li data-i="f3b">Consultas guardadas + stored procedures</li><li data-i="f3c">Re-optimizador de SQL existente</li></ul></div>
-    <div class="feat"><div class="ic">📊</div><h3 data-i="f4t">Resultados listos para presentar</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-chart"/></svg></div><h3 data-i="f4t">Resultados listos para presentar</h3>
       <p data-i="f4p">Gráficos profesionales con ejes etiquetados y valores legibles; formato a tu medida: decimales,
       separador de miles, porcentajes y moneda ($U, US$, R$…). Panel <b>Explorar</b>: correlación entre variables y cuáles influyen sobre cuál. Exportá a Excel, CSV, PDF y HTML.</p></div>
-    <div class="feat"><div class="ic">🔒</div><h3 data-i="f5t">Tus datos, bajo tu control</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-lock"/></svg></div><h3 data-i="f5t">Tus datos, bajo tu control</h3>
       <p data-i="f5p">Para generar el SQL viaja el esquema (nombres de tablas y columnas) y unos pocos valores de ejemplo;
       el análisis usa una muestra del resultado. Con el <b>modo privacidad estricta</b> (un clic) no viaja ningún valor
       real: solo nombres. Con Ollama local, nada sale de tu máquina. Conexión de solo lectura, siempre. Detalle completo
       abajo, en <a href="#seguridad" style="color:inherit">Seguridad</a>.</p></div>
-    <div class="feat"><div class="ic">🧩</div><h3 data-i="f6t">Bonus: Claude Desktop directo a tu base (MCP)</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-plug"/></svg></div><h3 data-i="f6t">Bonus: Claude Desktop directo a tu base (MCP)</h3>
       <p data-i="f6p">Incluye un instalador de un clic que conecta tu Claude Desktop a tu base por MCP: le preguntás a
       Claude y consulta la base solo, desde el chat.</p></div>
   </div>
@@ -377,29 +424,29 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   <p class="lead-d" data-i="sl">Sin promesas vagas: qué viaja, qué no, qué puede salir mal y qué pasa cuando sale mal.
   Todo lo de abajo está implementado en el código — y lo central, cubierto por tests públicos.</p>
   <div class="fgrid">
-    <div class="feat"><div class="ic">🏠</div><h3 data-i="s1t">¿Dónde se procesan mis datos?</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-server"/></svg></div><h3 data-i="s1t">¿Dónde se procesan mis datos?</h3>
       <p data-i="s1p">En tu PC o tu servidor: el programa corre local. No hay servidor nuestro procesando tus consultas.
       Con tu propia API key, tu máquina habla directo por HTTPS con el proveedor de IA que elegiste; en modo créditos
       pasa por nuestra función de cobro, que descuenta 1 crédito y no almacena tu consulta.</p></div>
-    <div class="feat"><div class="ic">📤</div><h3 data-i="s2t">¿Qué viaja exactamente a la IA?</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-upload"/></svg></div><h3 data-i="s2t">¿Qué viaja exactamente a la IA?</h3>
       <p data-i="s2p">Para generar el SQL: tu pregunta, los nombres de tablas y columnas de las ~4 tablas relevantes, y
       —para que la IA entienda los dominios— unos pocos valores de ejemplo de las columnas de texto. Para el análisis
       escrito (opcional): una muestra de hasta 20 filas del resultado. Con el <b>modo privacidad estricta</b> no viaja
       ningún valor real, ni de ejemplo ni de resultado: solo nombres. Con <b>Ollama local</b>, nada sale de tu máquina.</p></div>
-    <div class="feat"><div class="ic">🛑</div><h3 data-i="s3t">¿Puede escribir en mi base?</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-shield-x"/></svg></div><h3 data-i="s3t">¿Puede escribir en mi base?</h3>
       <p data-i="s3p">No. La conexión se abre en modo solo lectura y todo lo que no sea SELECT/WITH se bloquea en el punto
       de ejecución — no en un filtro de superficie. Hay un test público de inyección directa en el repositorio:
       ejecutar('DROP TABLE clientes') no borra la tabla.</p></div>
-    <div class="feat"><div class="ic">🎯</div><h3 data-i="s4t">¿Y si el SQL está mal?</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-target"/></svg></div><h3 data-i="s4t">¿Y si el SQL está mal?</h3>
       <p data-i="s4p">Antes de ejecutarse se valida contra tu esquema real: lo que no existe se rechaza y se autocorrige.
       El SQL siempre queda visible para auditarlo, y el porcentaje de confianza (autoevaluación del modelo + señal RAG +
       validación estructural) es una guía de cuándo mirar dos veces — no una garantía. El peor caso posible es un número
       mal en pantalla; nunca un dato modificado.</p></div>
-    <div class="feat"><div class="ic">👥</div><h3 data-i="s5t">Accesos y auditoría</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-users"/></svg></div><h3 data-i="s5t">Accesos y auditoría</h3>
       <p data-i="s5p">PIN por usuario, guardado con PBKDF2-SHA256 y sal — nunca en texto plano. Cada rol ve solo sus
       tablas: la IA ni se entera de que las demás existen, así no puede consultarlas ni por error. Quién preguntó qué,
       con qué SQL y qué resultado queda en un registro local exportable a CSV.</p></div>
-    <div class="feat"><div class="ic">📜</div><h3 data-i="s6t">¿Certificaciones?</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-certificate"/></svg></div><h3 data-i="s6t">¿Certificaciones?</h3>
       <p data-i="s6p">Todavía no tenemos certificaciones formales, y preferimos decírtelo antes que esquivarlo. La
       arquitectura reduce lo que habría que certificar: nunca recibimos ni almacenamos tus datos. El código de la
       barrera de solo lectura y de la validación es público y auditable en GitHub.</p></div>
@@ -441,8 +488,8 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
 
   <h3 class="sub-h" data-i="lich">Licencia del programa</h3>
   <div class="buy-toggle" role="group">
-    <button data-buymode="suscripcion" class="active" data-i="tg1">🔑 Suscripción mensual</button>
-    <button data-buymode="credits" data-i="tg2">⚡ Créditos incluidos</button>
+    <button data-buymode="suscripcion" class="active"><svg class="i i-t"><use href="#i-key"/></svg><span data-i="tg1">Suscripción mensual</span></button>
+    <button data-buymode="credits"><svg class="i i-t"><use href="#i-bolt"/></svg><span data-i="tg2">Créditos incluidos</span></button>
   </div>
   <p class="buy-desc" id="buy-mode-desc" data-i="susc_desc">Licencia mensual con tu propia clave de IA (Claude, ChatGPT, Gemini, Copilot…). Se cobra todos los meses, cancelás cuando quieras.</p>
 
@@ -518,7 +565,7 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
     <span data-i="paylead">Medios de pago:</span>
     <span class="paybadge">MercadoPago</span><span class="paybadge" data-i="payb0">Tarjeta</span>
     <span class="paybadge" data-i="payb1">Transferencia</span>
-    <span data-i="paysec">🔒 Pago verificado del lado del servidor antes de habilitar la descarga.</span>
+    <svg class="i i-t"><use href="#i-lock"/></svg><span data-i="paysec">Pago verificado del lado del servidor antes de habilitar la descarga.</span>
   </div>
 </div></section>
 
@@ -529,19 +576,19 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   <p class="lead-d" data-i="dl">Descargá la versión que prefieras y usala completa por 7 días, sin tarjeta.
   Después, comprás la licencia en un clic.</p>
   <div class="dl-grid">
-    <div class="dl"><h3 data-i="dl1t">💻 Instalador liviano (.exe)</h3>
+    <div class="dl"><h3><svg class="i i-t"><use href="#i-monitor"/></svg><span data-i="dl1t">Instalador liviano (.exe)</span></h3>
       <p data-i="dl1p">Programa de PC (React + Electron): instalador clásico, acceso directo, actualizaciones. Versión
       liviana — sin cuadernos, equipo ni auditoría (esas funciones están en el instalador completo, abajo).</p>
       <a class="btn btn-d" href="https://github.com/vieraschiavi/Mv-Sql/releases/latest/download/MV-SQL-NLP-App-Setup.exe" data-i="dl1cta">Descargar .exe</a></div>
-    <div class="dl"><h3 data-i="dl4t">🛠️ Instalador completo (.exe) — todas las funciones</h3>
+    <div class="dl"><h3><svg class="i i-t"><use href="#i-tool"/></svg><span data-i="dl4t">Instalador completo (.exe) — todas las funciones</span></h3>
       <p data-i="dl4p">El producto completo (cuadernos, equipo, auditoría, SHAP, diagrama de esquema, EXPLAIN...) como
       instalador de Windows de verdad: elegís la carpeta, queda en "Aplicaciones y características" con desinstalador. Más funciones que el instalador liviano de arriba.</p>
       <a class="btn btn-d" href="/downloads/MV-SQL-NLP-Setup.exe" data-i="dl4cta">Descargar instalador completo</a></div>
-    <div class="dl"><h3 data-i="dl2t">⚡ Autoinstalable (.bat + Python)</h3>
+    <div class="dl"><h3><svg class="i i-t"><use href="#i-bolt"/></svg><span data-i="dl2t">Autoinstalable (.bat + Python)</span></h3>
       <p data-i="dl2p">Doble clic en INICIAR_MVSQL.bat: instala todo solo, genera una base demo y abre la app en tu
       navegador en 2 minutos. Sin conocimientos técnicos.</p>
       <a class="btn btn-d" href="/downloads/mvsql-nlp-app.zip" data-i="dl2cta">Descargar .zip</a></div>
-    <div class="dl"><h3 data-i="dl3t">🧩 Conector MCP para Claude Desktop</h3>
+    <div class="dl"><h3><svg class="i i-t"><use href="#i-plug"/></svg><span data-i="dl3t">Conector MCP para Claude Desktop</span></h3>
       <p data-i="dl3p">¿Ya usás Claude Desktop? CONECTAR_CLAUDE_MCP.bat conecta tu Claude directo a tu base
       (SQL Server, MySQL, PostgreSQL o SQLite) — viene incluido en el zip.</p>
       <a class="btn btn-od" href="/downloads/mvsql-nlp-app.zip" data-i="dl3cta">Incluido en el .zip</a></div>
@@ -564,13 +611,13 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   <p class="lead-d" data-i="slr">Preferimos mostrar poco y verdadero antes que mucho e inventado. Estos son compromisos
   que podés verificar vos mismo, y las reseñas reales de clientes.</p>
   <div class="fgrid" style="margin-bottom:34px">
-    <div class="feat"><div class="ic">🔒</div><h3 data-i="tb1t">Solo lectura, siempre</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-lock"/></svg></div><h3 data-i="tb1t">Solo lectura, siempre</h3>
       <p data-i="tb1p">El programa solo ejecuta SELECT/WITH. Nada de INSERT, UPDATE ni DELETE — verificable en el código.</p></div>
-    <div class="feat"><div class="ic">🛡️</div><h3 data-i="tb2t">Tus datos nunca viajan</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-shield"/></svg></div><h3 data-i="tb2t">Tus datos nunca viajan</h3>
       <p data-i="tb2p">A la IA va únicamente el esquema (nombres de tablas/columnas relevantes), jamás filas de datos.</p></div>
-    <div class="feat"><div class="ic">🧪</div><h3 data-i="tb3t">Demo 100% sintética</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-flask"/></svg></div><h3 data-i="tb3t">Demo 100% sintética</h3>
       <p data-i="tb3p">La base demo y el video se generan con datos ficticios creados por el propio programa.</p></div>
-    <div class="feat"><div class="ic">💳</div><h3 data-i="tb4t">Pago verificado en el servidor</h3>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-card"/></svg></div><h3 data-i="tb4t">Pago verificado en el servidor</h3>
       <p data-i="tb4p">La descarga se habilita solo después de que MercadoPago confirma el pago del lado del servidor.</p></div>
   </div>
   <h3 style="font-size:19px;color:var(--ink-d);margin-bottom:10px" data-i="rsubt">Reseñas de clientes</h3>
@@ -578,7 +625,7 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   <div id="resenasVacio" class="resena-vacio"><p style="margin:0" data-i="rvacio">Todavía no tenemos reseñas públicas —
     sé el primero en dejar la tuya después de probarlo.</p></div>
   <div class="actions" style="margin-top:18px">
-    <button type="button" class="btn btn-od" id="btnDejarResena" data-i="rcta">✍️ Dejar mi reseña</button>
+    <button type="button" class="btn btn-od" id="btnDejarResena"><svg class="i i-t"><use href="#i-pencil"/></svg><span data-i="rcta">Dejar mi reseña</span></button>
     <span class="hint" data-i="rhint">Se abre tu correo; la publicamos luego de verificarla.</span>
   </div>
 </div></section>
@@ -605,7 +652,7 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
 
 <footer><div class="wrap">
   <div class="foot-top">
-    <div class="brand"><span class="bolt">⚡</span><b>MV SQL <span class="am">NLP</span></b></div>
+    <div class="brand"><svg class="i bolt"><use href="#i-bolt"/></svg><b>MV SQL <span class="am">NLP</span></b></div>
     <div class="lang" role="group" aria-label="Idioma">
       <button data-lang="es" class="on">ES</button><button data-lang="pt">PT</button><button data-lang="en">EN</button>
     </div>
@@ -624,10 +671,10 @@ var I18N={
     kick:"IA para seus dados · sem saber SQL",
     h1:'Pergunte ao seu banco de dados <span class="am">no seu idioma</span>',
     lead:"O MV SQL NLP converte suas perguntas em SQL profissional otimizado com CTEs, valida contra seu esquema real e devolve tabelas, gráficos e análises exportáveis — com a IA que você escolher: Claude, ChatGPT, Copilot, Gemini e mais.",
-    hb1:"▶ Ver o vídeo demo",hb2:"Testar grátis por 7 dias",
+    hb1:"Ver o vídeo demo",hb2:"Testar grátis por 7 dias",
     m1:"IAs à escolha (ou nossos créditos)",m2:"motores: SQL Server · MySQL · PostgreSQL · SQLite · arquivos",m3:"idiomas: espanhol · inglês · português",
     chs:"conectado ao seu banco",cb1:"Quanto cobramos por mês em 2026?",
-    cb2:'O melhor mês foi maio: <span class="hl">$U 31.033.659</span> cobrados. A tendência é crescente: +45% desde janeiro. 📈',
+    cb2:'O melhor mês foi maio: <span class="hl">$U 31.033.659</span> cobrados. A tendência é crescente: +45% desde janeiro.',
     cb3:"✓ SQL validado contra seu esquema · confiança 94% (±5) · exportado para Excel",
     vey:"Vídeo",vh:"Veja o MV SQL NLP em ação",vl:"Gravação real do programa, narrada e com a interface no seu idioma: pergunta, SQL com CTEs validado, intervalo de confiança, tabela, gráfico, relação entre variáveis, auditoria e permissões por usuário.",
     pey:"A plataforma",ph:"Tudo o que um analista SQL sênior faz, sem escrever código",
@@ -663,7 +710,7 @@ var I18N={
     susc_desc:"Licença mensal com sua própria chave de IA (Claude, ChatGPT, Gemini, Copilot…). Cobrada todo mês, cancele quando quiser.",
     ey3:"Planos",st3:"Comece pela implementação, siga com a licença",
     sl3:"A maioria começa pela implementação: conectamos o MV SQL NLP ao seu banco ou ERP real — o Odoo roda sobre PostgreSQL, o SAP Business One e o Dynamics NAV/Business Central sobre SQL Server, a maioria dos sistemas de gestão locais sobre MySQL/MariaDB — mapeamos seu esquema e deixamos rodando as consultas que sua equipe pede toda semana. Depois, a licença mensal mantém o programa atualizado. Preços de referência em dólares; cobrado via MercadoPago. Antes de tudo, teste grátis por 7 dias.",
-    tg1:"🔑 Assinatura mensal",tg2:"⚡ Créditos incluídos",
+    tg1:"Assinatura mensal",tg2:"Créditos incluídos",
     byok_desc:"Você traz sua própria chave de IA (Claude, ChatGPT, Gemini, Copilot…) e paga só a licença do programa. Ideal se você já usa IA.",
     credits_desc:"A IA já vem incluída e medida por créditos — zero configuração. Nós faturamos a IA por você.",
     p1t:"Pessoal",p1w:"Para um usuário e seus bancos.",p1per:"por mês · cancele quando quiser · ",p1a:"Programa completo (PC + autoinstalável)",p1b:"Todas as IAs e bancos",p1c:"Gráficos, exportação, consultas salvas",p1d:"Atualizações menores incluídas",p1cta:"Assinar Pessoal",
@@ -673,12 +720,12 @@ var I18N={
     poptag2:"Recomendado",c2t:"500 créditos",c2w:"Uso regular sem se preocupar com chaves.",c2per:"pagamento único · ",c2a:"Tudo incluído, zero configuração",c2b:"≈ 500 consultas com análise",c2c:"Melhor preço por consulta",c2d:"Recarregue quando quiser",c2cta:"Comprar 500 créditos",
     c3t:"2000 créditos",c3w:"Equipes e uso intensivo.",c3per:"pagamento único · ",c3a:"≈ 2000 consultas com análise",c3b:"Nós faturamos a IA",c3c:"Ideal para vários usuários",c3d:"Suporte prioritário",c3cta:"Comprar 2000 créditos",
     emailhint:"Sua licença e o link de download chegam neste email.",
-    paylead:"Meios de pagamento:",payb0:"Cartão",payb1:"Transferência",paysec:"🔒 Pagamento verificado no servidor antes de liberar o download.",
+    paylead:"Meios de pagamento:",payb0:"Cartão",payb1:"Transferência",paysec:"Pagamento verificado no servidor antes de liberar o download.",
     dey:"Downloads",dh:"Teste grátis por 7 dias — tudo incluído",dl:"Baixe a versão que preferir e use completa por 7 dias, sem cartão. Depois, compre a licença em um clique.",
-    dl1t:"💻 Instalador leve (.exe)",dl1p:"Programa de PC (React + Electron): instalador clássico, atalho, atualizações. Versão leve — sem cadernos, equipe nem auditoria (esses recursos estão no instalador completo, abaixo).",dl1cta:"Baixar .exe",
-    dl4t:"🛠️ Instalador completo (.exe) — todos os recursos",dl4p:"O produto completo (cadernos, equipe, auditoria, SHAP, diagrama de esquema, EXPLAIN...) como instalador de Windows de verdade: você escolhe a pasta, aparece em \"Aplicativos e recursos\" com desinstalador. Mais recursos que o instalador leve acima.",dl4cta:"Baixar instalador completo",
-    dl2t:"⚡ Autoinstalável (.bat + Python)",dl2p:"Duplo clique no INICIAR_MVSQL.bat: instala tudo sozinho, gera um banco demo e abre o app no navegador em 2 minutos. Sem conhecimentos técnicos.",dl2cta:"Baixar .zip",
-    dl3t:"🧩 Conector MCP para Claude Desktop",dl3p:"Já usa o Claude Desktop? O CONECTAR_CLAUDE_MCP.bat conecta seu Claude direto ao seu banco (SQL Server, MySQL, PostgreSQL ou SQLite) — vem incluído no zip.",dl3cta:"Incluído no .zip",
+    dl1t:"Instalador leve (.exe)",dl1p:"Programa de PC (React + Electron): instalador clássico, atalho, atualizações. Versão leve — sem cadernos, equipe nem auditoria (esses recursos estão no instalador completo, abaixo).",dl1cta:"Baixar .exe",
+    dl4t:"Instalador completo (.exe) — todos os recursos",dl4p:"O produto completo (cadernos, equipe, auditoria, SHAP, diagrama de esquema, EXPLAIN...) como instalador de Windows de verdade: você escolhe a pasta, aparece em \"Aplicativos e recursos\" com desinstalador. Mais recursos que o instalador leve acima.",dl4cta:"Baixar instalador completo",
+    dl2t:"Autoinstalável (.bat + Python)",dl2p:"Duplo clique no INICIAR_MVSQL.bat: instala tudo sozinho, gera um banco demo e abre o app no navegador em 2 minutos. Sem conhecimentos técnicos.",dl2cta:"Baixar .zip",
+    dl3t:"Conector MCP para Claude Desktop",dl3p:"Já usa o Claude Desktop? O CONECTAR_CLAUDE_MCP.bat conecta seu Claude direto ao seu banco (SQL Server, MySQL, PostgreSQL ou SQLite) — vem incluído no zip.",dl3cta:"Incluído no .zip",
     bey:"Novo",bandt:"Seu Claude, conectado ao seu banco de dados",
     bandp:'Duplo clique no <code>CONECTAR_CLAUDE_MCP.bat</code>, escolha o motor, informe os dados de conexão — e o Claude Desktop passa a consultar seu banco via MCP, com sua própria conta do Claude. Sem instalar mais nada.',
     bandcta:"Quero isso",
@@ -689,7 +736,7 @@ var I18N={
     tb3t:"Demo 100% sintética",tb3p:"O banco demo e o vídeo são gerados com dados fictícios criados pelo próprio programa.",
     tb4t:"Pagamento verificado no servidor",tb4p:"O download é liberado só depois que o MercadoPago confirma o pagamento no lado do servidor.",
     rsubt:"Avaliações de clientes",rvacio:"Ainda não temos avaliações públicas — seja o primeiro a deixar a sua depois de testar.",
-    rcta:"✍️ Deixar minha avaliação",rhint:"Abre seu e-mail; publicamos depois de verificar.",
+    rcta:"Deixar minha avaliação",rhint:"Abre seu e-mail; publicamos depois de verificar.",
     eyc:"Contato",stc:"Dúvidas? Escreva para nós",slc:"Preencha o formulário: seu e-mail abre com a mensagem pronta para nos enviar.",
     cfn:"Nome",cfe:"Seu e-mail",cft:"Telefone",cfa:"Assunto",cfp:"Dúvida / pergunta",cfb:"Enviar consulta",cfh:"Abre seu app de e-mail com a mensagem pronta.",
     legal:"MV SQL NLP · Seu banco de dados, no seu idioma. Consultas em linguagem natural com IA à escolha do cliente. Conexão somente leitura. Para a IA viaja o esquema com alguns valores de exemplo (e, se você ativar a análise, uma amostra do resultado); o modo privacidade estrita manda só nomes. Com Ollama local nada sai. Dados de demonstração 100% sintéticos."
@@ -699,10 +746,10 @@ var I18N={
     kick:"AI for your data · no SQL required",
     h1:'Ask your database <span class="am">in your language</span>',
     lead:"MV SQL NLP turns your questions into professional CTE-optimized SQL, validates it against your real schema, and returns exportable tables, charts and analysis — with the AI you choose: Claude, ChatGPT, Copilot, Gemini and more.",
-    hb1:"▶ Watch the demo video",hb2:"Try free for 7 days",
+    hb1:"Watch the demo video",hb2:"Try free for 7 days",
     m1:"AIs to choose from (or our credits)",m2:"engines: SQL Server · MySQL · PostgreSQL · SQLite · files",m3:"languages: Spanish · English · Portuguese",
     chs:"connected to your database",cb1:"How much did we collect per month in 2026?",
-    cb2:'The best month was May: <span class="hl">$U 31,033,659</span> collected. The trend is growing: +45% since January. 📈',
+    cb2:'The best month was May: <span class="hl">$U 31,033,659</span> collected. The trend is growing: +45% since January.',
     cb3:"✓ SQL validated against your schema · 94% confidence (±5) · exported to Excel",
     vey:"Video",vh:"See MV SQL NLP in action",vl:"A real, narrated recording of the product, with the interface in your own language: the question, validated CTE SQL, the confidence interval, table, chart, how the variables relate, the audit trail and per-user permissions.",
     pey:"The platform",ph:"Everything a senior SQL analyst does, without writing code",
@@ -738,7 +785,7 @@ var I18N={
     susc_desc:"Monthly license with your own AI key (Claude, ChatGPT, Gemini, Copilot…). Billed every month, cancel whenever you want.",
     ey3:"Plans",st3:"Start with the implementation, continue with the license",
     sl3:"Most people start with the implementation: we connect MV SQL NLP to your real database or ERP — Odoo runs on PostgreSQL, SAP Business One and Dynamics NAV/Business Central on SQL Server, most local systems on MySQL/MariaDB — map your schema, and leave the questions your team asks every week already working. After that, the monthly license keeps the program up to date. Reference prices in US dollars, charged via MercadoPago. Before any of it, try it free for 7 days.",
-    tg1:"🔑 Monthly subscription",tg2:"⚡ Credits included",
+    tg1:"Monthly subscription",tg2:"Credits included",
     byok_desc:"Bring your own AI key (Claude, ChatGPT, Gemini, Copilot…) and pay only for the program license. Ideal if you already use AI.",
     credits_desc:"AI comes included and metered by credits — zero setup. We bill the AI for you.",
     p1t:"Personal",p1w:"For one user and their databases.",p1per:"per month · cancel anytime · ",p1a:"Full program (PC + self-installing)",p1b:"All AIs and databases",p1c:"Charts, export, saved queries",p1d:"Minor updates included",p1cta:"Subscribe to Personal",
@@ -748,12 +795,12 @@ var I18N={
     poptag2:"Recommended",c2t:"500 credits",c2w:"Regular use without worrying about keys.",c2per:"one-time · ",c2a:"All included, zero setup",c2b:"≈ 500 queries with analysis",c2c:"Best price per query",c2d:"Top up whenever you want",c2cta:"Buy 500 credits",
     c3t:"2000 credits",c3w:"Teams and heavy use.",c3per:"one-time · ",c3a:"≈ 2000 queries with analysis",c3b:"We bill the AI for you",c3c:"Ideal for multiple users",c3d:"Priority support",c3cta:"Buy 2000 credits",
     emailhint:"Your license and download link arrive at this email.",
-    paylead:"Payment methods:",payb0:"Card",payb1:"Bank transfer",paysec:"🔒 Payment verified server-side before enabling the download.",
+    paylead:"Payment methods:",payb0:"Card",payb1:"Bank transfer",paysec:"Payment verified server-side before enabling the download.",
     dey:"Downloads",dh:"Try free for 7 days — everything included",dl:"Download whichever version you prefer and use it in full for 7 days, no card. Then buy the license in one click.",
-    dl1t:"💻 Lightweight installer (.exe)",dl1p:"PC program (React + Electron): classic installer, shortcut, updates. Lightweight version — no notebooks, team or audit log (those are in the full installer below).",dl1cta:"Download .exe",
-    dl4t:"🛠️ Full installer (.exe) — every feature",dl4p:"The complete product (notebooks, team, audit log, SHAP, schema diagram, EXPLAIN...) as a real Windows installer: pick the install folder, shows up in \"Apps & features\" with a proper uninstaller. More features than the lightweight installer above.",dl4cta:"Download full installer",
-    dl2t:"⚡ Self-installing (.bat + Python)",dl2p:"Double-click INICIAR_MVSQL.bat: it installs everything by itself, generates a demo database and opens the app in your browser in 2 minutes. No technical knowledge.",dl2cta:"Download .zip",
-    dl3t:"🧩 MCP connector for Claude Desktop",dl3p:"Already use Claude Desktop? CONECTAR_CLAUDE_MCP.bat connects your Claude straight to your database (SQL Server, MySQL, PostgreSQL or SQLite) — included in the zip.",dl3cta:"Included in the .zip",
+    dl1t:"Lightweight installer (.exe)",dl1p:"PC program (React + Electron): classic installer, shortcut, updates. Lightweight version — no notebooks, team or audit log (those are in the full installer below).",dl1cta:"Download .exe",
+    dl4t:"Full installer (.exe) — every feature",dl4p:"The complete product (notebooks, team, audit log, SHAP, schema diagram, EXPLAIN...) as a real Windows installer: pick the install folder, shows up in \"Apps & features\" with a proper uninstaller. More features than the lightweight installer above.",dl4cta:"Download full installer",
+    dl2t:"Self-installing (.bat + Python)",dl2p:"Double-click INICIAR_MVSQL.bat: it installs everything by itself, generates a demo database and opens the app in your browser in 2 minutes. No technical knowledge.",dl2cta:"Download .zip",
+    dl3t:"MCP connector for Claude Desktop",dl3p:"Already use Claude Desktop? CONECTAR_CLAUDE_MCP.bat connects your Claude straight to your database (SQL Server, MySQL, PostgreSQL or SQLite) — included in the zip.",dl3cta:"Included in the .zip",
     bey:"New",bandt:"Your Claude, connected to your database",
     bandp:'Double-click <code>CONECTAR_CLAUDE_MCP.bat</code>, pick the engine, enter the connection details — and Claude Desktop starts querying your database via MCP, with your own Claude account. Nothing else to install.',
     bandcta:"Get it",
@@ -764,7 +811,7 @@ var I18N={
     tb3t:"100% synthetic demo",tb3p:"The demo database and the video are generated with fictional data created by the product itself.",
     tb4t:"Server-verified payment",tb4p:"The download is enabled only after MercadoPago confirms the payment server-side.",
     rsubt:"Customer reviews",rvacio:"No public reviews yet — be the first to leave yours after trying it.",
-    rcta:"✍️ Leave my review",rhint:"Opens your email app; we publish it after verifying.",
+    rcta:"Leave my review",rhint:"Opens your email app; we publish it after verifying.",
     eyc:"Contact",stc:"Questions? Write to us",slc:"Fill out the form: your email opens with the message ready to send us.",
     cfn:"Name",cfe:"Your email",cft:"Phone",cfa:"Subject",cfp:"Question / inquiry",cfb:"Send inquiry",cfh:"Opens your email app with the message ready.",
     legal:"MV SQL NLP · Your database, in your language. Natural-language queries with the customer's choice of AI. Read-only connection. The schema travels to the AI with a few example values (and, if you enable the analysis, a sample of the result); strict privacy mode sends only names. With local Ollama nothing leaves. 100% synthetic demo data."
