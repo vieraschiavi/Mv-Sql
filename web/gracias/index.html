@@ -87,7 +87,18 @@
     };
 
     const params = new URLSearchParams(location.search);
+    // MercadoPago vuelve con parámetros distintos según cómo se cobró:
+    // un pago único trae payment_id/collection_id, y una suscripción trae
+    // preapproval_id (al autorizar todavía no hay un pago hecho, hay una
+    // autorización de débito recurrente). Leer solo el primero dejaba a
+    // todos los suscriptores mensuales en la pantalla de "falta el id",
+    // con la tarjeta ya débitandose.
     const paymentId = params.get("payment_id") || params.get("collection_id");
+    const preapprovalId = params.get("preapproval_id");
+    const idCobro = paymentId || preapprovalId;
+    const qsVerify = preapprovalId
+      ? `preapproval_id=${encodeURIComponent(preapprovalId)}`
+      : `payment_id=${encodeURIComponent(paymentId)}`;
 
     let guardado = null;
     try { guardado = localStorage.getItem('mvsql_lang'); } catch (e) {}
@@ -106,7 +117,7 @@
       title.textContent = T.verificando;
       sub.textContent = T.esperando;
 
-      if (!paymentId) {
+      if (!idCobro) {
         spinner.style.display = "none";
         title.textContent = T.falta_id;
         // innerHTML [D] ESCAPADO: T.falta_id_sub es literal (lleva un <a>)
@@ -120,7 +131,7 @@
       }
 
       try {
-        const r = await fetch(`/api/verify-and-issue?payment_id=${encodeURIComponent(paymentId)}`);
+        const r = await fetch(`/api/verify-and-issue?${qsVerify}`);
 
         // El JSON se parsea aparte y tolerando el fallo. Antes se hacía
         // `await r.json()` ANTES de mirar r.ok: si la API devolvía un 500
