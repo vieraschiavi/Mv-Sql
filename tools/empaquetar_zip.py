@@ -23,12 +23,28 @@ a este script — ver .github/workflows/build-desktop.yml.
 """
 
 import glob
+import json
 import os
+import sys
 import zipfile
 
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 ORIGEN = os.path.join(RAIZ, "app-python")
 DESTINO = os.path.join(RAIZ, "web", "downloads", "mvsql-nlp-app.zip")
+# Variante del propietario: el mismo zip con una licencia adentro, para
+# usar la via .bat en una PC donde no se pueden abrir .exe. NO se publica
+# (esta en .gitignore y el workflow lo sube como artefacto, nunca al
+# Release): lleva licencia hasta 2099, asi que publicarlo seria regalar
+# el producto. Es la misma regla que ya rige para el .exe del propietario.
+DESTINO_OWNER = os.path.join(RAIZ, "web", "downloads", "mvsql-nlp-app-OWNER.zip")
+LICENCIA_OWNER = {
+    "producto": "MV SQL NLP",
+    "plan": "propietario",
+    "mode": "own_ai",
+    "emitida": "2026-01-01T00:00:00+00:00",
+    "vence": "2099-12-31T00:00:00+00:00",
+    "nota": "Version del propietario: sin limite de prueba.",
+}
 CARPETA = "nl2sql_rag"          # nombre de la carpeta dentro del zip
 
 INCLUIR = (".py", ".txt", ".bat", ".ico", ".pyd")
@@ -89,19 +105,27 @@ def archivos():
         yield nombre, ruta
 
 
-def main():
-    os.makedirs(os.path.dirname(DESTINO), exist_ok=True)
+def main(propietario=False):
+    destino = DESTINO_OWNER if propietario else DESTINO
+    os.makedirs(os.path.dirname(destino), exist_ok=True)
     metidos = []
-    with zipfile.ZipFile(DESTINO, "w", zipfile.ZIP_DEFLATED) as z:
+    with zipfile.ZipFile(destino, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr(zipfile.ZipInfo(f"{CARPETA}/"), b"")
         for nombre, ruta in archivos():
             # Los .bat entran byte a byte: llevan CRLF y solo ASCII a
             # propósito. Si se normalizan, cmd.exe cierra la ventana sola.
             z.write(ruta, f"{CARPETA}/{nombre}")
             metidos.append(nombre)
+        if propietario:
+            # licencia.py busca este archivo al lado del código y, si el
+            # vencimiento es futuro, no aplica el trial. Es lo único que
+            # separa esta variante de la del cliente.
+            z.writestr(f"{CARPETA}/licencia_mvsql.json",
+                       json.dumps(LICENCIA_OWNER, indent=2))
+            metidos.append("licencia_mvsql.json")
 
-    total = os.path.getsize(DESTINO)
-    print(f"\n✓ {os.path.relpath(DESTINO, RAIZ)}  ({total / 1024:.0f} KB, {len(metidos)} archivos)")
+    total = os.path.getsize(destino)
+    print(f"\n✓ {os.path.relpath(destino, RAIZ)}  ({total / 1024:.0f} KB, {len(metidos)} archivos)")
     for n in metidos:
         print(f"    {n}")
 
@@ -117,4 +141,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(propietario="--propietario" in sys.argv)

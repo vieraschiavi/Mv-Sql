@@ -195,6 +195,21 @@ jobs:
         run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/mvsql-nlp-app.zip --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Empaquetar el zip del propietario (via .bat, sin limite de prueba)
+        # DESPUES de subir el del cliente, igual que con los .exe: este
+        # lleva un licencia_mvsql.json que vence en 2099, asi que si se
+        # generara antes y algo lo confundiera con el del cliente, el
+        # producto quedaria gratis y sin vencimiento. Sale como artefacto,
+        # nunca al Release. Existe para poder usar la via .bat en una PC
+        # donde no se pueden abrir .exe.
+        run: python3 tools/empaquetar_zip.py --propietario
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mvsql-zip-owner
+          path: web/downloads/mvsql-nlp-app-OWNER.zip
+          retention-days: 90
+          if-no-files-found: error
       - name: Subir instalador .exe (NSIS) al Release
         run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/MV-SQL-NLP-Setup.exe --clobber
         env:
