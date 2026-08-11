@@ -60,10 +60,14 @@ function leerJson(ruta) {
   try {
     // Se le saca el BOM antes de parsear. La licencia del propietario la
     // escribe PowerShell en el runner de Windows, y segun la version le
-    // antepone un ﻿ que JSON.parse rechaza. Sin esta linea, ese
+    // antepone un U+FEFF que JSON.parse rechaza. Sin esta linea, ese
     // caracter invisible hace que la licencia se descarte y la build del
     // propietario muestre el trial, sin ningun error que lo explique.
-    return JSON.parse(fs.readFileSync(ruta, "utf8").replace(/^﻿/, ""));
+    //
+    // Va escrito como escape \uFEFF y no como el caracter literal:
+    // puesto tal cual es invisible en el editor y en el diff, y el
+    // linter lo marca como espacio irregular, que es lo que es.
+    return JSON.parse(fs.readFileSync(ruta, "utf8").replace(/^\uFEFF/, ""));
   } catch {
     return null;
   }
