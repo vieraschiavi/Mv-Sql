@@ -87,6 +87,17 @@
     };
 
     const params = new URLSearchParams(location.search);
+    // MercadoPago devuelve un identificador distinto según el tipo de compra:
+    // `payment_id`/`collection_id` para un pago único y `preapproval_id` para
+    // una suscripción. Los tres planes de la home son suscripciones, así que
+    // leer sólo el primero dejaba al comprador con la suscripción debitándose
+    // y esta página mostrándole "falta el identificador del pago".
+    const paymentId = params.get("payment_id") || params.get("collection_id");
+    const preapprovalId = params.get("preapproval_id");
+    const compraId = paymentId || preapprovalId;
+    const queryVerificacion = paymentId
+      ? "payment_id=" + encodeURIComponent(paymentId)
+      : "preapproval_id=" + encodeURIComponent(preapprovalId || "");
     // MercadoPago vuelve con parámetros distintos según cómo se cobró:
     // un pago único trae payment_id/collection_id, y una suscripción trae
     // preapproval_id (al autorizar todavía no hay un pago hecho, hay una
@@ -117,6 +128,7 @@
       title.textContent = T.verificando;
       sub.textContent = T.esperando;
 
+      if (!compraId) {
       if (!idCobro) {
         spinner.style.display = "none";
         title.textContent = T.falta_id;
@@ -131,6 +143,7 @@
       }
 
       try {
+        const r = await fetch(`/api/verify-and-issue?${queryVerificacion}`);
         const r = await fetch(`/api/verify-and-issue?${qsVerify}`);
 
         // El JSON se parsea aparte y tolerando el fallo. Antes se hacía
