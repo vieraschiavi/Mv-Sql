@@ -1,7 +1,7 @@
 {
   "name": "mv-sql-nlp",
   "productName": "MV SQL NLP",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Tu base de datos, en tu idioma. Consultas SQL en lenguaje natural con IA a elección.",
   "author": "MV SQL NLP <vieraschiavi@gmail.com>",
   "license": "UNLICENSED",
