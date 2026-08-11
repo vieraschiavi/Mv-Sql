@@ -937,6 +937,11 @@ with st.sidebar:
                 '<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>'
                 'MV SQL NLP</div>', unsafe_allow_html=True)
 
+    # El selector de idioma necesita su propia etiqueta traducida, así que
+    # `t` tiene que existir ANTES de dibujarlo. Se asigna dos veces a
+    # propósito: acá con el idioma vigente al entrar, y de nuevo abajo por
+    # si el usuario acaba de cambiarlo en este mismo rerun.
+    t = T[ss.lang]
     ss.lang = st.selectbox(t["idioma"], ["es", "en", "pt"],
                            index=["es", "en", "pt"].index(ss.lang),
                            format_func=lambda x: {"es": "Español", "en": "English",
