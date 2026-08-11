@@ -37,6 +37,36 @@ const JOBS_QUE_PUBLICAN = Object.keys(WF.jobs).filter((j) => j !== "decidir");
 (async () => {
   console.log("\n== Release automático: solo con versión nueva ==");
 
+  await test("nadie pasa config a electron-builder con la sintaxis -c.clave", () => {
+    // "-c.nsis.artifactName=X" parece un override de config y no lo es:
+    // electron-builder lee "-c" como la RUTA de un archivo de config y
+    // busca uno llamado ".nsis.artifactName=X". Rompió un release entero
+    // con un ENOENT de un archivo que nadie escribió nunca:
+    //   ENOENT: open '...\desktop\.nsis.artifactName=MV-SQL-NLP-App-Setup-OWNER.exe'
+    // Falla rápido y con exit 1, así que se lleva puesto el job entero.
+    // Se saltean los comentarios: el YAML documenta este mismo error para
+    // que no se repita, y el guard no puede dispararse con su propia
+    // explicación.
+    const malos = CRUDO.split("\n")
+      .filter((l) => !l.trim().startsWith("#"))
+      .filter((l) => /-c\.[a-zA-Z]/.test(l));
+    assert.deepStrictEqual(malos.map((l) => l.trim()), [],
+      "electron-builder va a leer eso como una ruta de archivo, no como config");
+  });
+
+  await test("el instalador del propietario se renombra y nunca va al Release", () => {
+    // Sale del build con el mismo nombre que el del cliente. Si el
+    // renombrado no estuviera, quedaría un .exe con licencia hasta 2099
+    // llamado igual que el que baja cualquiera.
+    assert.ok(/MV-SQL-NLP-App-Setup-OWNER\.exe/.test(CRUDO),
+      "no se renombra el instalador del propietario");
+    // Y no puede subirse con gh release upload en ningún lado.
+    const subidas = CRUDO.split("\n").filter(
+      (l) => /gh release upload/.test(l) && /OWNER/i.test(l));
+    assert.deepStrictEqual(subidas, [],
+      "se está subiendo una build del propietario al Release público");
+  });
+
   await test("el workflow dispara en push a main", () => {
     assert.ok(ON.push && (ON.push.branches || []).includes("main"),
       "ya no corre en push a main — ¿se volvió al disparo manual?");
