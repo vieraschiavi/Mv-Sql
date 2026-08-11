@@ -58,7 +58,12 @@ function rutas(dirs) {
 
 function leerJson(ruta) {
   try {
-    return JSON.parse(fs.readFileSync(ruta, "utf8"));
+    // Se le saca el BOM antes de parsear. La licencia del propietario la
+    // escribe PowerShell en el runner de Windows, y segun la version le
+    // antepone un ﻿ que JSON.parse rechaza. Sin esta linea, ese
+    // caracter invisible hace que la licencia se descarte y la build del
+    // propietario muestre el trial, sin ningun error que lo explique.
+    return JSON.parse(fs.readFileSync(ruta, "utf8").replace(/^﻿/, ""));
   } catch {
     return null;
   }

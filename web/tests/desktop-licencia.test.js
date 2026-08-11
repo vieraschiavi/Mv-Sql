@@ -156,6 +156,20 @@ function licencia(dirs, archivo, dias_hasta_vencer) {
     assert.strictEqual(r.esPropietario, true);
   });
 
+  await test("una licencia con BOM igual se lee (la escribe PowerShell)", () => {
+    // El runner de Windows genera licencia_owner.json con PowerShell, que
+    // segun la version le antepone un BOM. JSON.parse lo rechaza, y como
+    // el error se traga el catch, la build del propietario mostraria el
+    // trial sin ningun sintoma que explique por que.
+    const dirs = entorno();
+    marcaTrial(dirs, 400);
+    fs.writeFileSync(path.join(dirs.recursos, "licencia_owner.json"),
+      "\ufeff" + JSON.stringify({ plan: "propietario", vence: "2099-12-31T00:00:00+00:00" }));
+    const r = lic.verificarAcceso(dirs);
+    assert.strictEqual(r.permitido, true, "el BOM invalido la licencia del propietario");
+    assert.strictEqual(r.esPropietario, true);
+  });
+
   await test("la build normal NO trae licencia de propietario", () => {
     // Si el archivo se colara en la build de clientes, todos tendrían
     // acceso hasta 2099. Es el mismo error que el .exe OWNER en el Release.

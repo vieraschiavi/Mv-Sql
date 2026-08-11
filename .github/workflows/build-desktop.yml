@@ -107,11 +107,36 @@ jobs:
           '{"producto":"MV SQL NLP","plan":"propietario","emitida":"2026-01-01T00:00:00+00:00","vence":"2099-12-31T00:00:00+00:00","nota":"Version del propietario: sin limite de prueba."}' | Set-Content -Encoding utf8 licencia_owner.json
 
       - name: Generar instalador del propietario (Electron, sin trial)
-        # --publish=never: este .exe NO va al Release. El repo es publico y
-        # abre sin pedir nada, asi que publicarlo seria regalar el producto
-        # — el mismo error que ya se corrigio con el .exe del producto
-        # Python. Sale como artefacto, que exige acceso al repositorio.
-        run: npx electron-builder --win nsis --x64 -c.nsis.artifactName=MV-SQL-NLP-App-Setup-OWNER.exe --publish=never
+        # --publish=never: este .exe NO va al Release. Abre sin pedir nada,
+        # asi que publicarlo seria regalar el producto — el mismo error que
+        # ya se corrigio con el .exe del producto Python. Sale como
+        # artefacto, que exige acceso al repositorio.
+        #
+        # Sale con el MISMO nombre que el del cliente y se renombra en el
+        # paso siguiente. El intento anterior era pasarle el nombre por
+        # linea de comandos con "-c.nsis.artifactName=...", y eso fallaba:
+        # electron-builder lo lee como que "-c" trae la RUTA de un archivo
+        # de config, y busca uno llamado ".nsis.artifactName=MV-SQL-..."
+        #
+        #   ENOENT: no such file or directory, open
+        #   'D:\a\Mv-Sql\Mv-Sql\desktop\.nsis.artifactName=MV-SQL-NLP-App-Setup-OWNER.exe'
+        #
+        # Pisar el archivo del cliente en release/ es inocuo: el paso de
+        # arriba ya lo subio al Release con --publish=always.
+        run: npx electron-builder --win nsis --x64 --publish=never
+
+      - name: Renombrar el instalador del propietario
+        # El guard no es decorativo: si el renombrado fallara en silencio,
+        # quedaria un .exe CON licencia hasta 2099 llamado igual que el del
+        # cliente. Que este paso reviente es mucho mejor que eso.
+        run: |
+          Move-Item -Force release/MV-SQL-NLP-App-Setup.exe release/MV-SQL-NLP-App-Setup-OWNER.exe
+          if (Test-Path release/MV-SQL-NLP-App-Setup.exe) {
+            throw "Quedo un .exe con el nombre del cliente despues de renombrar el del propietario"
+          }
+          if (-not (Test-Path release/MV-SQL-NLP-App-Setup-OWNER.exe)) {
+            throw "No se genero el instalador del propietario"
+          }
 
       - uses: actions/upload-artifact@v4
         with:
