@@ -88,6 +88,20 @@ function leerZip(buf) {
       "commiteá el resultado. Archivos desactualizados: " + distintos.join(", "));
   });
 
+  await test("EL ZIP DEL CLIENTE NO LLEVA LICENCIA ADENTRO", () => {
+    // Este es el zip que sirve la web, a un clic de cualquiera. La
+    // variante del propietario es el MISMO zip con un licencia_mvsql.json
+    // que vence en 2099: si ese archivo se colara acá, el trial de 7 días
+    // no aplicaría para nadie y el producto quedaría gratis y sin
+    // vencimiento. Es el mismo error que ya se cometió publicando el .exe
+    // del propietario en un Release, y no da ningún síntoma: el zip se
+    // descarga igual, la app abre igual, solo que nunca vence.
+    const archivos = leerZip(fs.readFileSync(ZIP));
+    const licencias = Object.keys(archivos).filter((n) => /licencia_mvsql/.test(n));
+    assert.deepStrictEqual(licencias, [],
+      `el zip público lleva licencia embebida: ${licencias.join(", ")}`);
+  });
+
   await test("el zip trae los archivos clave (no quedó un zip vacío)", () => {
     const archivos = leerZip(fs.readFileSync(ZIP));
     const nombres = Object.keys(archivos).map((n) => n.split("/").pop());
