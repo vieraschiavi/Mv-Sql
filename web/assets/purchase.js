@@ -15,32 +15,6 @@ function pintarPreciosUyu() {
   });
 }
 
-// Descripciones del modo de compra (es = default; en/pt vienen del I18N de la página)
-const BUY_DESC_ES = {
-  susc_desc: "Licencia mensual con tu propia clave de IA (Claude, ChatGPT, Gemini, " +
-             "Copilot…). Se cobra todos los meses, cancelás cuando quieras.",
-  credits_desc: "La IA ya viene incluida y medida por créditos — cero configuración. " +
-                "Pago único, sin suscripción.",
-};
-
-function setBuyMode(mode) {
-  const susc = document.getElementById("plans-suscripcion");
-  const cred = document.getElementById("plans-credits");
-  if (susc) susc.style.display = mode === "suscripcion" ? "grid" : "none";
-  if (cred) cred.style.display = mode === "credits" ? "grid" : "none";
-  document.querySelectorAll("[data-buymode]").forEach((b) =>
-    b.classList.toggle("active", b.dataset.buymode === mode));
-  const desc = document.getElementById("buy-mode-desc");
-  if (desc) {
-    const key = mode === "suscripcion" ? "susc_desc" : "credits_desc";
-    const dict = (window.I18N && window.I18N[window.LANG]) || null;
-    // innerHTML [B] LITERAL: dict/BUY_DESC_ES son literales de este repo
-    // (llevan <b> y <br> a propósito). No entra nada del usuario ni de la
-    // base. El email que tipea el comprador NUNCA pasa por acá — va por
-    // status.textContent más arriba.
-    desc.innerHTML = (dict && dict[key]) || BUY_DESC_ES[key];
-  }
-}
 
 async function mvsqlComprar(plan, mode) {
   const status = document.getElementById("buy-status");
@@ -118,8 +92,6 @@ async function mvsqlComprar(plan, mode) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll("[data-buymode]").forEach((b) =>
-    b.addEventListener("click", () => setBuyMode(b.dataset.buymode)));
   pintarPreciosUyu();
 });
 

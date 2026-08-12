@@ -121,16 +121,34 @@ async function test(nombre, fn) {
   });
 
   await test("el external_reference permite reconstruir la compra", async () => {
+    // Se usa un producto que HOY se vende. Antes esto compraba
+    // "personal:credits", y los paquetes de créditos se dejaron de vender:
+    // el catálogo ya no los tiene, así que create-preference los rechaza
+    // — que es exactamente lo que tiene que pasar.
     await llamar(crearPreferencia, {
+      body: { plan: "implementacion_express", mode: "servicio", email: "x@y.com" },
+    });
+    assert.strictEqual(mockMP.ultimaPreferencia.external_reference,
+      "implementacion_express:servicio:x@y.com");
+  });
+
+  await test("un paquete de créditos YA NO SE PUEDE COMPRAR", async () => {
+    // El modelo pasó a ser que cada cliente ponga su propia API key. Si el
+    // catálogo volviera a aceptarlos, se estaría vendiendo algo cuyo costo
+    // de IA pagamos nosotros y que la app ya no ofrece.
+    const r = await llamar(crearPreferencia, {
       body: { plan: "personal", mode: "credits", email: "x@y.com" },
     });
-    assert.strictEqual(mockMP.ultimaPreferencia.external_reference, "personal:credits:x@y.com");
+    assert.strictEqual(r.statusCode, 400, "el catálogo todavía vende créditos");
   });
 
   console.log("\n== 2. Verificación de pago y emisión de licencia ==");
 
   let licenciaValida = null;
 
+  // El modo "credits" se sigue verificando a propósito aunque ya no se
+  // venda: quien compró un paquete antes tiene que poder seguir usándolo,
+  // y esa rama de _license.js y download.js sigue viva por eso.
   await test("emite licencia solo si MercadoPago dice approved", async () => {
     pagoSimulado = { status: "approved", id: 555, transaction_amount: 39,
                      external_reference: "profesional:credits:c@t.com" };

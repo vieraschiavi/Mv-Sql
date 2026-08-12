@@ -43,10 +43,16 @@ const UNICOS = {
     title: "MV SQL NLP — Implementación Express (1 base, sin ERP)", price: 900,
     descripcion: "una sola base, esquema acotado, hasta 10 consultas de negocio",
   },
-  // Créditos: solo para quien no quiere gestionar una API key propia.
-  "personal:credits":    { title: "MV SQL NLP — 100 créditos IA embebidos",  price: 9   },
-  "profesional:credits": { title: "MV SQL NLP — 500 créditos IA embebidos",  price: 35  },
-  "empresa:credits":     { title: "MV SQL NLP — 2000 créditos IA embebidos", price: 110 },
+  // Los paquetes de créditos SE DEJARON DE VENDER. El modelo es que cada
+  // cliente ponga su propia API key del proveedor que prefiera (Claude,
+  // GPT, Gemini, Copilot...), así el costo de IA es suyo y nuestro es 0.
+  //
+  // Sacarlos de acá alcanza para dejar de venderlos: create-preference
+  // lee los precios de este catálogo y rechaza cualquier clave que no
+  // esté. Lo que NO se toca es el modo "credits" en _license.js,
+  // download.js y ai-proxy.js — quien ya compró un paquete sigue
+  // teniéndolo hasta que se le agote, y borrar esa rama le rompería el
+  // producto que pagó.
 };
 
 const PRODUCTS = { ...UNICOS, ...SUSCRIPCIONES };

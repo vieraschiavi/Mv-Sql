@@ -997,14 +997,16 @@ with st.sidebar:
 
     st.divider()
     st.subheader(f"{t['ia']}")
-    prov_keys = list(PROVEEDORES.keys())
-    # El proveedor por defecto depende de lo que el usuario PUEDA usar.
-    # "MV SQL Créditos" es el primero de la lista, pero solo funciona en el
-    # zip comprado con créditos embebidos: preseleccionarlo hacía que lo
-    # primero que veía alguien en prueba fuera un error rojo sobre un
-    # producto que todavía no compró, en su primer minuto con la app.
-    # Con licencia sí corresponde, porque es lo que pagó.
+    # Los paquetes de créditos YA NO SE VENDEN: el modelo es que cada
+    # cliente ponga su propia API key del proveedor que prefiera (Claude,
+    # GPT, Gemini, Copilot...), así el costo de IA es suyo y el nuestro 0.
+    #
+    # El proveedor igual NO se borra: quien compró un paquete antes sigue
+    # teniendo créditos, y sacarlo de la lista le rompería el producto que
+    # pagó. Se muestra solo si hay licencia de créditos — el que la tiene
+    # lo encuentra, y el que no, no ve una opción que ya no puede comprar.
     _lic_creditos = cargar_licencia_creditos()
+    prov_keys = [k for k in PROVEEDORES if k != "mvsql_creditos" or _lic_creditos]
     proveedor = st.selectbox(
         t["ia"], prov_keys, label_visibility="collapsed",
         index=prov_keys.index("mvsql_creditos" if _lic_creditos else "anthropic"),
