@@ -1,0 +1,31 @@
+# app-python/tests/test_solo_lectura.py
+
+- test · function · L23-L33 — def test(nombre)
+- deco · function · L24-L32 — def deco(fn)
+- rechaza · function · L36-L42 — def rechaza(sql)
+- _ · function · L59-L60 — def _()
+- _ · function · L64-L66 — def _()
+- _ · function · L70-L74 — def _(): # Falso positivo clásico: bloquear la palabra 'replace' a secas rompe # una función de string perfectamente válida y de uso corriente.
+- _ · function · L78-L79 — def _()
+- _ · function · L83-L85 — def _()
+- _ · function · L89-L90 — def _()
+- _ · function · L97-L98 — def _()
+- _ · function · L102-L105 — def _(): # motor.py buscaba el substring "delete " (con espacio): "DELETE\nFROM" # no matcheaba y pasaba de largo.
+- _ · function · L109-L110 — def _()
+- _ · function · L114-L115 — def _()
+- _ · function · L119-L120 — def _()
+- _ · function · L124-L126 — def _()
+- _ · function · L130-L135 — def _()
+- _ · function · L139-L140 — def _()
+- _ · function · L144-L146 — def _()
+- _ · function · L150-L159 — def _(): # Empiezan con SELECT, son un solo statement, no llevaban ninguna palabra # de la denylist vieja: escribian un archivo en el server con las # credenciales del cliente (authorized_keys, webshell) -> RCE. Es la # falla directa del argumento de venta "solo lectura".
+- _ · function · L163-L164 — def _()
+- _ · function · L168-L172 — def _()
+- _ · function · L176-L181 — def _(): # El fix no puede romper consultas legitimas que solo llevan esas # palabras como dato: se sacan los literales antes de buscar.
+- _ · function · L185-L186 — def _()
+- _ · function · L193-L197 — def _()
+- _ · function · L201-L222 — def _(): # El caso que importa: saltearse motor.py por completo y llamar al # método público del conector, que es lo que hace cualquier código que # no pase por el orquestador (celdas SQL de cuadernos, por ejemplo).
+- _ · function · L226-L235 — def _()
+- _ · function · L239-L247 — def _(): # Aunque alguien saltee asegurar_solo_lectura() y vaya al cursor # directo, la conexión no puede escribir.
+- _ · function · L251-L256 — def _()
+- _ · function · L260-L264 — def _()

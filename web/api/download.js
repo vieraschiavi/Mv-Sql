@@ -68,6 +68,13 @@ module.exports = async (req, res) => {
           email: license.email,
           plan: license.plan,
           modo: "own_ai",
+          // El token viaja también en esta variante, no solo en la de
+          // créditos. Es lo único que el cliente tiene para acreditarse
+          // ante /api/renovar-licencia cuando su suscripción se renueva:
+          // sin esto, la única identificación disponible sería el email, y
+          // renovar por email dejaría que cualquiera que lo conozca se
+          // lleve la licencia ajena.
+          token,
           emitida: new Date(license.iat * 1000).toISOString(),
           vence: new Date(license.exp * 1000).toISOString(),
           nota: "No compartas este archivo: acredita tu licencia paga. Configurá tu propia API key en 'Proveedor de IA' — este archivo solo te exime del límite de la prueba gratuita.",

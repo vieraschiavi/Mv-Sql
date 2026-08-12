@@ -1,0 +1,15 @@
+# tools/video/armar.py
+
+- ffmpeg · function · L57-L65 — def ffmpeg()
+- fuente · function · L68-L69 — def fuente(ruta, tam)
+- envolver · function · L72-L85 — def envolver(draw, texto, fnt, ancho_max)
+- fondo · function · L88-L101 — def fondo()
+- rayo · function · L104-L110 — def rayo(d, x, y, alto, color)
+- marca · function · L113-L123 — def marca(d, y=92)
+- puntos · function · L126-L134 — def puntos(d, indice, total, y=1836)
+- _difuminar_bordes · function · L137-L151 — def _difuminar_bordes(cap, alto_fade=70)
+- tarjeta · function · L154-L174 — def tarjeta(img, captura, x, y, ancho_max, alto_max)
+- cuadro · function · L177-L238 — def cuadro(indice, total, titular, captura_path, pie=None, grande=False)
+- narrar · function · L241-L243 — async def narrar(texto, voz, destino)
+- duracion · function · L246-L253 — def duracion(path)
+- main · function · L256-L328 — def main()
