@@ -998,13 +998,22 @@ with st.sidebar:
     st.divider()
     st.subheader(f"{t['ia']}")
     prov_keys = list(PROVEEDORES.keys())
-    proveedor = st.selectbox(t["ia"], prov_keys, label_visibility="collapsed",
-                             format_func=lambda k: PROVEEDORES[k]["nombre"])
+    # El proveedor por defecto depende de lo que el usuario PUEDA usar.
+    # "MV SQL Créditos" es el primero de la lista, pero solo funciona en el
+    # zip comprado con créditos embebidos: preseleccionarlo hacía que lo
+    # primero que veía alguien en prueba fuera un error rojo sobre un
+    # producto que todavía no compró, en su primer minuto con la app.
+    # Con licencia sí corresponde, porque es lo que pagó.
+    _lic_creditos = cargar_licencia_creditos()
+    proveedor = st.selectbox(
+        t["ia"], prov_keys, label_visibility="collapsed",
+        index=prov_keys.index("mvsql_creditos" if _lic_creditos else "anthropic"),
+        format_func=lambda k: PROVEEDORES[k]["nombre"])
     info_prov = PROVEEDORES[proveedor]
     modelo, base_url, api_key = "", None, ""
 
     if proveedor == "mvsql_creditos":
-        licencia = cargar_licencia_creditos()
+        licencia = _lic_creditos
         if licencia:
             st.success(t["creditos_activos"].format(
                 n=licencia.get("creditos", "?"), plan=licencia.get("plan", "")))

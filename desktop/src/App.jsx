@@ -1,6 +1,7 @@
 import Icono from "./components/Icono.jsx";
 import React, { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";
+import AvisoLicencia from "./components/AvisoLicencia.jsx";
 import Results from "./components/Results.jsx";
 import { I18N, EXAMPLES, PROVIDERS } from "./i18n.js";
 
@@ -16,6 +17,7 @@ export default function App() {
   const [history, setHistory] = useState([]);
 
   const t = I18N[lang];
+  const [licencia, setLicencia] = useState(null);
 
   // cargar preferencias + consultas guardadas
   useEffect(() => {
@@ -24,6 +26,9 @@ export default function App() {
       if (prefs?.lang) setLang(prefs.lang);
       if (prefs?.ai) setAi((a) => ({ ...a, ...prefs.ai, apiKey: prefs.ai.apiKey || "" }));
       setSaved((await window.mvsql.storeGet("saved")) || []);
+      // La puerta de acceso ya se resolvio en el proceso principal;
+      // esto es solo para mostrar cuantos dias quedan.
+      setLicencia(await window.mvsql.licenciaEstado());
     })();
   }, []);
 
@@ -94,6 +99,7 @@ export default function App() {
         saved={saved} onRunSaved={runSaved} onDeleteSaved={deleteSaved}
       />
       <main className="main">
+        <AvisoLicencia t={t} estado={licencia} />
         {!catalog && !result ? (
           <div className="welcome">
             <h1><Icono n="bolt" /> <span className="grad-text">{t.welcome_t}</span></h1>

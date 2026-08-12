@@ -228,5 +228,68 @@ def _():
                 open(m, "wb").write(contenido)
 
 
+@test("el primer arranque de un cliente en prueba NO muestra errores rojos")
+def _():
+    """
+    El proveedor de IA que viene primero en la lista es "MV SQL Créditos",
+    que solo funciona en el zip comprado. Como el selectbox no llevaba
+    index=, quedaba preseleccionado, y lo primero que veía alguien en
+    prueba era un error rojo sobre un producto que todavía no compró — en
+    su primer minuto con la app, antes de haber consultado nada.
+
+    Se prueban las dos ramas porque arreglar una sola rompe la otra: sin
+    licencia tiene que ofrecer un proveedor donde pueda pegar su API key,
+    y con licencia tiene que ofrecer el que pagó.
+    """
+    try:
+        from streamlit.testing.v1 import AppTest
+    except ImportError:
+        print("      (streamlit no instalado: se saltea)")
+        return
+
+    import json
+    marcas = [os.path.join(RAIZ, n) for n in
+              (".eula_aceptado", ".mvsql_trial.json", "licencia_mvsql.json")]
+    previos = {m: (open(m, "rb").read() if os.path.exists(m) else None) for m in marcas}
+    lic = os.path.join(RAIZ, "licencia_mvsql.json")
+
+    def arrancar():
+        for m in marcas[:2]:
+            if os.path.exists(m):
+                os.remove(m)
+        at = AppTest.from_file(APP, default_timeout=240)
+        at.run()
+        at.checkbox[0].check().run()
+        at.button[0].click().run()
+        sel = [s for s in at.selectbox if s.label and "IA" in s.label]
+        return at, (sel[0].value if sel else None)
+
+    try:
+        # 1) Cliente en prueba: sin licencia de creditos.
+        if os.path.exists(lic):
+            os.remove(lic)
+        at, prov = arrancar()
+        assert not at.error, \
+            f"el cliente en prueba ve un error rojo al entrar: {[str(e.value)[:120] for e in at.error]}"
+        assert prov == "anthropic", f"preselecciona '{prov}', que no puede usar sin comprar"
+
+        # 2) Cliente que compro creditos: ahi si corresponde el proveedor pago.
+        with open(lic, "w", encoding="utf-8") as fh:
+            json.dump({"producto": "MV SQL NLP", "plan": "profesional", "mode": "credits",
+                       "creditos": 500, "email": "x@y.com",
+                       "vence": "2099-12-31T00:00:00+00:00"}, fh)
+        at, prov = arrancar()
+        assert prov == "mvsql_creditos", \
+            f"compro creditos y le preselecciona '{prov}': tiene que buscarlo a mano"
+        assert not at.error, "el cliente con creditos ve un error"
+    finally:
+        for m, contenido in previos.items():
+            if contenido is None:
+                if os.path.exists(m):
+                    os.remove(m)
+            else:
+                open(m, "wb").write(contenido)
+
+
 print(f"\n  {_pasadas} pasadas · {_falladas} falladas\n")
 sys.exit(1 if _falladas else 0)
