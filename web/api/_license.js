@@ -20,8 +20,18 @@ function issueLicense({ email, plan, mode, paymentId }) {
   );
 }
 
-function verifyLicense(token) {
-  return jwt.verify(token, secret());
+/**
+ * Verifica la firma de una licencia.
+ *
+ * `opciones` se pasa tal cual a jwt.verify. El único caso que lo usa hoy
+ * es la renovación, con {ignoreExpiration: true}: renovar es exactamente
+ * lo que hace alguien cuya licencia venció, así que rechazarla por
+ * vencida haría imposible el único camino para dejar de estarlo. La
+ * FIRMA se sigue verificando siempre — eso es lo que prueba que la
+ * licencia la emitimos nosotros, y es lo que no se puede relajar.
+ */
+function verifyLicense(token, opciones) {
+  return jwt.verify(token, secret(), opciones);
 }
 
 module.exports = { issueLicense, verifyLicense, CREDITS_BY_PLAN };

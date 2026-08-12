@@ -1,0 +1,13 @@
+{
+  "lastQuery": "corregir /all-in-one-tech-team  hasta que sea producción y venta 100%",
+  "perAgentQuery": {},
+  "graftReads": 0,
+  "sourceReads": 0,
+  "savedTokens": 3518,
+  "injectedPointers": [
+    "app-python/conectores.py:L280-L305",
+    "desktop/src/components/Icono.jsx:L37-L57",
+    "app-python/conectores.py:L87-L124"
+  ],
+  "nudges": 2
+}

@@ -1,0 +1,16 @@
+# desktop/electron/services/engine.cjs
+
+- setCatalog · function · L8-L12 — function setCatalog(catalog, dialect)
+- buildCards · function · L15-L27 — function buildCards(catalog)
+- tokens · function · L29-L32 — function tokens(s)
+- retrieve · function · L34-L49 — function retrieve(question, k = 4)
+- SYSTEM_SQL · function · L52-L71 — SYSTEM_SQL = (dialect, schema)
+- parseResponse · function · L76-L83 — function parseResponse(text)
+- stripForCheck · function · L101-L106 — function stripForCheck(sql)
+- assertReadOnly · function · L108-L121 — function assertReadOnly(sql)
+- validate · function · L123-L144 — function validate(sql, catalog)
+- confidence · function · L146-L162 — function confidence(confLLM, simRag, valid, nWarnings, usesCte)
+- answer · function · L165-L211 — async function answer(question, ai, { run, k = 4, limit = 5000, explain = true })
+- storedProcedure · function · L213-L216 — async function storedProcedure(sql, name, ai)
+- optimize · function · L218-L221 — async function optimize(sql, ai)
+- testProvider · function · L223-L228 — async function testProvider(ai)

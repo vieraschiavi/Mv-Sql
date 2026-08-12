@@ -1,0 +1,16 @@
+# desktop/electron/services/archivos.cjs
+
+- identificador · function · L36-L47 — function identificador(nombre, usados, porDefecto)
+- normalizarFecha · function · L55-L64 — function normalizarFecha(v)
+- deducirTipos · function · L66-L88 — function deducirTipos(filas, cantColumnas)
+- convertir · function · L90-L97 — function convertir(v, tipo)
+- sniffDelimitador · function · L104-L118 — function sniffDelimitador(cabecera)
+- crearParser · function · L120-L145 — function crearParser(delim, alFila)
+- push · method · L123-L140 — push(txt)
+- fin · method · L141-L143 — fin()
+- importarCsv · function · L147-L232 — async function importarCsv(conn, archivo, tabla, avisar)
+- crearTabla · function · L154-L159 — crearTabla = ()
+- volcar · function · L161-L171 — volcar = (filas)
+- alFila · function · L173-L191 — alFila = (f)
+- importarExcel · function · L235-L286 — async function importarExcel(conn, archivo, prefijo, usadosTabla)
+- importar · function · L293-L323 — async function importar(rutas, destino, avisar)
