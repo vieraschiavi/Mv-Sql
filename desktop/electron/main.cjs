@@ -68,6 +68,13 @@ function textos() {
  * y bastaría con no pedirle nada al backend para seguir usándola.
  */
 async function puertaDeAcceso() {
+  // Antes de decidir nada: si la licencia esta por vencer y la
+  // suscripcion sigue paga, se pide una nueva. Va ACA y no despues
+  // porque el que paga todos los meses no tiene que ver ni una vez el
+  // cartel de "compra tu licencia". No lanza nunca y tiene su propio
+  // limite de espera: sin red, la app abre igual con lo que ya tenia.
+  await licencia.renovarSiCorresponde();
+
   let estado = licencia.verificarAcceso();
   while (!estado.permitido) {
     const t = textos();

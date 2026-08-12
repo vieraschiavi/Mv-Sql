@@ -25,6 +25,7 @@
 // MercadoPago se le pregunta si todavía está pagando.
 // ====================================================================
 const { issueLicense, verifyLicense } = require("./_license.js");
+const { archivoLicencia } = require("./_licencia-archivo.js");
 const { limitar } = require("./_guard.js");
 
 /** Consulta el estado de una suscripción en MercadoPago. */
@@ -96,18 +97,21 @@ module.exports = async (req, res) => {
     // token: si el cliente cambió de plan, lo que vale es lo que está
     // pagando ahora.
     const [planSub, , emailSub] = String(sub.external_reference || "").split(":");
-    const nuevo = issueLicense({
-      email: emailSub || sub.payer_email || lic.email || "",
-      plan: planSub || lic.plan,
-      mode: "own_ai",
-      paymentId: sub.id,
-    });
+    const email = emailSub || sub.payer_email || lic.email || "";
+    const plan = planSub || lic.plan;
+    const nuevo = issueLicense({ email, plan, mode: "own_ai", paymentId: sub.id });
 
     res.status(200).json({
       token: nuevo,
-      plan: planSub || lic.plan,
+      plan,
       mode: "own_ai",
-      email: emailSub || sub.payer_email || lic.email || "",
+      email,
+      // El archivo completo, listo para que la app lo guarde tal cual
+      // encima del suyo. Devolver solo el token obligaría a cada cliente
+      // a reconstruir el JSON —y a acertarle a `vence`, sin el cual la
+      // licencia recién renovada nace muerta y el que paga ve el cartel
+      // de "comprá tu licencia" justo después de renovar bien.
+      licencia: archivoLicencia(nuevo, verifyLicense(nuevo), req.headers.host),
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
