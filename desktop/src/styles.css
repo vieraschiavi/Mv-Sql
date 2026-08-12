@@ -104,3 +104,24 @@ table.result tr:nth-child(even) td { background: #0d1627; }
 .modal-bg { position: fixed; inset: 0; background: #0009; display: flex; align-items: center; justify-content: center; z-index: 50; }
 .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 1.4rem; width: min(680px, 92vw); max-height: 84vh; overflow-y: auto; }
 .modal h3 { margin-bottom: .8rem; }
+
+/* ── aviso de prueba gratuita ───────────────────────────────── */
+/* Informa sin tapar: ocupa una franja fina arriba del contenido y no
+   se puede cerrar, porque el dato (cuántos días quedan) deja de estar
+   disponible en cualquier otro lado de la interfaz. */
+.aviso-trial {
+  display: flex; align-items: center; gap: .5rem;
+  margin: 0 0 .9rem; padding: .5rem .75rem;
+  border: 1px solid #1e3a5f; border-radius: 8px;
+  background: #0f1e33; color: #9fb6d4; font-size: .82rem;
+}
+.aviso-trial a {
+  margin-left: auto; color: #7cc4ff; text-decoration: none;
+  font-weight: 600; white-space: nowrap;
+}
+.aviso-trial a:hover { text-decoration: underline; }
+/* Últimos dos días: mismo umbral que el aviso del producto Python. */
+.aviso-trial.urgente {
+  border-color: #7a4a12; background: #2a1c08; color: #f0c07a;
+}
+.aviso-trial.urgente a { color: #ffc961; }
