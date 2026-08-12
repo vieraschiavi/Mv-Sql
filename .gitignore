@@ -46,3 +46,6 @@ desktop/licencia_owner.json
 # Zip del propietario (via .bat, con licencia hasta 2099 adentro). Nunca
 # se commitea ni se publica: web/downloads/ lo sirve Vercel.
 web/downloads/mvsql-nlp-app-OWNER.zip
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+graft/
