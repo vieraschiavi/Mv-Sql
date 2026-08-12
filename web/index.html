@@ -345,7 +345,7 @@ footer .legal{max-width:74ch;line-height:1.6}
       <a href="#descargas" class="btn btn-o" data-i="hb2">Probar gratis 7 días</a>
     </div>
     <div class="metrics">
-      <div class="metric"><div class="v tnum">10<span class="am">+</span></div><div class="l" data-i="m1">IAs a elección (o créditos nuestros)</div></div>
+      <div class="metric"><div class="v tnum">10<span class="am">+</span></div><div class="l" data-i="m1">IAs a elección, con tu propia clave</div></div>
       <div class="metric"><div class="v tnum">4<span class="am">+</span></div><div class="l" data-i="m2">motores: SQL Server · MySQL · PostgreSQL · SQLite · archivos</div></div>
       <div class="metric"><div class="v tnum">3</div><div class="l" data-i="m3">idiomas: español · inglés · portugués</div></div>
     </div>
@@ -387,7 +387,7 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   anti-alucinación, intervalo de confianza y resultados listos para presentar.</p>
   <div class="fgrid">
     <div class="feat"><div class="ic"><svg class="i"><use href="#i-cpu"/></svg></div><h3 data-i="f1t">La IA que vos elijas</h3>
-      <p data-i="f1p">Usá tu propia API key del proveedor que prefieras — o nuestros créditos, sin configurar nada.</p>
+      <p data-i="f1p">Usá tu propia API key del proveedor que prefieras: Claude, ChatGPT, Gemini, Copilot y varios más.</p>
       <div class="ia-badges"><span class="ia-badge">Claude</span><span class="ia-badge">ChatGPT</span>
       <span class="ia-badge">Copilot (Azure)</span><span class="ia-badge">Gemini</span><span class="ia-badge">Groq</span>
       <span class="ia-badge">Mistral</span><span class="ia-badge">DeepSeek</span><span class="ia-badge">Grok</span>
@@ -426,8 +426,8 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   <div class="fgrid">
     <div class="feat"><div class="ic"><svg class="i"><use href="#i-server"/></svg></div><h3 data-i="s1t">¿Dónde se procesan mis datos?</h3>
       <p data-i="s1p">En tu PC o tu servidor: el programa corre local. No hay servidor nuestro procesando tus consultas.
-      Con tu propia API key, tu máquina habla directo por HTTPS con el proveedor de IA que elegiste; en modo créditos
-      pasa por nuestra función de cobro, que descuenta 1 crédito y no almacena tu consulta.</p></div>
+      Tu máquina habla directo por HTTPS con el proveedor de IA que elegiste, con tu propia API key.
+      No pasa por ningún servidor nuestro.</p></div>
     <div class="feat"><div class="ic"><svg class="i"><use href="#i-upload"/></svg></div><h3 data-i="s2t">¿Qué viaja exactamente a la IA?</h3>
       <p data-i="s2p">Para generar el SQL: tu pregunta, los nombres de tablas y columnas de las ~4 tablas relevantes, y
       —para que la IA entienda los dominios— unos pocos valores de ejemplo de las columnas de texto. Para el análisis
@@ -487,10 +487,6 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   </div>
 
   <h3 class="sub-h" data-i="lich">Licencia del programa</h3>
-  <div class="buy-toggle" role="group">
-    <button data-buymode="suscripcion" class="active"><svg class="i i-t"><use href="#i-key"/></svg><span data-i="tg1">Suscripción mensual</span></button>
-    <button data-buymode="credits"><svg class="i i-t"><use href="#i-bolt"/></svg><span data-i="tg2">Créditos incluidos</span></button>
-  </div>
   <p class="buy-desc" id="buy-mode-desc" data-i="susc_desc">Licencia mensual con tu propia clave de IA (Claude, ChatGPT, Gemini, Copilot…). Se cobra todos los meses, cancelás cuando quieras.</p>
 
   <div class="pgrid" id="plans-suscripcion">
@@ -521,37 +517,6 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
       <ul><li data-i="p3a">Todo lo de Profesional × 5 puestos</li><li data-i="p3b">Onboarding remoto (1 sesión)</li>
         <li data-i="p3c">Soporte prioritario 6 meses</li><li data-i="p3d">Factura a nombre de tu empresa</li></ul>
       <button class="btn btn-od" onclick="mvsqlComprar('empresa','suscripcion')" data-i="p3cta">Suscribirme a Empresa</button>
-    </div>
-  </div>
-
-  <div class="pgrid" id="plans-credits" style="display:none">
-    <div class="plan">
-      <h3 data-i="c1t">100 créditos</h3>
-      <div class="who" data-i="c1w">Probá con IA incluida, sin API key.</div>
-      <div class="amt price" data-usd="9">US$9</div><div class="per"><span data-i="c1per">pago único · </span><span class="price-uyu"></span></div>
-      <div class="pais-precio" data-pais-precio="9"></div>
-      <ul><li data-i="c1a">Programa completo + IA nuestra</li><li data-i="c1b">≈ 100 consultas con análisis</li>
-        <li data-i="c1c">Sin configurar nada técnico</li><li data-i="c1d">Licencia embebida en tu descarga</li></ul>
-      <button class="btn btn-od" onclick="mvsqlComprar('personal','credits')" data-i="c1cta">Comprar 100 créditos</button>
-    </div>
-    <div class="plan pop">
-      <span class="tag" data-i="poptag2">Recomendado</span>
-      <h3 data-i="c2t">500 créditos</h3>
-      <div class="who" data-i="c2w">Uso regular sin preocuparte por claves.</div>
-      <div class="amt price" data-usd="35">US$35</div><div class="per"><span data-i="c2per">pago único · </span><span class="price-uyu"></span></div>
-      <div class="pais-precio" data-pais-precio="35"></div>
-      <ul><li data-i="c2a">Todo incluido, cero configuración</li><li data-i="c2b">≈ 500 consultas con análisis</li>
-        <li data-i="c2c">Mejor precio por consulta</li><li data-i="c2d">Recargás cuando quieras</li></ul>
-      <button class="btn btn-a" onclick="mvsqlComprar('profesional','credits')" data-i="c2cta">Comprar 500 créditos</button>
-    </div>
-    <div class="plan">
-      <h3 data-i="c3t">2000 créditos</h3>
-      <div class="who" data-i="c3w">Equipos y uso intensivo.</div>
-      <div class="amt price" data-usd="110">US$110</div><div class="per"><span data-i="c3per">pago único · </span><span class="price-uyu"></span></div>
-      <div class="pais-precio" data-pais-precio="110"></div>
-      <ul><li data-i="c3a">≈ 2000 consultas con análisis</li><li data-i="c3b">Facturamos nosotros la IA</li>
-        <li data-i="c3c">Ideal para varios usuarios</li><li data-i="c3d">Soporte prioritario</li></ul>
-      <button class="btn btn-od" onclick="mvsqlComprar('empresa','credits')" data-i="c3cta">Comprar 2000 créditos</button>
     </div>
   </div>
 
@@ -672,14 +637,14 @@ var I18N={
     h1:'Pergunte ao seu banco de dados <span class="am">no seu idioma</span>',
     lead:"O MV SQL NLP converte suas perguntas em SQL profissional otimizado com CTEs, valida contra seu esquema real e devolve tabelas, gráficos e análises exportáveis — com a IA que você escolher: Claude, ChatGPT, Copilot, Gemini e mais.",
     hb1:"Ver o vídeo demo",hb2:"Testar grátis por 7 dias",
-    m1:"IAs à escolha (ou nossos créditos)",m2:"motores: SQL Server · MySQL · PostgreSQL · SQLite · arquivos",m3:"idiomas: espanhol · inglês · português",
+    m1:"IAs à escolha, com a sua própria chave",m2:"motores: SQL Server · MySQL · PostgreSQL · SQLite · arquivos",m3:"idiomas: espanhol · inglês · português",
     chs:"conectado ao seu banco",cb1:"Quanto cobramos por mês em 2026?",
     cb2:'O melhor mês foi maio: <span class="hl">$U 31.033.659</span> cobrados. A tendência é crescente: +45% desde janeiro.',
     cb3:"✓ SQL validado contra seu esquema · confiança 94% (±5) · exportado para Excel",
     vey:"Vídeo",vh:"Veja o MV SQL NLP em ação",vl:"Gravação real do programa, narrada e com a interface no seu idioma: pergunta, SQL com CTEs validado, intervalo de confiança, tabela, gráfico, relação entre variáveis, auditoria e permissões por usuário.",
     pey:"A plataforma",ph:"Tudo o que um analista SQL sênior faz, sem escrever código",
     pl:"Você pergunta em linguagem natural; o MV SQL NLP faz o resto: SQL otimizado, validação anti-alucinação, intervalo de confiança e resultados prontos para apresentar.",
-    f1t:"A IA que você escolher",f1p:"Use sua própria API key do provedor que preferir — ou nossos créditos, sem configurar nada.",
+    f1t:"A IA que você escolher",f1p:"Use sua própria API key do provedor que preferir: Claude, ChatGPT, Gemini, Copilot e vários mais.",
     f2t:"Qualquer banco — e também arquivos",f2p:"SQL Server, MySQL/MariaDB, PostgreSQL e SQLite: adapta-se ao seu esquema sozinho. Sem banco? Envie um CSV, Excel ou Parquet e consulte igual — carga rápida com cache.",
     f3t:"SQL de nível sênior",f3p:"CTEs com nomes claros, filtros antecipados, sem SELECT *. Validado contra o catálogo real: se a IA inventa uma coluna, é rejeitado e auto-corrigido.",
     f3a:"Intervalo de confiança em cada resposta (ex. 94% ±5)",f3b:"Consultas salvas + stored procedures",f3c:"Re-otimizador de SQL existente",
@@ -689,7 +654,7 @@ var I18N={
     sh:"As perguntas que a sua equipe de TI faz, respondidas",
     sl:"Sem promessas vagas: o que viaja, o que não viaja, o que pode dar errado e o que acontece quando dá. Tudo abaixo está implementado no código — e o essencial, coberto por testes públicos.",
     s1t:"Onde os meus dados são processados?",
-    s1p:"No seu PC ou no seu servidor: o programa roda local. Não existe servidor nosso processando as suas consultas. Com a sua própria API key, a sua máquina fala direto por HTTPS com o provedor de IA escolhido; no modo créditos passa pela nossa função de cobrança, que desconta 1 crédito e não armazena a sua consulta.",
+    s1p:"No seu PC ou no seu servidor: o programa roda local. Não existe servidor nosso processando as suas consultas. Com a sua própria API key, a sua máquina fala direto por HTTPS com o provedor de IA escolhido. Não passa por nenhum servidor nosso.",
     s2t:"O que exatamente viaja para a IA?",
     s2p:"Para gerar o SQL: a sua pergunta, os nomes de tabelas e colunas das ~4 tabelas relevantes, e —para a IA entender os domínios— alguns poucos valores de exemplo das colunas de texto. Para a análise escrita (opcional): uma amostra de até 20 linhas do resultado. Com o <b>modo privacidade estrita</b> nenhum valor real viaja, nem de exemplo nem de resultado: só nomes. Com <b>Ollama local</b>, nada sai da sua máquina.",
     s3t:"Pode escrever no meu banco?",
@@ -710,15 +675,15 @@ var I18N={
     susc_desc:"Licença mensal com sua própria chave de IA (Claude, ChatGPT, Gemini, Copilot…). Cobrada todo mês, cancele quando quiser.",
     ey3:"Planos",st3:"Comece pela implementação, siga com a licença",
     sl3:"A maioria começa pela implementação: conectamos o MV SQL NLP ao seu banco ou ERP real — o Odoo roda sobre PostgreSQL, o SAP Business One e o Dynamics NAV/Business Central sobre SQL Server, a maioria dos sistemas de gestão locais sobre MySQL/MariaDB — mapeamos seu esquema e deixamos rodando as consultas que sua equipe pede toda semana. Depois, a licença mensal mantém o programa atualizado. Preços de referência em dólares; cobrado via MercadoPago. Antes de tudo, teste grátis por 7 dias.",
-    tg1:"Assinatura mensal",tg2:"Créditos incluídos",
+    tg1:"Assinatura mensal",
     byok_desc:"Você traz sua própria chave de IA (Claude, ChatGPT, Gemini, Copilot…) e paga só a licença do programa. Ideal se você já usa IA.",
-    credits_desc:"A IA já vem incluída e medida por créditos — zero configuração. Nós faturamos a IA por você.",
+    
     p1t:"Pessoal",p1w:"Para um usuário e seus bancos.",p1per:"por mês · cancele quando quiser · ",p1a:"Programa completo (PC + autoinstalável)",p1b:"Todas as IAs e bancos",p1c:"Gráficos, exportação, consultas salvas",p1d:"Atualizações menores incluídas",p1cta:"Assinar Pessoal",
     poptag:"Recomendado",p2t:"Profissional",p2w:"Para analistas e consultores.",p2per:"por mês · cancele quando quiser · ",p2a:"Tudo do Pessoal",p2b:"Stored procedures + otimizador CTE",p2c:"Conector MCP para Claude Desktop",p2d:"Suporte por email prioritário",p2cta:"Assinar Profissional",
     p3t:"Empresa",p3w:"Para equipes (até 5 postos).",p3per:"por mês · cancele quando quiser · ",p3a:"Tudo do Profissional × 5 postos",p3b:"Onboarding remoto (1 sessão)",p3c:"Suporte prioritário 6 meses",p3d:"Nota fiscal para sua empresa",p3cta:"Assinar Empresa",
-    c1t:"100 créditos",c1w:"Teste com IA incluída, sem API key.",c1per:"pagamento único · ",c1a:"Programa completo + nossa IA",c1b:"≈ 100 consultas com análise",c1c:"Sem configurar nada técnico",c1d:"Licença embutida no seu download",c1cta:"Comprar 100 créditos",
-    poptag2:"Recomendado",c2t:"500 créditos",c2w:"Uso regular sem se preocupar com chaves.",c2per:"pagamento único · ",c2a:"Tudo incluído, zero configuração",c2b:"≈ 500 consultas com análise",c2c:"Melhor preço por consulta",c2d:"Recarregue quando quiser",c2cta:"Comprar 500 créditos",
-    c3t:"2000 créditos",c3w:"Equipes e uso intensivo.",c3per:"pagamento único · ",c3a:"≈ 2000 consultas com análise",c3b:"Nós faturamos a IA",c3c:"Ideal para vários usuários",c3d:"Suporte prioritário",c3cta:"Comprar 2000 créditos",
+    
+    poptag2:"Recomendado",
+    
     emailhint:"Sua licença e o link de download chegam neste email.",
     paylead:"Meios de pagamento:",payb0:"Cartão",payb1:"Transferência",paysec:"Pagamento verificado no servidor antes de liberar o download.",
     dey:"Downloads",dh:"Teste grátis por 7 dias — tudo incluído",dl:"Baixe a versão que preferir e use completa por 7 dias, sem cartão. Depois, compre a licença em um clique.",
@@ -747,14 +712,14 @@ var I18N={
     h1:'Ask your database <span class="am">in your language</span>',
     lead:"MV SQL NLP turns your questions into professional CTE-optimized SQL, validates it against your real schema, and returns exportable tables, charts and analysis — with the AI you choose: Claude, ChatGPT, Copilot, Gemini and more.",
     hb1:"Watch the demo video",hb2:"Try free for 7 days",
-    m1:"AIs to choose from (or our credits)",m2:"engines: SQL Server · MySQL · PostgreSQL · SQLite · files",m3:"languages: Spanish · English · Portuguese",
+    m1:"AIs to choose from, with your own key",m2:"engines: SQL Server · MySQL · PostgreSQL · SQLite · files",m3:"languages: Spanish · English · Portuguese",
     chs:"connected to your database",cb1:"How much did we collect per month in 2026?",
     cb2:'The best month was May: <span class="hl">$U 31,033,659</span> collected. The trend is growing: +45% since January.',
     cb3:"✓ SQL validated against your schema · 94% confidence (±5) · exported to Excel",
     vey:"Video",vh:"See MV SQL NLP in action",vl:"A real, narrated recording of the product, with the interface in your own language: the question, validated CTE SQL, the confidence interval, table, chart, how the variables relate, the audit trail and per-user permissions.",
     pey:"The platform",ph:"Everything a senior SQL analyst does, without writing code",
     pl:"You ask in plain words; MV SQL NLP does the rest: optimized SQL, anti-hallucination validation, confidence interval, and presentation-ready results.",
-    f1t:"The AI you choose",f1p:"Use your own API key from your preferred provider — or our credits, zero setup.",
+    f1t:"The AI you choose",f1p:"Use your own API key from your preferred provider: Claude, ChatGPT, Gemini, Copilot and more.",
     f2t:"Any database — and files too",f2p:"SQL Server, MySQL/MariaDB, PostgreSQL and SQLite: it adapts to your schema by itself. No database? Upload a CSV, Excel or Parquet file and query it the same way — fast, cached loading.",
     f3t:"Senior-level SQL",f3p:"CTEs with clear names, early filters, no SELECT *. Validated against the real catalog: if the AI invents a column, it gets rejected and self-repaired.",
     f3a:"Confidence interval on every answer (e.g. 94% ±5)",f3b:"Saved queries + stored procedures",f3c:"Re-optimizer for existing SQL",
@@ -764,7 +729,7 @@ var I18N={
     sh:"The questions your IT team will ask, answered",
     sl:"No vague promises: what travels, what doesn't, what can go wrong and what happens when it does. Everything below is implemented in the code — and the critical parts are covered by public tests.",
     s1t:"Where is my data processed?",
-    s1p:"On your PC or your server: the program runs locally. There is no server of ours processing your queries. With your own API key, your machine talks directly over HTTPS to the AI provider you chose; in credits mode it goes through our billing function, which deducts 1 credit and does not store your query.",
+    s1p:"On your PC or your server: the program runs locally. There is no server of ours processing your queries. With your own API key, your machine talks directly over HTTPS to the AI provider you chose. It does not go through any server of ours.",
     s2t:"What exactly travels to the AI?",
     s2p:"To generate the SQL: your question, the table and column names of the ~4 relevant tables, and —so the AI understands the domains— a few example values from the text columns. For the written analysis (optional): a sample of up to 20 result rows. With <b>strict privacy mode</b> no real value travels, neither examples nor results: only names. With <b>local Ollama</b>, nothing leaves your machine.",
     s3t:"Can it write to my database?",
@@ -785,15 +750,15 @@ var I18N={
     susc_desc:"Monthly license with your own AI key (Claude, ChatGPT, Gemini, Copilot…). Billed every month, cancel whenever you want.",
     ey3:"Plans",st3:"Start with the implementation, continue with the license",
     sl3:"Most people start with the implementation: we connect MV SQL NLP to your real database or ERP — Odoo runs on PostgreSQL, SAP Business One and Dynamics NAV/Business Central on SQL Server, most local systems on MySQL/MariaDB — map your schema, and leave the questions your team asks every week already working. After that, the monthly license keeps the program up to date. Reference prices in US dollars, charged via MercadoPago. Before any of it, try it free for 7 days.",
-    tg1:"Monthly subscription",tg2:"Credits included",
+    tg1:"Monthly subscription",
     byok_desc:"Bring your own AI key (Claude, ChatGPT, Gemini, Copilot…) and pay only for the program license. Ideal if you already use AI.",
-    credits_desc:"AI comes included and metered by credits — zero setup. We bill the AI for you.",
+    
     p1t:"Personal",p1w:"For one user and their databases.",p1per:"per month · cancel anytime · ",p1a:"Full program (PC + self-installing)",p1b:"All AIs and databases",p1c:"Charts, export, saved queries",p1d:"Minor updates included",p1cta:"Subscribe to Personal",
     poptag:"Recommended",p2t:"Professional",p2w:"For analysts and consultants.",p2per:"per month · cancel anytime · ",p2a:"Everything in Personal",p2b:"Stored procedures + CTE optimizer",p2c:"MCP connector for Claude Desktop",p2d:"Priority email support",p2cta:"Subscribe to Professional",
     p3t:"Business",p3w:"For teams (up to 5 seats).",p3per:"per month · cancel anytime · ",p3a:"Everything in Professional × 5 seats",p3b:"Remote onboarding (1 session)",p3c:"6 months priority support",p3d:"Invoice for your company",p3cta:"Subscribe to Business",
-    c1t:"100 credits",c1w:"Try with AI included, no API key.",c1per:"one-time · ",c1a:"Full program + our AI",c1b:"≈ 100 queries with analysis",c1c:"No technical setup",c1d:"License embedded in your download",c1cta:"Buy 100 credits",
-    poptag2:"Recommended",c2t:"500 credits",c2w:"Regular use without worrying about keys.",c2per:"one-time · ",c2a:"All included, zero setup",c2b:"≈ 500 queries with analysis",c2c:"Best price per query",c2d:"Top up whenever you want",c2cta:"Buy 500 credits",
-    c3t:"2000 credits",c3w:"Teams and heavy use.",c3per:"one-time · ",c3a:"≈ 2000 queries with analysis",c3b:"We bill the AI for you",c3c:"Ideal for multiple users",c3d:"Priority support",c3cta:"Buy 2000 credits",
+    
+    poptag2:"Recommended",
+    
     emailhint:"Your license and download link arrive at this email.",
     paylead:"Payment methods:",payb0:"Card",payb1:"Bank transfer",paysec:"Payment verified server-side before enabling the download.",
     dey:"Downloads",dh:"Try free for 7 days — everything included",dl:"Download whichever version you prefer and use it in full for 7 days, no card. Then buy the license in one click.",
