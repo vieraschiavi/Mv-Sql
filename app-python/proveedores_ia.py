@@ -142,6 +142,125 @@ def _post(url, headers, payload):
     return r.json()
 
 
+def _get(url, headers=None, params=None):
+    try:
+        r = requests.get(url, headers=headers or {}, params=params, timeout=TIMEOUT)
+    except requests.exceptions.ConnectionError as e:
+        raise ErrorProveedor(f"No se pudo conectar al proveedor ({url}): {e}")
+    except requests.exceptions.Timeout:
+        raise ErrorProveedor("El proveedor de IA tardó demasiado en responder (timeout).")
+    if r.status_code == 401:
+        raise ErrorProveedor("API key inválida o vencida (401). Verificá la clave en Configuración.")
+    if r.status_code == 429:
+        raise ErrorProveedor("Límite de uso del proveedor alcanzado (429). Esperá unos segundos o cambiá de proveedor.")
+    if r.status_code >= 400:
+        raise ErrorProveedor(f"Error del proveedor ({r.status_code}): {r.text[:300]}")
+    return r.json()
+
+
+# ── Listado de modelos EN VIVO ──────────────────────────────────────
+#
+# PROVEEDORES["...]["modelos"] es una lista fija que se desactualiza en
+# cuanto el proveedor saca un modelo nuevo — y eso pasa seguido: hay que
+# tocar código y republicar para que el cliente pueda elegir un modelo
+# que salió la semana pasada. Estas funciones consultan el catálogo real
+# por API, con la API key que el cliente ya puso, para que la lista de
+# modelos esté al día sin depender de un release nuestro.
+
+# Ids que aparecen en el listado de modelos pero no sirven para chat
+# (embeddings, audio, moderación, imagen): mostrarlos solo confundiría
+# la elección. No es una lista exhaustiva a propósito — ante la duda se
+# incluye, porque un modelo de más se descarta con la vista y uno de
+# menos ni se sabe que faltó.
+_NO_CHAT = ("embed", "whisper", "tts", "dall-e", "moderation", "clip",
+            "davinci-002", "babbage-002", "text-moderation")
+
+
+def _es_modelo_chat(id_modelo):
+    bajo = id_modelo.lower()
+    return not any(x in bajo for x in _NO_CHAT)
+
+
+def _modelos_anthropic(api_key):
+    headers = {"x-api-key": api_key, "anthropic-version": "2023-06-01"}
+    data = _get("https://api.anthropic.com/v1/models", headers, params={"limit": 100})
+    items = [m for m in data.get("data", []) if m.get("id")]
+    items.sort(key=lambda m: m.get("created_at", ""), reverse=True)
+    return [m["id"] for m in items]
+
+
+def _modelos_openai_compat(base, api_key):
+    headers = {"Authorization": f"Bearer {api_key}"}
+    data = _get(f"{base.rstrip('/')}/models", headers)
+    items = [m for m in data.get("data", []) if m.get("id") and _es_modelo_chat(m["id"])]
+    items.sort(key=lambda m: m.get("created", 0), reverse=True)
+    return [m["id"] for m in items]
+
+
+def _modelos_gemini(api_key):
+    data = _get("https://generativelanguage.googleapis.com/v1beta/models",
+                params={"key": api_key, "pageSize": 1000})
+    salida = []
+    for m in data.get("models", []):
+        # Solo los que de verdad sirven para esto: Gemini también lista
+        # modelos de embeddings y de generación de imagen bajo el mismo
+        # endpoint, que no aceptan un system prompt + mensaje de chat.
+        if "generateContent" not in (m.get("supportedGenerationMethods") or []):
+            continue
+        nombre = (m.get("name") or "").split("/")[-1]
+        if nombre:
+            salida.append(nombre)
+    return salida
+
+
+def _modelos_ollama(base_url):
+    base = (base_url or "http://localhost:11434").rstrip("/")
+    data = _get(f"{base}/api/tags")
+    items = [m for m in data.get("models", []) if m.get("name") or m.get("model")]
+    items.sort(key=lambda m: m.get("modified_at", ""), reverse=True)
+    return [m.get("name") or m.get("model") for m in items]
+
+
+def listar_modelos(proveedor, api_key=None, base_url=None):
+    """
+    Trae del proveedor la lista real de modelos disponibles para esa API
+    key, más nuevos primero cuando el proveedor informa la fecha.
+
+    No lanza para "no hay modelos nuevos" (eso no es un error, es una
+    lista vacía) — SÍ lanza ErrorProveedor para lo que impide seguir:
+    proveedor sin listado por API, sin key, o cualquier falla de red que
+    ya maneja _get() (401, 429, timeout, etc).
+    """
+    proveedor = (proveedor or "").lower()
+    info = PROVEEDORES.get(proveedor)
+    if not info:
+        raise ErrorProveedor(f"Proveedor desconocido: {proveedor}")
+
+    if proveedor == "mvsql_creditos":
+        raise ErrorProveedor("MV SQL Créditos no tiene modelos para elegir: es un servicio ya configurado.")
+    if proveedor == "azure":
+        # El listado real de deployments de Azure OpenAI se hace con
+        # credenciales de gestión de Azure (Azure AD), no con la api-key
+        # del recurso — no hay una API simple y equivalente que consultar
+        # acá. El nombre del deployment se sigue escribiendo a mano.
+        raise ErrorProveedor("Azure OpenAI no expone sus modelos por esta vía: escribí el nombre del deployment a mano.")
+
+    if info["necesita_key"] and not api_key:
+        raise ErrorProveedor("Falta la API key.")
+
+    if proveedor == "anthropic":
+        return _modelos_anthropic(api_key)
+    if proveedor == "gemini":
+        return _modelos_gemini(api_key)
+    if proveedor == "ollama":
+        return _modelos_ollama(base_url)
+
+    base = base_url or _BASES_OPENAI_COMPAT.get(proveedor)
+    if not base:
+        raise ErrorProveedor(f"Proveedor '{proveedor}' necesita una Base URL para listar modelos.")
+    return _modelos_openai_compat(base, api_key)
+
+
 def completar(proveedor, api_key, system, user, modelo=None, max_tokens=1500,
               base_url=None, temperatura=0.0):
     """

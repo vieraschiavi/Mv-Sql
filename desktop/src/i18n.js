@@ -31,6 +31,11 @@ export const I18N = {
     history: "Historial", welcome_t: "Tu base de datos, en tu idioma",
     welcome_s: "Conectá tu base, elegí tu IA y preguntá en lenguaje natural. MV SQL NLP genera SQL optimizado con CTEs, lo valida contra tu esquema y te devuelve tablas, gráficos y análisis con intervalo de confianza.",
     saved_to: "Guardado en",
+    refresh_models: "Actualizar modelos",
+    refreshing_models: "Consultando los modelos disponibles…",
+    models_updated: (n) => `Se encontraron ${n} modelos — ya podés elegir entre las últimas versiones.`,
+    models_no_new: "El proveedor no devolvió modelos nuevos.",
+    models_need_key: "Poné tu API key antes de actualizar los modelos.",
   },
   en: {
     settings: "Settings", provider: "AI provider", model: "Model",
@@ -63,6 +68,11 @@ export const I18N = {
     history: "History", welcome_t: "Your database, in your language",
     welcome_s: "Connect your database, pick your AI and ask in plain language. MV SQL NLP writes CTE-optimized SQL, validates it against your schema and returns tables, charts and analysis with a confidence interval.",
     saved_to: "Saved to",
+    refresh_models: "Refresh models",
+    refreshing_models: "Checking available models…",
+    models_updated: (n) => `Found ${n} models — you can now pick the latest versions.`,
+    models_no_new: "The provider didn't return any new models.",
+    models_need_key: "Enter your API key before refreshing the models.",
   },
   pt: {
     settings: "Configuração", provider: "Provedor de IA", model: "Modelo",
@@ -95,6 +105,11 @@ export const I18N = {
     history: "Histórico", welcome_t: "Seu banco de dados, no seu idioma",
     welcome_s: "Conecte seu banco, escolha sua IA e pergunte em linguagem natural. O MV SQL NLP gera SQL otimizado com CTEs, valida contra seu esquema e devolve tabelas, gráficos e análises com intervalo de confiança.",
     saved_to: "Salvo em",
+    refresh_models: "Atualizar modelos",
+    refreshing_models: "Consultando os modelos disponíveis…",
+    models_updated: (n) => `Foram encontrados ${n} modelos — já dá para escolher as últimas versões.`,
+    models_no_new: "O provedor não retornou modelos novos.",
+    models_need_key: "Coloque sua API key antes de atualizar os modelos.",
   },
 };
 
@@ -110,6 +125,7 @@ export const EXAMPLES = {
 export const PROVIDERS = {
   anthropic: { nombre: "Anthropic (Claude)", modelos: ["claude-sonnet-5", "claude-haiku-4-5-20251001", "claude-opus-4-8"], needsKey: true },
   openai: { nombre: "OpenAI (GPT)", modelos: ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1"], needsKey: true },
+  azure: { nombre: "Microsoft Copilot (Azure OpenAI)", modelos: [], needsKey: true },
   gemini: { nombre: "Google (Gemini)", modelos: ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro"], needsKey: true },
   groq: { nombre: "Groq (Llama)", modelos: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"], needsKey: true },
   mistral: { nombre: "Mistral AI", modelos: ["mistral-small-latest", "mistral-large-latest", "codestral-latest"], needsKey: true },

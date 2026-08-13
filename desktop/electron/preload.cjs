@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld("mvsql", {
   storedProcedure: (payload) => ipcRenderer.invoke("query:stored-procedure", payload),
   optimize: (payload) => ipcRenderer.invoke("query:optimize", payload),
   testAI: (ai) => ipcRenderer.invoke("ai:test", ai),
+  refreshModels: (ai) => ipcRenderer.invoke("ai:refresh-models", ai),
   storeGet: (key) => ipcRenderer.invoke("store:get", key),
   storeSet: (key, value) => ipcRenderer.invoke("store:set", { key, value }),
   saveFile: (payload) => ipcRenderer.invoke("file:save", payload),

@@ -32,6 +32,8 @@ const D = {
   chincheta: <><path d="M12 17v5" /><path d="M9 3h6l-1 6 4 3v2H6v-2l4-3-1-6z" /></>,
   play: <path d="M6 4l14 8-14 8V4z" fill="currentColor" stroke="none" />,
   tacho: <><path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15" /><path d="M10 11v6M14 11v6" /></>,
+  refrescar: <><path d="M3 12a9 9 0 0115-6.7L21 8" /><path d="M21 3v5h-5" />
+              <path d="M21 12a9 9 0 01-15 6.7L3 16" /><path d="M3 21v-5h5" /></>,
 };
 
 export default function Icono({ n, size = 16, style }) {

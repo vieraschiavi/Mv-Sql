@@ -205,6 +205,7 @@ ipcMain.handle("query:stored-procedure", (_e, { sql, name, ai }) =>
 ipcMain.handle("query:optimize", (_e, { sql, ai }) => engine.optimize(sql, ai));
 
 ipcMain.handle("ai:test", (_e, ai) => engine.testProvider(ai));
+ipcMain.handle("ai:refresh-models", (_e, ai) => engine.refreshModels(ai));
 
 // ── IPC: consultas guardadas + configuración (persistencia local) ──
 ipcMain.handle("store:get", (_e, key) => store.get(key));
