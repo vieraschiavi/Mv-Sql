@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** La suscripción tiene que ENTREGAR, no solo cobrar.
  *
  * Los cuatro planes recurrentes (US$ 15 / 29 / 79 / 150 por mes) se cobran

@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — conector universal de bases (proceso principal)
 // Motores: sqlite (better-sqlite3), sqlserver (mssql), mysql (mysql2), postgres (pg)
 // Toda conexión es de solo lectura a nivel de uso: run() solo acepta SELECT/WITH

@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 sembrar_demo.py — datos de escenografía para el video.
 ==================================================================

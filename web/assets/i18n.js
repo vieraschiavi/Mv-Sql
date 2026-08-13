@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — diccionarios de idioma (ES / EN / PT)
 window.I18N = {
   es: {

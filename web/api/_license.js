@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — licencias de descarga (JWT firmado, sin base de datos)
 // El token codifica: email, plan, modo (own_ai | credits), créditos incluidos
 // y el id de pago de MercadoPago que lo originó (evita re-emisión duplicada).

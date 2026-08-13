@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — POST /api/create-preference { plan, mode, email }
 // Crea una preferencia de Checkout Pro y devuelve la URL de pago.
 const { client, Preference } = require("./_mp.js");

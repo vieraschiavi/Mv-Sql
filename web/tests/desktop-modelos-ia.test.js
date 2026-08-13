@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** El cliente ve los modelos DE VERDAD de su cuenta (desktop/electron/services/ai.cjs).
  *
  * Espejo de app-python/tests/test_modelos_ia.py: los dos productos

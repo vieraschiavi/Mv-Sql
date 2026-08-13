@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /**
  * Icono — el mismo set de trazo que usa la landing (web/index.html).
  *

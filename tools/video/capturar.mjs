@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /**
  * capturar.mjs — capturas del video de demo, en el idioma que se pida.
  * ==================================================================

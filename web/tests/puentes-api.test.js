@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Cada endpoint tiene su puente en la raíz, o en producción es un 404.
  *
  * La implementación de la API vive en web/api/, pero el proyecto de

@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 build_cython.py — compila los módulos sensibles de MV SQL NLP
 ==================================================================

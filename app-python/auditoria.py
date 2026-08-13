@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 auditoria.py — MV SQL NLP
 ==================================================================

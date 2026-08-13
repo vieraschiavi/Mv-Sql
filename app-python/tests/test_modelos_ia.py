@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 test_modelos_ia.py — el cliente puede ver los modelos DE VERDAD de su cuenta
 ==================================================================

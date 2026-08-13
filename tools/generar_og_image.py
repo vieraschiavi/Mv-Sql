@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 generar_og_image.py — arma la imagen de vista previa (Open Graph).
 ==================================================================

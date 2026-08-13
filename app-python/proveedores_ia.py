@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 proveedores_ia.py — MV SQL NLP
 ==================================================================

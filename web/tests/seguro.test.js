@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Escape centralizado de HTML (web/assets/seguro.js).
  *
  * Hasta ahora cada página que armaba HTML a mano (owner/index.html,

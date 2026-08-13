@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — Excel y CSV como si fueran una base
 // ==================================================================
 // Se importa el archivo a una base SQLite local y despues se consulta

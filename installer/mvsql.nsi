@@ -1,3 +1,5 @@
+; © 2026 Martín Viera. Todos los derechos reservados.
+
 ; ============================================================================
 ; mvsql.nsi — instalador profesional de Windows para MV SQL NLP
 ; ============================================================================

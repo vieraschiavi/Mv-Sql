@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** El release automático solo dispara cuando hay versión nueva.
  *
  * build-desktop.yml corre en push a main, así que sin una condición que lo

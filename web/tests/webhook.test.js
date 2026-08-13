@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** /api/webhook — rate limiting (web/api/webhook.js).
  *
  * Todos los endpoints de pago tenían freno de pedidos salvo este: al no

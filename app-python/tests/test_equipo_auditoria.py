@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """Pruebas de usuarios/permisos y auditoría. Correr: python3 tests/test_equipo_auditoria.py"""
 import os
 import sys

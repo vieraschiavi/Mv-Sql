@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — GET /api/download?token=...
 // Sirve el paquete descargable, gateado por la licencia emitida tras el pago.
 // Los dos modos llevan licencia_mvsql.json embebida — sin eso, la app

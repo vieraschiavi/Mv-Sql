@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 generar_bmp_instalador.py — imagen lateral del asistente de instalación.
 ==================================================================

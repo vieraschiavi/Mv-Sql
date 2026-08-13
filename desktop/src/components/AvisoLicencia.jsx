@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 import Icono from "./Icono.jsx";
 import { avisoTrial } from "../licencia-aviso.js";
 

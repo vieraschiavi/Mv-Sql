@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — capa multi-proveedor de IA (proceso principal, fetch nativo)
 // El cliente elige: Anthropic, OpenAI, Gemini, Groq, Mistral, DeepSeek, xAI,
 // Ollama local o cualquier endpoint OpenAI-compatible.

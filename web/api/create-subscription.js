@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — POST /api/create-subscription { plan, email }
 // Crea una suscripción mensual (preapproval de MercadoPago) y devuelve el
 // link de pago. A diferencia de una preferencia, esto cobra todos los meses

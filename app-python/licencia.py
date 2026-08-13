@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 licencia.py — trial y licencia de MV SQL NLP
 ==================================================================

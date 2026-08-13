@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** La app PIDE la licencia nueva sola mientras el cliente siga pagando.
  *
  * El endpoint que renueva (web/api/renovar-licencia.js) existía desde

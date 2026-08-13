@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 motor.py — MV SQL NLP
 ==================================================================

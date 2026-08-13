@@ -1,6 +1,7 @@
 {
   "name": "mv-sql-nlp",
   "private": true,
+  "license": "UNLICENSED",
   "version": "1.0.0",
   "description": "MV SQL NLP — raíz del repositorio. El sitio vive en web/; esto sólo existe para que Vercel lo publique desde la raíz.",
   "workspaces": [

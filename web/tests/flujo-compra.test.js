@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /**
  * Pruebas del flujo de compra completo: preferencia → pago → licencia → descarga.
  * Sin dependencias externas: mockea MercadoPago y corre con `node tests/flujo-compra.test.js`.

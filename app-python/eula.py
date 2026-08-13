@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 eula.py — aceptación del EULA de MV SQL NLP
 ==================================================================

@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /* MV SQL NLP — landing interactions: i18n, pricing toggle, terminal demo
  *
  * ⚠️ CÓDIGO MUERTO: ninguna página carga este archivo. La landing actual

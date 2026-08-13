@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Errores de conexión del desktop (desktop/electron/services/db.cjs).
  *
  * Reportado sobre la app corriendo: con el campo del archivo vacío, apretar

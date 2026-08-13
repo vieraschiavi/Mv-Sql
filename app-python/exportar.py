@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 exportar.py — MV SQL NLP
 ==================================================================

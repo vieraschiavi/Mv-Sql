@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — catálogo comercial.
 //
 // Modelo (corregido tras la auditoría de jul-2026): el producto es el

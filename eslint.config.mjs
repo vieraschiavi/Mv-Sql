@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // Configuración de ESLint (flat config, ESLint 9).
 // ===================================================================
 // El repo no tenía linter. Este arranca deliberadamente austero: reglas

@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP desktop — diccionarios ES / EN / PT
 export const I18N = {
   es: {

@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 empaquetar_zip.py — arma el zip que descarga el cliente.
 ==================================================================

@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """Pruebas de cuadernos con variables, diagrama de relaciones y plan de ejecución."""
 import os
 import sys

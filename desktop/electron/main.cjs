@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — proceso principal de Electron
 const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");

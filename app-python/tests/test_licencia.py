@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """Pruebas del trial y la licencia paga. Correr: python3 tests/test_licencia.py
 
 licencia.py es el módulo que hace cumplir "7 días de prueba gratis, después
