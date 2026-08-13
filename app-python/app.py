@@ -29,7 +29,7 @@ from eula import eula_aceptado, registrar_aceptacion, texto_eula
 from exportar import a_csv, a_excel, a_pdf, a_html, a_json
 from licencia import TRIAL_DIAS, renovar_si_corresponde, verificar_acceso
 from motor import MotorMVSQL
-from proveedores_ia import PROVEEDORES, probar_conexion, cargar_licencia_creditos
+from proveedores_ia import ErrorProveedor, PROVEEDORES, cargar_licencia_creditos, listar_modelos, probar_conexion
 import auditoria
 import cuadernos
 import equipo
@@ -44,6 +44,11 @@ T = {
         "titulo": "MV SQL NLP", "sub": "Tu base de datos, en tu idioma. Preguntá en lenguaje natural — la IA genera SQL optimizado, lo valida contra tu esquema y te devuelve tablas, gráficos y análisis.",
         "config": "Configuración", "idioma": "Idioma", "ia": "Proveedor de IA",
         "modelo": "Modelo", "apikey": "API key", "probar": "Probar conexión",
+        "actualizar_modelos": "Actualizar modelos",
+        "actualizando_modelos": "Consultando los modelos disponibles…",
+        "modelos_actualizados": "Se encontraron {n} modelos — ya podés elegir entre las últimas versiones.",
+        "modelos_sin_cambios": "El proveedor no devolvió modelos nuevos.",
+        "modelos_falta_key": "Poné tu API key antes de actualizar los modelos.",
         "privacidad": "Modo privacidad estricta",
         "privacidad_ayuda": "Activado: ninguna fila de tus datos viaja a la IA — solo tu pregunta y los nombres de tablas/columnas relevantes. Te quedás sin el análisis escrito del resultado (la tabla y el gráfico siguen igual). Desactivado: para el análisis viaja una muestra de hasta 20 filas del resultado. Con Ollama local nada sale de tu máquina en ningún caso.",
         "privacidad_nota": "Modo privacidad estricta: el análisis escrito está desactivado para que ninguna fila viaje a la IA. La tabla y el gráfico no cambian.",
@@ -142,6 +147,11 @@ T = {
         "titulo": "MV SQL NLP", "sub": "Your database, in your language. Ask in plain words — AI generates optimized SQL, validates it against your schema, and returns tables, charts and analysis.",
         "config": "Settings", "idioma": "Language", "ia": "AI provider",
         "modelo": "Model", "apikey": "API key", "probar": "Test connection",
+        "actualizar_modelos": "Refresh models",
+        "actualizando_modelos": "Checking available models…",
+        "modelos_actualizados": "Found {n} models — you can now pick the latest versions.",
+        "modelos_sin_cambios": "The provider didn't return any new models.",
+        "modelos_falta_key": "Enter your API key before refreshing the models.",
         "privacidad": "Strict privacy mode",
         "privacidad_ayuda": "On: no row of your data ever travels to the AI — only your question and the relevant table/column names. You give up the written analysis of the result (table and chart stay the same). Off: a sample of up to 20 result rows travels for the analysis. With local Ollama nothing leaves your machine either way.",
         "privacidad_nota": "Strict privacy mode: the written analysis is off so that no row travels to the AI. Table and chart are unaffected.",
@@ -240,6 +250,11 @@ T = {
         "titulo": "MV SQL NLP", "sub": "Seu banco de dados, no seu idioma. Pergunte em linguagem natural — a IA gera SQL otimizado, valida contra seu esquema e devolve tabelas, gráficos e análises.",
         "config": "Configuração", "idioma": "Idioma", "ia": "Provedor de IA",
         "modelo": "Modelo", "apikey": "API key", "probar": "Testar conexão",
+        "actualizar_modelos": "Atualizar modelos",
+        "actualizando_modelos": "Consultando os modelos disponíveis…",
+        "modelos_actualizados": "Foram encontrados {n} modelos — já dá para escolher as últimas versões.",
+        "modelos_sin_cambios": "O provedor não retornou modelos novos.",
+        "modelos_falta_key": "Coloque sua API key antes de atualizar os modelos.",
         "privacidad": "Modo privacidade estrita",
         "privacidad_ayuda": "Ativado: nenhuma linha dos seus dados viaja para a IA — só a sua pergunta e os nomes das tabelas/colunas relevantes. Você abre mão da análise escrita do resultado (a tabela e o gráfico continuam iguais). Desativado: para a análise viaja uma amostra de até 20 linhas do resultado. Com Ollama local nada sai da sua máquina em nenhum caso.",
         "privacidad_nota": "Modo privacidade estrita: a análise escrita está desativada para que nenhuma linha viaje para a IA. Tabela e gráfico não mudam.",
@@ -1042,16 +1057,13 @@ with st.sidebar:
             st.error(t["creditos_falta"])
             st.caption(t["creditos_comprar"].format(url=info_prov["url_keys"]))
     else:
-        if info_prov["modelos"]:
-            modelo = st.selectbox(t["modelo"], info_prov["modelos"],
-                                  index=info_prov["modelos"].index(info_prov["modelo_default"]))
-        else:
-            modelo = st.text_input(t["modelo"], placeholder="gpt-4o-mini")
-
-        if proveedor in ("custom", "ollama"):
+        # Base URL y API key van PRIMERO: el botón de actualizar modelos,
+        # más abajo, los necesita para consultar al proveedor de verdad.
+        if proveedor in ("custom", "ollama", "azure"):
             base_url = st.text_input("Base URL",
                                      value="http://localhost:11434" if proveedor == "ollama" else "",
-                                     placeholder="https://api.miproveedor.com/v1")
+                                     placeholder="https://mirecurso.openai.azure.com" if proveedor == "azure"
+                                     else "https://api.miproveedor.com/v1")
 
         if info_prov["necesita_key"]:
             api_key = st.text_input(t["apikey"], type="password",
@@ -1060,6 +1072,42 @@ with st.sidebar:
                                                          if proveedor == "anthropic" else ""))
             if info_prov["url_keys"]:
                 st.caption(f"[Obtener API key]({info_prov['url_keys']})")
+
+        # El modelo se elige de una lista fija por defecto, pero el
+        # cliente puede pedir la lista REAL de su cuenta con "Actualizar
+        # modelos": así no depende de que nosotros toquemos código cada
+        # vez que un proveedor saca un modelo nuevo. Azure no tiene
+        # listado por API (ver listar_modelos) — ahí el nombre del
+        # deployment se sigue escribiendo a mano.
+        if proveedor == "azure":
+            modelo = st.text_input(t["modelo"], placeholder="nombre-del-deployment")
+        else:
+            _clave_cache_modelos = f"_modelos_{proveedor}"
+            _opciones_modelo = ss.get(_clave_cache_modelos) or info_prov["modelos"]
+
+            if _opciones_modelo:
+                _indice = (_opciones_modelo.index(info_prov["modelo_default"])
+                          if info_prov["modelo_default"] in _opciones_modelo else 0)
+                modelo = st.selectbox(t["modelo"], _opciones_modelo, index=_indice)
+            else:
+                modelo = st.text_input(t["modelo"], placeholder="gpt-4o-mini")
+
+            if st.button(f"🔄 {t['actualizar_modelos']}", key=f"btn_actualizar_modelos_{proveedor}"):
+                if info_prov["necesita_key"] and not api_key:
+                    st.error(t["modelos_falta_key"])
+                else:
+                    with st.spinner(t["actualizando_modelos"]):
+                        try:
+                            _modelos_nuevos = listar_modelos(proveedor, api_key, base_url)
+                        except ErrorProveedor as e:
+                            st.error(str(e))
+                            _modelos_nuevos = None
+                    if _modelos_nuevos:
+                        ss[_clave_cache_modelos] = _modelos_nuevos
+                        st.success(t["modelos_actualizados"].format(n=len(_modelos_nuevos)))
+                        st.rerun()
+                    elif _modelos_nuevos is not None:
+                        st.info(t["modelos_sin_cambios"])
 
     if st.button(f"{t['probar']}", use_container_width=True):
         ok, msg = probar_conexion(proveedor, api_key, modelo, base_url)

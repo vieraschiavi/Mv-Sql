@@ -11,12 +11,42 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
   const [testMsg, setTestMsg] = useState(null);
   const [connMsg, setConnMsg] = useState(null);
   const [busy, setBusy] = useState(false);
+  // Modelos traídos EN VIVO de la cuenta del cliente, por proveedor —
+  // sin esto, la lista de modelos es la fija de PROVIDERS y se
+  // desactualiza en cuanto el proveedor saca un modelo nuevo.
+  const [modelosPorProveedor, setModelosPorProveedor] = useState({});
+  const [refrescando, setRefrescando] = useState(false);
+  const [refreshMsg, setRefreshMsg] = useState(null);
 
   const prov = PROVIDERS[ai.provider];
+  const modelosDisponibles = modelosPorProveedor[ai.provider] || prov.modelos;
 
   async function testAI() {
     setTestMsg({ ok: null, message: "…" });
     setTestMsg(await window.mvsql.testAI(ai));
+  }
+
+  async function refrescarModelos() {
+    setRefreshMsg(null);
+    if (prov.needsKey && !ai.apiKey) {
+      setRefreshMsg({ ok: false, message: t.models_need_key });
+      return;
+    }
+    setRefrescando(true);
+    try {
+      const r = await window.mvsql.refreshModels(ai);
+      if (!r.ok) {
+        setRefreshMsg({ ok: false, message: r.message });
+      } else if (!r.models || !r.models.length) {
+        setRefreshMsg({ ok: false, message: t.models_no_new });
+      } else {
+        setModelosPorProveedor({ ...modelosPorProveedor, [ai.provider]: r.models });
+        setAi({ ...ai, model: r.models[0] });
+        setRefreshMsg({ ok: true, message: t.models_updated(r.models.length) });
+      }
+    } finally {
+      setRefrescando(false);
+    }
   }
 
   async function connect() {
@@ -51,18 +81,31 @@ export default function Sidebar({ t, lang, setLang, ai, setAi, onConnect,
       <div className="side-section">
         <h3><Icono n="cpu" /> {t.provider}</h3>
         <select value={ai.provider}
-                onChange={(e) => setAi({ ...ai, provider: e.target.value, model: PROVIDERS[e.target.value].modelos[0] || "" })}>
+                onChange={(e) => {
+                  const nuevo = e.target.value;
+                  const opciones = modelosPorProveedor[nuevo] || PROVIDERS[nuevo].modelos;
+                  setAi({ ...ai, provider: nuevo, model: opciones[0] || "" });
+                  setRefreshMsg(null);
+                }}>
           {Object.entries(PROVIDERS).map(([k, p]) => <option key={k} value={k}>{p.nombre}</option>)}
         </select>
         <label>{t.model}</label>
-        {prov.modelos.length ? (
+        {ai.provider !== "azure" && modelosDisponibles.length ? (
           <select value={ai.model} onChange={(e) => setAi({ ...ai, model: e.target.value })}>
-            {prov.modelos.map((m) => <option key={m}>{m}</option>)}
+            {modelosDisponibles.map((m) => <option key={m}>{m}</option>)}
           </select>
         ) : (
-          <input value={ai.model} placeholder="gpt-4o-mini"
+          <input value={ai.model} placeholder={ai.provider === "azure" ? "nombre-del-deployment" : "gpt-4o-mini"}
                  onChange={(e) => setAi({ ...ai, model: e.target.value })} />
         )}
+        {ai.provider !== "azure" && (
+          <div className="btn-row">
+            <button className="ghost small" onClick={refrescarModelos} disabled={refrescando}>
+              <Icono n="refrescar" /> {refrescando ? t.refreshing_models : t.refresh_models}
+            </button>
+          </div>
+        )}
+        {refreshMsg && <div className={refreshMsg.ok ? "status-ok" : "status-err"}>{refreshMsg.message}</div>}
         {(ai.provider === "custom" || ai.provider === "ollama" || ai.provider === "azure") && (
           <>
             <label>Base URL</label>

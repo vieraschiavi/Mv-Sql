@@ -1,5 +1,5 @@
 // MV SQL NLP — motor NL2SQL (retrieval + generación + validación + confianza)
-const { complete } = require("./ai.cjs");
+const { complete, listModels } = require("./ai.cjs");
 
 let CATALOG = null;
 let DIALECT = "SQLite";
@@ -227,4 +227,13 @@ async function testProvider(ai) {
   } catch (e) { return { ok: false, message: e.message }; }
 }
 
-module.exports = { setCatalog, answer, storedProcedure, optimize, testProvider, assertReadOnly };
+async function refreshModels(ai) {
+  try {
+    const modelos = await listModels(ai.provider, ai.apiKey, ai.baseUrl);
+    return { ok: true, models: modelos };
+  } catch (e) { return { ok: false, message: e.message }; }
+}
+
+module.exports = {
+  setCatalog, answer, storedProcedure, optimize, testProvider, refreshModels, assertReadOnly,
+};
