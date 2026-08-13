@@ -27,7 +27,7 @@ import streamlit as st
 from conectores import ConexionBD, MOTORES
 from eula import eula_aceptado, registrar_aceptacion, texto_eula
 from exportar import a_csv, a_excel, a_pdf, a_html, a_json
-from licencia import TRIAL_DIAS, verificar_acceso
+from licencia import TRIAL_DIAS, renovar_si_corresponde, verificar_acceso
 from motor import MotorMVSQL
 from proveedores_ia import PROVEEDORES, probar_conexion, cargar_licencia_creditos
 import auditoria
@@ -438,6 +438,23 @@ if not eula_aceptado():
 # ──────────────────────────────────────────────────────────────
 # TRIAL / LICENCIA — se chequea antes de armar el resto de la app
 # ──────────────────────────────────────────────────────────────
+@st.cache_resource(show_spinner=False)
+def _renovar_una_vez():
+    """Renueva la licencia al arrancar, si está por vencer y se sigue pagando.
+
+    Cacheado a propósito: este bloque corre en CADA rerun de Streamlit
+    (o sea, en cada clic), y sin la caché saldría a la red cada vez.
+    cache_resource lo deja en una sola llamada por proceso, que es lo
+    que corresponde para algo que se decide al abrir la app.
+
+    Va antes de verificar_acceso() porque el que paga todos los meses no
+    tiene que ver ni una vez el cartel de "comprá tu licencia".
+    """
+    return renovar_si_corresponde()
+
+
+_renovar_una_vez()
+
 _acceso = verificar_acceso()
 if not _acceso["permitido"]:
     _TXT_VENCIDO = {

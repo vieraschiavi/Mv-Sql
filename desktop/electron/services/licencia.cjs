@@ -153,6 +153,116 @@ function verificarAcceso(dirs) {
   };
 }
 
+// ── Renovacion automatica de la suscripcion ────────────────────────
+//
+// Una suscripcion cobra todos los meses; la licencia se emite una sola
+// vez. Mientras la licencia dure un año eso solo regala producto al que
+// cancela, pero en cuanto la vigencia se acorte al ciclo de cobro —que
+// es a donde tiene que ir— el cliente que SI paga se quedaria afuera
+// todos los meses si nadie pide la licencia nueva por el.
+//
+// El endpoint que la emite ya existe (web/api/renovar-licencia.js) y no
+// lo llamaba nadie: la mitad del servidor estaba hecha y la del cliente
+// no, o sea que la funcion completa no existia.
+//
+// Regla de oro de todo esto: NUNCA dejar al cliente peor que antes. Si
+// no hay red, si el servidor contesta cualquier cosa, si la respuesta
+// viene rota — se deja la licencia que ya tenia y la app abre igual. Lo
+// unico que puede pasar es que mejore.
+
+/** Dias antes del vencimiento en que se empieza a intentar renovar.
+ *  Con margen a proposito: si el intento cae justo el dia del
+ *  vencimiento y ese dia la maquina esta sin red, el cliente que paga
+ *  pierde el acceso. Varios dias de ventana dan varios arranques. */
+const DIAS_ANTES_DE_RENOVAR = 5;
+
+const URL_RENOVAR = "https://mvsqlnlp.com/api/renovar-licencia";
+
+/** Cuanto se espera al servidor. Esto corre ANTES de abrir la ventana:
+ *  un servidor colgado no puede traducirse en una app que no arranca. */
+const ESPERA_MS = 8000;
+
+function escribirLicencia(datos, destino) {
+  // Primero a un temporal y despues rename, que es atomico: si se corta
+  // la luz a mitad de la escritura, el cliente conserva la licencia
+  // vieja en vez de quedarse con un JSON truncado que no parsea —o sea,
+  // sin licencia, justo cuando acaba de pagar.
+  const tmp = `${destino}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(datos, null, 2));
+  fs.renameSync(tmp, destino);
+}
+
+/**
+ * Pide una licencia nueva si la actual esta por vencer y el cliente
+ * sigue pagando. No lanza nunca: devuelve por que no se hizo.
+ *
+ * Estados: "sin-licencia" | "sin-token" | "al-dia" | "renovada" |
+ *          "sin-red" | "rechazada" | "respuesta-invalida"
+ */
+async function renovarSiCorresponde(dirs, opciones = {}) {
+  const traer = opciones.fetch || globalThis.fetch;
+  const ahora = opciones.ahora || Date.now();
+  if (typeof traer !== "function") return { estado: "sin-red" };
+
+  const { datos } = rutas(dirs);
+  const archivo = path.join(datos, "licencia_mvsql.json");
+  const lic = leerJson(archivo);
+  if (!lic) return { estado: "sin-licencia" };
+
+  // Las licencias viejas (y las de la build del propietario) no llevan
+  // token: sin el no hay con que acreditarse, y esta bien que asi sea —
+  // renovar por email dejaria que cualquiera que lo conozca se lleve la
+  // licencia ajena.
+  if (!lic.token) return { estado: "sin-token" };
+
+  const vence = new Date(String(lic.vence || "").replace(" ", "T")).getTime();
+  // Sin fecha legible se intenta igual: una licencia que la app no sabe
+  // hasta cuando vale es exactamente una que conviene renovar.
+  if (!Number.isNaN(vence) && vence - ahora > DIAS_ANTES_DE_RENOVAR * MS_POR_DIA) {
+    return { estado: "al-dia" };
+  }
+
+  let resp;
+  try {
+    resp = await traer(`${URL_RENOVAR}?token=${encodeURIComponent(lic.token)}`, {
+      signal: AbortSignal.timeout(ESPERA_MS),
+    });
+  } catch {
+    // Sin red, DNS caido, timeout. La licencia actual queda intacta.
+    return { estado: "sin-red" };
+  }
+
+  if (!resp || !resp.ok) {
+    // 402 (cancelada), 409 (pago unico), 404, 500... En todos los casos
+    // se deja lo que hay: si de verdad cancelo, la licencia vence sola
+    // y ahi la puerta lo frena. Borrarla aca convertiria un 500 nuestro
+    // en un cliente bloqueado.
+    return { estado: "rechazada", codigo: resp ? resp.status : 0 };
+  }
+
+  let cuerpo;
+  try {
+    cuerpo = await resp.json();
+  } catch {
+    return { estado: "respuesta-invalida" };
+  }
+
+  const nueva = cuerpo && cuerpo.licencia;
+  // No se pisa nada hasta comprobar que lo nuevo sirve. Escribir una
+  // licencia sin `vence` la dejaria muerta al instante, y el cliente
+  // veria "compra tu licencia" JUSTO despues de renovar bien.
+  if (!nueva || !nueva.token || !vigente(nueva)) {
+    return { estado: "respuesta-invalida" };
+  }
+
+  try {
+    escribirLicencia(nueva, archivo);
+  } catch {
+    return { estado: "respuesta-invalida" };
+  }
+  return { estado: "renovada", vence: nueva.vence };
+}
+
 /** Guarda la licencia que el cliente pega despues de comprar. */
 function instalarLicencia(texto, dirs) {
   const { datos } = rutas(dirs);
@@ -168,4 +278,11 @@ function instalarLicencia(texto, dirs) {
   return { ok: true, vence: lic.vence };
 }
 
-module.exports = { verificarAcceso, instalarLicencia, TRIAL_DIAS, _firma: firma };
+module.exports = {
+  verificarAcceso,
+  instalarLicencia,
+  renovarSiCorresponde,
+  TRIAL_DIAS,
+  DIAS_ANTES_DE_RENOVAR,
+  _firma: firma,
+};

@@ -13,6 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const JSZip = require("jszip");
 const { verifyLicense } = require("./_license.js");
+const { archivoLicencia } = require("./_licencia-archivo.js");
 const { limitar } = require("./_guard.js");
 
 // El zip está en web/downloads/. Según desde dónde publique Vercel (la raíz
@@ -49,36 +50,11 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const esCredits = license.mode === "credits";
-    const licenciaJson = esCredits
-      ? {
-          producto: "MV SQL NLP",
-          email: license.email,
-          plan: license.plan,
-          modo: "credits",
-          creditos: license.credits,
-          token,
-          emitida: new Date(license.iat * 1000).toISOString(),
-          vence: new Date(license.exp * 1000).toISOString(),
-          proxy_url: `https://${req.headers.host}/api/ai-proxy`,
-          nota: "No compartas este archivo: contiene tu token de créditos. Elegí el proveedor 'MV SQL Créditos' en la app — no hace falta ninguna API key.",
-        }
-      : {
-          producto: "MV SQL NLP",
-          email: license.email,
-          plan: license.plan,
-          modo: "own_ai",
-          // El token viaja también en esta variante, no solo en la de
-          // créditos. Es lo único que el cliente tiene para acreditarse
-          // ante /api/renovar-licencia cuando su suscripción se renueva:
-          // sin esto, la única identificación disponible sería el email, y
-          // renovar por email dejaría que cualquiera que lo conozca se
-          // lleve la licencia ajena.
-          token,
-          emitida: new Date(license.iat * 1000).toISOString(),
-          vence: new Date(license.exp * 1000).toISOString(),
-          nota: "No compartas este archivo: acredita tu licencia paga. Configurá tu propia API key en 'Proveedor de IA' — este archivo solo te exime del límite de la prueba gratuita.",
-        };
+    // La forma del archivo vive en _licencia-archivo.js, compartida con
+    // /api/renovar-licencia: los dos escriben el MISMO archivo, y si cada
+    // uno lo armara por su cuenta el segundo podría emitir una licencia a
+    // la que le falte un campo que este sí pone.
+    const licenciaJson = archivoLicencia(token, license, req.headers.host);
 
     // Todo el trabajo que puede fallar ocurre ANTES de tocar los headers:
     // leer el zip base y generar el zip final. Antes se seteaba

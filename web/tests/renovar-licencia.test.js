@@ -161,11 +161,31 @@ function licenciaSub({ vencida = false } = {}) {
     // de créditos llevaba el token, así que el suscriptor no tenía con
     // qué acreditarse — y renovar por email dejaría que cualquiera que lo
     // conozca se lleve la licencia ajena.
-    const fs = require("fs");
-    const src = fs.readFileSync(path.join(API, "download.js"), "utf8");
-    const ownAi = src.slice(src.indexOf('modo: "own_ai"'));
-    assert.match(ownAi.slice(0, 600), /\btoken,/,
+    const { archivoLicencia } = require(path.join(API, "_licencia-archivo.js"));
+    const token = licenciaSub();
+    const archivo = archivoLicencia(token, verifyLicense(token), "mvsqlnlp.com");
+    assert.strictEqual(archivo.token, token,
       "la licencia own_ai no lleva el token: el suscriptor no puede renovar");
+    assert.strictEqual(archivo.modo, "own_ai");
+    assert.ok(archivo.vence, "sin `vence` la app la trata como si no existiera");
+  });
+
+  await test("el 200 trae el archivo COMPLETO, no solo el token", () => {
+    // El cliente guarda la respuesta tal cual. Si viniera solo el token
+    // tendría que reconstruir el JSON y acertarle a `vence`, sin el cual
+    // la licencia recién renovada nace muerta.
+    subFalsa = { id: ID_SUB, status: "authorized",
+                 external_reference: "profesional:suscripcion:cliente@empresa.com",
+                 payer_email: "cliente@empresa.com" };
+    return llamar(renovar, { token: licenciaSub() }).then((r) => {
+      assert.strictEqual(r.statusCode, 200);
+      const lic = r.body.licencia;
+      assert.ok(lic, "el endpoint no devuelve el archivo de licencia");
+      for (const campo of ["producto", "email", "plan", "modo", "token", "vence"]) {
+        assert.ok(lic[campo], `al archivo devuelto le falta '${campo}'`);
+      }
+      assert.ok(new Date(lic.vence) > new Date(), "la licencia devuelta ya nace vencida");
+    });
   });
 
   console.log(`\n  ${pasadas} pasadas · ${falladas} falladas\n`);
