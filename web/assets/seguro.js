@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // seguro.js — MV SQL NLP
 // ===================================================================
 // Punto único de escape para cualquier dato (usuario, API externa, base

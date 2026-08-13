@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — POST /api/ai-proxy { token, system, user, max_tokens }
 // Usado por la app (proveedor "MV SQL Créditos") cuando el cliente compró
 // el modo "créditos embebidos": nosotros ponemos la IA, autenticada por el

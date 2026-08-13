@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** La suscripción se puede RENOVAR mientras se siga pagando.
  *
  * Una suscripción cobra todos los meses, pero la licencia se emitía una

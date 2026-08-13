@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 test_arranque_app.py — que app.py ARRANQUE, no solo que exista
 ==================================================================

@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 test_renovacion.py — la app Python también renueva la licencia sola
 ==================================================================

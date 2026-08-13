@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // correr-tests.mjs — corre TODA la suite del repo con un solo comando.
 // ===================================================================
 // Antes había que acordarse de tres comandos distintos (los tests de

@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Suscripciones (preapproval) y tope de créditos del proxy de IA. */
 const assert = require("assert");
 const path = require("path");

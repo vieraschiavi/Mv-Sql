@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** El cliente en prueba VE cuántos días le quedan.
  *
  * El trial de Electron existía pero era invisible: el proceso principal lo

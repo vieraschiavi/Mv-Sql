@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // Puente hacia web/api/create-preference.js
 //
 // El sitio vive en web/, pero el proyecto de Vercel publica desde la raíz del

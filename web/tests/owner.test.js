@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Pruebas del panel del dueño: seguridad del token + agregación de ventas. */
 const assert = require("assert");
 const path = require("path");

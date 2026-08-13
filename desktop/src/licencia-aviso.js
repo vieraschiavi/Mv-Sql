@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /**
  * Decide QUÉ avisar sobre la prueba gratuita. Sin JSX y sin React a
  * propósito: separar la decisión del dibujo deja la regla verificable

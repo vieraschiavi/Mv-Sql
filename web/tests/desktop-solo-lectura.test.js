@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Barrera de solo-lectura del producto de escritorio (desktop/engine.cjs).
  *
  * El desktop tenía la MISMA barrera evadible que app-python ya había cerrado:

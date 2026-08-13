@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Validación de entrada y rate limiting (web/api/_guard.js).
  *
  * El regex de email que había antes (/^\S+@\S+\.\S+$/) aceptaba payloads

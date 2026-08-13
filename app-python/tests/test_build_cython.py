@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """Verifica tools/build_cython.py. Correr: python3 tests/test_build_cython.py
 
 build_cython.py corre en el runner de Windows del workflow de releases, y

@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """Verifica los .bat del instalador. Correr: python3 tests/test_instalador_bat.py
 
 Los .bat solo se pueden EJECUTAR en Windows, pero sus modos de falla mas

@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 import Icono from "./Icono.jsx";
 import React, { useState } from "react";
 import { PROVIDERS, ENGINES } from "../i18n.js";

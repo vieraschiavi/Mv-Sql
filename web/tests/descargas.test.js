@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Los botones de descarga apuntan a archivos que existen de verdad.
  *
  * La landing reparte las descargas en DOS canales, por tamaño:

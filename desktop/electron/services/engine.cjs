@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — motor NL2SQL (retrieval + generación + validación + confianza)
 const { complete, listModels } = require("./ai.cjs");
 

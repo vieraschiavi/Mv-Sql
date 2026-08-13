@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — flujo de compra (Checkout Pro de MercadoPago)
 
 // Tasa de referencia USD → UYU (peso uruguayo). Es un valor aproximado para

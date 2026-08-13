@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 cuadernos.py — MV SQL NLP
 ==================================================================

@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 equipo.py — MV SQL NLP
 ==================================================================

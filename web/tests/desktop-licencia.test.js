@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Trial y licencia de la app Electron (desktop/electron/services/licencia.cjs).
  *
  * Hasta que existió ese módulo, el desktop NO tenía ningún control: el .exe

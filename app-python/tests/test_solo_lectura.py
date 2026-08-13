@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """Pruebas de la barrera de solo-lectura. Correr: python3 tests/test_solo_lectura.py
 
 La regla "MV SQL NLP nunca modifica tu base" vivía solo en motor.py, el

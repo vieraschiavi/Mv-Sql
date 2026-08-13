@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Paridad de metadatos entre variantes de idioma de la landing.
  *
  * web/index.html (es) tenía el set completo de meta tags para compartir

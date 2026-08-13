@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — GET /api/owner-stats?token=...  (panel del dueño)
 // Consulta las ventas reales en MercadoPago y devuelve KPIs del negocio.
 // No usa base de datos: MercadoPago ES la fuente de verdad de las ventas.

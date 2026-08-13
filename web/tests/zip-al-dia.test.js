@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** El zip que descarga el que paga coincide con el fuente de app-python.
  *
  * /api/download sirve web/downloads/mvsql-nlp-app.zip tal cual está en el

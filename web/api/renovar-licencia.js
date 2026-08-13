@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — GET /api/renovar-licencia?token=...
 // ====================================================================
 // Devuelve una licencia nueva si la suscripción del cliente SIGUE PAGA.

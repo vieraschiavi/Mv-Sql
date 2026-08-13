@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — persistencia local simple (JSON en userData)
 // Guarda: consultas guardadas, conexiones (sin passwords), config de IA e idioma.
 const { app } = require("electron");

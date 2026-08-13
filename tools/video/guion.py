@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 guion.py — texto del video de demo, en los tres idiomas.
 ==================================================================

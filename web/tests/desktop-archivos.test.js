@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Excel/CSV como base consultable (desktop/electron/services/archivos.cjs).
  *
  * El pedido era subir Excel/CSV "sin límite de tamaño" y poder preguntarles

@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 app_demo.py — la app real, con la IA simulada.
 ==================================================================

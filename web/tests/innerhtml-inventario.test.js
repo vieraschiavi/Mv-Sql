@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** Inventario clasificado de los innerHTML del código propio.
  *
  * El test de seguro.test.js prueba que la función de escape funciona. Este

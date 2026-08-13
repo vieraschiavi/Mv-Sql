@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — GET /api/verify-and-issue?payment_id=... | ?preapproval_id=...
 // Llamado desde /gracias tras volver de MercadoPago. Verifica el pago EN VIVO
 // contra la API de MercadoPago (nunca confía solo en el query string) y,

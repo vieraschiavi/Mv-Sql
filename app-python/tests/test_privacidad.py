@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """Qué viaja (y qué NO viaja) al proveedor de IA. Correr: python3 tests/test_privacidad.py
 
 La landing dice "tus datos no salen de tu red". Este archivo convierte esa

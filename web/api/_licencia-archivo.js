@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — el CONTENIDO de licencia_mvsql.json, en un solo lugar
 // ====================================================================
 // Este archivo es el que la app (Electron y Python) lee para saber si

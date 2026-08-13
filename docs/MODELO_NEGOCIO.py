@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 Modelo financiero MV SQL NLP — 3 escenarios × 1/3/6/12/18 meses, Uruguay.
 Todos los supuestos explícitos y trazables. USD.

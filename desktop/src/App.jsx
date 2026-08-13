@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 import Icono from "./components/Icono.jsx";
 import React, { useEffect, useState } from "react";
 import Sidebar from "./components/Sidebar.jsx";

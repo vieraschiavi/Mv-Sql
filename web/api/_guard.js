@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // _guard.js — validación de entrada y rate limiting compartidos.
 // ===================================================================
 // Antes cada endpoint validaba (o no) por su cuenta, y ninguno tenía

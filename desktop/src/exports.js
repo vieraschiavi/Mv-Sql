@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — exportaciones (renderer): Excel, CSV, PDF, HTML
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";

@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 /** El instalador .exe que sirve la web está al día con app-python/.
  *
  * web/downloads/ NO es un artefacto del CI: son archivos commiteados que

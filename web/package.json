@@ -1,6 +1,7 @@
 {
   "name": "mv-sql-nlp-web",
   "private": true,
+  "license": "UNLICENSED",
   "version": "1.0.0",
   "description": "MV SQL NLP — landing + funciones serverless (MercadoPago + descarga con licencia)",
   "dependencies": {

@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — cliente de MercadoPago (Checkout Pro)
 const { MercadoPagoConfig, Preference, Payment } = require("mercadopago");
 

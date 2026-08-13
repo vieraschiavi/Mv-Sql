@@ -1,3 +1,5 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
 """
 armar.py — arma el video de demo a partir de las capturas + el guion.
 ==================================================================

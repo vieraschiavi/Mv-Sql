@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — trial y licencia de la app Electron
 // ==================================================================
 // Espejo de app-python/licencia.py. Hasta ahora este modulo no existia

@@ -1,3 +1,5 @@
+/* © 2026 Martín Viera. Todos los derechos reservados. */
+
 // MV SQL NLP — POST /api/webhook (notificación IPN de MercadoPago)
 // Solo logging/reconciliación: la entrega real ocurre en verify-and-issue,
 // que re-verifica el pago en vivo cuando el comprador vuelve a /gracias.
