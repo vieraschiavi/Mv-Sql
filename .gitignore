@@ -49,3 +49,9 @@ web/downloads/mvsql-nlp-app-OWNER.zip
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/
+
+# Conversor a version propietario CON la licencia real adentro (ver
+# owner/README.md y tools/generar_conversor_owner.py). Solo se genera
+# localmente; owner/plantilla-convertir-a-dueno.ps1 (sin licencia real)
+# es la unica version que se commitea.
+owner/dist/
