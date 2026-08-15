@@ -105,17 +105,31 @@ function esShallow() {
       "        makensis \"-DVERSION=<version>\" installer/mvsql.nsi");
   });
 
-  await test("el instalador y el zip se generaron del mismo código", () => {
-    // Las dos vias de descarga tienen que entregar lo mismo. Si una se
-    // regenera y la otra no, dos clientes con la misma version del
-    // producto tienen builds distintos y los sintomas no se reproducen.
-    const tExe = ultimoCommit("web/downloads/MV-SQL-NLP-Setup.exe");
+  await test("el zip tampoco quedó atrás del código", () => {
+    // Las dos vías de descarga tienen que entregar lo mismo. Antes esto
+    // se chequeaba restando las fechas de commit del .exe y del zip y
+    // exigiendo menos de un día de diferencia, y esa premisa no se
+    // sostiene: regenerar el zip cuando app-python no cambió da un
+    // archivo BYTE A BYTE IDÉNTICO, o sea que no hay nada que commitear
+    // y su fecha se queda atrás legítimamente. El caso sano hacía fallar
+    // el test.
+    //
+    // Lo que importa de verdad es que ninguno de los dos sea más viejo
+    // que el código, y eso se mide contra app-python/, no uno contra el
+    // otro. Para el zip hay además un chequeo más fuerte que este, por
+    // CONTENIDO, en zip-al-dia.test.js.
     const tZip = ultimoCommit("web/downloads/mvsql-nlp-app.zip");
     assert.ok(tZip > 0, "el zip no está commiteado");
-    const dias = Math.abs(tExe - tZip) / 86400;
-    assert.ok(dias < 1,
-      `el .exe y el zip se commitearon con ${dias.toFixed(1)} días de diferencia: ` +
-      "uno de los dos quedó atrás");
+
+    const viejos = [];
+    for (const f of fs.readdirSync(path.join(RAIZ, "app-python"))) {
+      if (!EXTENSIONES.includes(path.extname(f))) continue;
+      const t = ultimoCommit(`app-python/${f}`);
+      if (t > tZip) viejos.push(`${f} (+${Math.round((t - tZip) / 86400)}d)`);
+    }
+    assert.deepStrictEqual(viejos, [],
+      "el zip que sirve la web es más viejo que el código; regeneralo con:\n" +
+      "        python3 tools/empaquetar_zip.py");
   });
 
   console.log(`\n  ${pasadas} pasadas · ${falladas} falladas\n`);
