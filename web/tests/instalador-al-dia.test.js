@@ -53,8 +53,36 @@ function ultimoCommit(rutaRelativa) {
 // __pycache__, que no viajan.
 const EXTENSIONES = [".py", ".bat", ".txt", ".ico"];
 
+/** ¿Es un clon sin historia (git clone --depth N)? */
+function esShallow() {
+  try {
+    return execFileSync("git", ["rev-parse", "--is-shallow-repository"],
+      { cwd: RAIZ, encoding: "utf8" }).trim() === "true";
+  } catch {
+    return false;
+  }
+}
+
 (async () => {
   console.log("\n== El instalador .exe de la web está al día ==");
+
+  await test("HAY HISTORIA DE GIT PARA COMPARAR (si no, este archivo no prueba nada)", () => {
+    // Sin esto el test entero era teatro en CI. actions/checkout@v4 clona
+    // shallow por defecto: el único commit no tiene padre, así que git
+    // reporta TODOS los archivos como creados en él. Todas las fechas dan
+    // iguales, ningún archivo puede ser "más nuevo que" el instalador, y
+    // los tres tests de abajo pasaban en verde sin mirar nada.
+    //
+    // Medido: en un clon --depth 1 de este repo daba 3/3 verde mientras
+    // que con la historia completa fallaba de verdad. Cuatro PRs pasaron
+    // con CI en verde y el .exe publicado desactualizado.
+    //
+    // Se falla ruidosamente en vez de saltear: un chequeo que no puede
+    // correr tiene que doler, no desaparecer sin que nadie lo note.
+    assert.ok(!esShallow(),
+      "el repo está clonado en modo shallow: las fechas de commit son todas iguales y " +
+      "la comparación no prueba nada. Poné fetch-depth: 0 en el checkout de CI.");
+  });
 
   await test("el instalador existe y no es un archivo vacío", () => {
     assert.ok(fs.existsSync(EXE), "no está web/downloads/MV-SQL-NLP-Setup.exe");

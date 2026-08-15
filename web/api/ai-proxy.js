@@ -33,6 +33,29 @@ module.exports = async (req, res) => {
     const { token, system, user, max_tokens } = req.body || {};
     if (!token || !user) return res.status(400).json({ error: "Faltan parámetros (token, user)." });
 
+    // Techo de costo por llamada. El contador de créditos limita CUÁNTAS
+    // llamadas, pero no cuánto cuesta cada una: max_tokens, system y user
+    // venían del cliente sin ningún límite. Una licencia de 500 créditos
+    // con max_tokens=200000 y un prompt enorme gasta, contra la tarjeta
+    // del dueño, un múltiplo enorme de lo que se cobró por ese paquete —
+    // y el contador lo registra como 500 llamadas normales.
+    //
+    // Los topes son holgados respecto del uso real del producto
+    // (motor.py pide 1500-2000 tokens y manda esquema, no datos), así que
+    // un cliente legítimo no los toca nunca.
+    const MAX_TOKENS_TECHO = 4000;
+    const MAX_CARACTERES_PROMPT = 24000;   // ~6k tokens de entrada
+    const tokensPedidos = Number(max_tokens);
+    const tokensSalida = Number.isFinite(tokensPedidos)
+      ? Math.min(Math.max(1, Math.floor(tokensPedidos)), MAX_TOKENS_TECHO)
+      : 1500;
+    if (String(user).length + String(system || "").length > MAX_CARACTERES_PROMPT) {
+      return res.status(413).json({
+        error: "La consulta es demasiado grande para el servicio de créditos. " +
+               "Usá tu propia API key desde el menú de proveedor de IA.",
+      });
+    }
+
     const license = verifyLicense(token);
     if (license.mode !== "credits") {
       return res.status(403).json({ error: "Esta licencia no tiene créditos embebidos (es modo IA propia)." });
@@ -84,7 +107,7 @@ module.exports = async (req, res) => {
         headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: max_tokens || 1500,
+          max_tokens: tokensSalida,
           system: system || "",
           messages: [{ role: "user", content: user }],
         }),

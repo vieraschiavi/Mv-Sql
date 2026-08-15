@@ -22,6 +22,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Historia completa, no el clon shallow por defecto.
+          #
+          # instalador-al-dia.test.js compara FECHAS DE COMMIT (¿el .exe
+          # publicado quedó más viejo que el código?). En un clon shallow
+          # el único commit no tiene padre, así que git reporta TODOS los
+          # archivos como creados en ese mismo commit: todas las fechas
+          # dan iguales, ninguna comparación puede ser "más nuevo que", y
+          # el test pasaba en verde sin probar nada.
+          #
+          # Medido: en un clon --depth 1 de este repo el test daba 3/3 en
+          # verde mientras que con la historia completa fallaba de verdad
+          # (el .exe publicado estaba desactualizado). O sea que el gate
+          # existía y no gateaba.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:
