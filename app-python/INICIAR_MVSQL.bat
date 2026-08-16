@@ -48,6 +48,7 @@ set "M_PY=Python detectado:"
 set "M_VENV_NEW=Creando entorno virtual aislado (solo la primera vez)..."
 set "M_VENV_OK=Entorno virtual OK"
 set "M_VENV_ERR=[X] Fallo creando .venv"
+set "M_VENV_ERR2=Si instalaste Python desde la Microsoft Store, desinstalalo y bajalo de python.org: la version de la Store suele bloquear la instalacion de pip."
 set "M_PIP_REP=El entorno quedo sin pip. Reparando (puede tardar un minuto)..."
 set "M_PIP_ERR=[X] No se pudo reparar pip en el entorno virtual."
 set "M_PIP_ERR2=Reinstala Python desde python.org marcando pip y Add Python to PATH."
@@ -100,6 +101,7 @@ set "M_PY=Python found:"
 set "M_VENV_NEW=Creating an isolated virtual environment (first run only)..."
 set "M_VENV_OK=Virtual environment OK"
 set "M_VENV_ERR=[X] Could not create .venv"
+set "M_VENV_ERR2=If you installed Python from the Microsoft Store, uninstall it and get it from python.org instead: the Store version often blocks pip from installing."
 set "M_PIP_REP=The environment has no pip. Repairing (may take a minute)..."
 set "M_PIP_ERR=[X] Could not repair pip inside the virtual environment."
 set "M_PIP_ERR2=Reinstall Python from python.org with pip and Add Python to PATH ticked."
@@ -152,6 +154,7 @@ set "M_PY=Python encontrado:"
 set "M_VENV_NEW=Criando ambiente virtual isolado (so na primeira vez)..."
 set "M_VENV_OK=Ambiente virtual OK"
 set "M_VENV_ERR=[X] Falha ao criar o .venv"
+set "M_VENV_ERR2=Se voce instalou o Python pela Microsoft Store, desinstale e baixe do python.org: a versao da Store costuma bloquear a instalacao do pip."
 set "M_PIP_REP=O ambiente ficou sem pip. Reparando (pode levar um minuto)..."
 set "M_PIP_ERR=[X] Nao foi possivel reparar o pip no ambiente virtual."
 set "M_PIP_ERR2=Reinstale o Python do python.org marcando pip e Add Python to PATH."
@@ -301,9 +304,31 @@ exit /b 0
 :: error que no tenia nada que ver.
 if exist ".venv" if not exist ".venv\Scripts\python.exe" rmdir /s /q ".venv" >nul 2>&1
 
+:: "python -m venv" intenta instalar pip ADENTRO del mismo paso, y ESE es
+:: el que falla mas seguido (Python de la Microsoft Store, antivirus,
+:: permisos) -- no la creacion del entorno en si. El python.exe casi
+:: siempre queda armado igual; el problema es que antes esto se trataba
+:: como fatal de una, y la cadena de reparacion de pip de mas abajo (que
+:: ya sabe resolver justo este caso con ensurepip, recrear el venv, o
+:: get-pip.py) nunca se llegaba a probar porque el script paraba aca
+:: mismo. Se reintenta UNA vez con --without-pip, que no dispara
+:: ensurepip y por eso practicamente no falla nunca, y se deja que la
+:: cadena de abajo instale pip despues.
+:: Todo esto va FUERA de los bloques ( ): las lineas :: adentro de
+:: parentesis rompen cmd.exe con "sintaxis incorrecta".
 if not exist ".venv\Scripts\python.exe" (
     echo   [3/7] !M_VENV_NEW!
-    %PY% -m venv .venv || ( color 0C & echo   !M_VENV_ERR! & pause & exit /b 1 )
+    %PY% -m venv .venv
+    if not exist ".venv\Scripts\python.exe" (
+        rmdir /s /q ".venv" >nul 2>&1
+        %PY% -m venv .venv --without-pip >nul 2>&1
+    )
+    if not exist ".venv\Scripts\python.exe" (
+        color 0C
+        echo   !M_VENV_ERR!
+        echo      !M_VENV_ERR2!
+        pause & exit /b 1
+    )
 ) else (
     echo   [3/7] !M_VENV_OK!
 )
