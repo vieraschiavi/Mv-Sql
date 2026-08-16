@@ -140,6 +140,41 @@ function createWindow() {
     },
   });
 
+  // Todo lo externo se abre en el NAVEGADOR del usuario, nunca adentro
+  // de la app.
+  //
+  // Sin esto, el <a target="_blank"> del aviso de prueba (el boton
+  // "Comprar licencia", o sea el unico camino de venta del producto)
+  // abria una segunda ventana de Electron cargando mvsqlnlp.com. Una
+  // ventana de Electron no tiene barra de direcciones: el cliente no ve
+  // en que dominio esta, no tiene su gestor de contrasenas, ni sus
+  // tarjetas guardadas, ni la sesion que ya tenia. Justo en el paso de
+  // pagar. Verificado corriendo Electron de verdad: con esta config y
+  // sin handler, un click abria 2 ventanas; con el handler, 1.
+  //
+  // will-navigate cubre el otro lado: que la ventana de la app se vaya
+  // a otro sitio EN EL LUGAR y quede una web remota adentro del marco
+  // de la aplicacion, sin forma de volver.
+  //
+  // Solo se reenvia https. openExternal se lo pasa al sistema operativo,
+  // asi que esquemas como file: o los que registran otros programas son
+  // justamente los peligrosos.
+  const abrirAfuera = (url) => {
+    if (/^https:\/\//i.test(url)) shell.openExternal(url);
+  };
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    abrirAfuera(url);
+    return { action: "deny" };
+  });
+  win.webContents.on("will-navigate", (evento, url) => {
+    const propia = process.env.VITE_DEV
+      ? url.startsWith("http://localhost:5173")
+      : url.startsWith("file://");
+    if (propia) return;
+    evento.preventDefault();
+    abrirAfuera(url);
+  });
+
   if (process.env.VITE_DEV) {
     win.loadURL("http://localhost:5173");
   } else {
