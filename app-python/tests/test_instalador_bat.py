@@ -259,6 +259,47 @@ def _():
             f"log {log.splitlines()[0][:60]!r} -> causa {got}, se esperaba {esperado}")
 
 
+@test("una FALLA CREANDO EL VENV (pip roto) se repara antes de darse por vencido")
+def _():
+    # Reportado por un cliente en Windows: "%PY% -m venv .venv" instala pip
+    # COMO PARTE del mismo paso (via ensurepip), y ese bootstrap interno es
+    # lo que falla mas seguido -- Python de la Microsoft Store, antivirus,
+    # permisos -- no la creacion del entorno en si. El .venv y su python.exe
+    # casi siempre quedan armados igual; lo unico que falta es pip.
+    #
+    # Antes, esa falla (venv devuelve codigo != 0) se trataba como fatal de
+    # una: "%PY% -m venv .venv || (... exit /b 1)". La cadena de reparacion
+    # de pip que esta un poco mas abajo en el MISMO archivo (ensurepip,
+    # recrear el venv, get-pip.py) nunca se llegaba a probar, porque el
+    # script ya habia salido.
+    #
+    # No se puede ejecutar cmd.exe en este entorno, asi que esto verifica la
+    # ESTRUCTURA: que el primer intento de venv ya no sea fatal por si solo,
+    # que haya un reintento con --without-pip (no dispara ensurepip, por eso
+    # casi no falla nunca) ANTES del error final, y que declarar la falla
+    # dependa de si python.exe existe -- no del codigo de salida crudo.
+    texto = "\n".join(lineas("INICIAR_MVSQL.bat"))
+    i = texto.index('if not exist ".venv\\Scripts\\python.exe" (\n    echo   [3/7]')
+    fin = texto.index('set "VPY=.venv\\Scripts\\python.exe"', i)
+    bloque = texto[i:fin]
+
+    assert "|| (" not in bloque, (
+        "el primer intento de venv sigue siendo fatal de una: la reparacion "
+        "de pip de mas abajo nunca se llega a probar")
+
+    primero = bloque.index("%PY% -m venv .venv")
+    reintento = bloque.index("--without-pip", primero)
+    fatal = bloque.index("!M_VENV_ERR!", reintento)
+    assert primero < reintento < fatal, (
+        "el reintento con --without-pip no esta ENTRE el primer intento y "
+        "el error fatal: el orden importa, si no la reparacion no sirve")
+
+    assert bloque.count('if not exist ".venv\\Scripts\\python.exe"') >= 2, (
+        "declarar la falla no depende de que python.exe exista de verdad: "
+        "un venv que devuelve error pero SI crea python.exe (el caso real "
+        "reportado) se trataria como fallo aunque el entorno sirva")
+
+
 @test("los dos requirements existen y no se pisan")
 def _():
     for f in ("requirements.txt", "requirements-extras.txt"):
