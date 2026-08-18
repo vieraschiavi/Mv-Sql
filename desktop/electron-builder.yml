@@ -60,6 +60,10 @@ nsis:
   installerLanguages: [es_ES, en_US, pt_BR]
   license: build/LICENSE.txt
   runAfterFinish: true
+  # customInit propio: la carpeta default de allowToChangeInstallationDirectory
+  # arranca siempre en la unidad del perfil de Windows (casi siempre C:), sin
+  # mirar cuál unidad fija tiene más espacio libre. Ver build/installer.nsh.
+  include: build/installer.nsh
   # Nombre ESTABLE (sin la versión): la web enlaza directo a este archivo
   # con releases/latest/download/<nombre>, sin mandar al usuario a la página
   # de Releases. Distinto de "MV-SQL-NLP-Setup.exe" (el instalador del
