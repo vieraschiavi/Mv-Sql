@@ -47,7 +47,7 @@ jobs:
     outputs:
       seguir: ${{ steps.d.outputs.seguir }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - id: d
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -76,11 +76,11 @@ jobs:
       run:
         working-directory: desktop
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: desktop/package-lock.json
 
@@ -138,7 +138,7 @@ jobs:
             throw "No se genero el instalador del propietario"
           }
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: mvsql-app-owner
           # Relativo a la raiz del workspace: upload-artifact no hereda el
@@ -156,15 +156,15 @@ jobs:
     # de nada al cliente de Windows.
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
       - name: Instalar Cython
         run: pip install cython
       - name: Compilar motor.py / proveedores_ia.py / licencia.py a .pyd
         run: python tools/build_cython.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: mvsql-pyd
           path: app-python/*.pyd
@@ -174,7 +174,7 @@ jobs:
     needs: [build-windows-exe, build-cython-windows]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Determinar version y tag del Release
         id: version
         # electron-builder etiqueta el Release según version en package.json,
@@ -185,7 +185,7 @@ jobs:
           V=$(node -p "require('./desktop/package.json').version")
           echo "version=$V" >> "$GITHUB_OUTPUT"
           echo "tag=v$V" >> "$GITHUB_OUTPUT"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: mvsql-pyd
           path: app-python
@@ -229,7 +229,7 @@ jobs:
         # nunca al Release. Existe para poder usar la via .bat en una PC
         # donde no se pueden abrir .exe.
         run: python3 tools/empaquetar_zip.py --propietario
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: mvsql-zip-owner
           path: web/downloads/mvsql-nlp-app-OWNER.zip
@@ -252,7 +252,7 @@ jobs:
         # esta línea. Como artefacto de Actions vuelve a requerir acceso al
         # repositorio para bajarlo, que es lo que se quería desde el
         # principio.
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mvsql-setup-owner
           path: web/downloads/MV-SQL-NLP-Setup-OWNER.exe

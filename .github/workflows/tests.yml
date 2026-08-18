@@ -30,7 +30,14 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Las tres actions van en su major actual (v7). No es "estar al dia"
+      # por deporte: GitHub ya avisa en cada corrida que las v4/v5 corren
+      # sobre Node 20, que esta deprecado, y que por ahora las FUERZA a
+      # Node 24. Cuando saquen ese salvavidas, esas versiones dejan de
+      # arrancar y TODO PR de este repo falla de golpe, sin que nadie haya
+      # tocado una linea de codigo. Se adelanta el cambio mientras es una
+      # linea, en vez de descubrirlo el dia que rompe.
+      - uses: actions/checkout@v7
         with:
           # Historia completa, no el clon shallow por defecto.
           #
@@ -47,12 +54,15 @@ jobs:
           # existía y no gateaba.
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: "20"
+          # Node 20 quedo fuera de soporte. La suite entera (34 archivos)
+          # ya se corre en Node 22 en desarrollo, asi que subir aca no es
+          # un salto a ciegas: es alinear CI con donde ya se prueba.
+          node-version: "22"
           cache: "npm"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
 
