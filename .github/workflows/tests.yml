@@ -17,6 +17,15 @@ on:
 permissions:
   contents: read
 
+# Si se pushea dos veces seguidas a la misma rama, la corrida vieja se
+# cancela en vez de terminar tarde. Sin esto, una corrida ya superada
+# puede fallar DESPUES de que el commit nuevo la arregló, y el PR queda
+# con la cruz roja de un commit que ya no existe — un "error" que no es
+# un error, pero que hay que ir a leer para darse cuenta.
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ubuntu-latest
