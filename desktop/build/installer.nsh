@@ -38,6 +38,26 @@
 # siguiente (Examinar): esto solo cambia qué aparece pre-cargado ahí.
 # ============================================================================
 
+# Estos dos !include NO son decorativos y no se pueden sacar "porque
+# electron-builder ya los incluye". Rompieron un release de verdad:
+#
+#   Invalid command: "${DriveSpace}"
+#   !include: error in script: "...\build\installer.nsh" on line 103
+#
+# El motivo es una asimetria de NSIS que es facil no ver. Lo que hay
+# adentro de un !macro NO se expande al momento del !include: queda
+# guardado tal cual y recien se resuelve cuando alguien lo inserta. Una
+# Function, en cambio, se compila EN EL ACTO. Por eso el ${DriveSpace}
+# de adentro de customInit pasaba sin chistar y el de la Function de
+# abajo explotaba: cuando electron-builder mete este archivo, todavia no
+# incluyo FileFunc.nsh.
+#
+# Los dos headers se auto-protegen contra la doble inclusion
+# (!ifndef FILEFUNC_INCLUDED / LOGICLIB_INCLUDED), asi que incluirlos
+# aca es gratis aunque electron-builder los incluya despues.
+!include "FileFunc.nsh"
+!include "LogicLib.nsh"
+
 !macro customInit
   ${If} $perUserInstallationFolder == ""
     Push $R1
