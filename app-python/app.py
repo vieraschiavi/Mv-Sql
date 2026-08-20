@@ -19,12 +19,15 @@ Correr:  streamlit run app.py
 ==================================================================
 """
 
+import base64
 import html
+import io
 import os
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from PIL import Image
 
 from conectores import ConexionBD, MOTORES
 from eula import eula_aceptado, registrar_aceptacion, texto_eula
@@ -371,7 +374,31 @@ EJEMPLOS = {
 # ──────────────────────────────────────────────────────────────
 # CONFIG DE PÁGINA + ESTILO
 # ──────────────────────────────────────────────────────────────
-st.set_page_config(page_title="MV SQL NLP", page_icon="⚡", layout="wide",
+def _icono_marca_png(tam=48):
+    """El ícono de marca (mvsql.ico) como PNG en memoria.
+
+    mvsql.ico trae varias resoluciones — PIL abre la más grande por
+    default — y se reduce acá a un tamaño chico para meterlo inline en
+    los headers HTML (page_icon se lo puede pasar directo como Image).
+    """
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mvsql.ico")
+    icono = Image.open(ruta).convert("RGBA")
+    icono.thumbnail((tam, tam), Image.LANCZOS)
+    return icono
+
+
+_ICONO = _icono_marca_png()
+_buf = io.BytesIO()
+_ICONO.save(_buf, format="PNG")
+# <img> inline para los headers "mv-logo": el ⚡ literal dependía del
+# glifo de emoji del sistema (mismo problema que ya se había resuelto en
+# la landing y en generar_og_image.py) y no era la marca del producto.
+_ICONO_IMG_HTML = (
+    f'<img src="data:image/png;base64,{base64.b64encode(_buf.getvalue()).decode("ascii")}" '
+    'style="height:1em;vertical-align:-.15em;margin-right:.3em" alt="">'
+)
+
+st.set_page_config(page_title="MV SQL NLP", page_icon=_ICONO, layout="wide",
                    initial_sidebar_state="expanded")
 
 st.markdown("""
@@ -437,7 +464,7 @@ if not eula_aceptado():
                "Marque a caixa para continuar."),
     }
     _titulo_eula, _cuerpo_eula, _chk_eula, _btn_eula, _falta_eula = _TXT_EULA[ss.lang]
-    st.markdown('<div class="mv-logo" style="font-size:2.6rem">⚡ MV SQL NLP</div>',
+    st.markdown(f'<div class="mv-logo" style="font-size:2.6rem">{_ICONO_IMG_HTML}MV SQL NLP</div>',
                 unsafe_allow_html=True)
     st.title(_titulo_eula)
     st.write(_cuerpo_eula)
@@ -492,7 +519,7 @@ if not _acceso["permitido"]:
                "Comprar licença em mvsqlnlp.com"),
     }
     _titulo_venc, _cuerpo_venc, _cta_venc = _TXT_VENCIDO[ss.lang]
-    st.markdown('<div class="mv-logo" style="font-size:2.6rem">⚡ MV SQL NLP</div>',
+    st.markdown(f'<div class="mv-logo" style="font-size:2.6rem">{_ICONO_IMG_HTML}MV SQL NLP</div>',
                 unsafe_allow_html=True)
     st.title(_titulo_venc)
     st.write(_cuerpo_venc)
@@ -965,11 +992,8 @@ def barra_confianza(conf, t):
 # SIDEBAR — idioma, IA, base de datos
 # ──────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.markdown('<div class="mv-logo">'
-                '<svg viewBox="0 0 24 24" width="19" height="19" fill="#f2b441" '
-                'style="vertical-align:-.15em;margin-right:.25em">'
-                '<path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z"/></svg>'
-                'MV SQL NLP</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="mv-logo">{_ICONO_IMG_HTML}MV SQL NLP</div>',
+                unsafe_allow_html=True)
 
     # El selector de idioma necesita su propia etiqueta traducida, así que
     # `t` tiene que existir ANTES de dibujarlo. Se asigna dos veces a
@@ -1337,7 +1361,7 @@ with st.sidebar:
 # ──────────────────────────────────────────────────────────────
 # MAIN
 # ──────────────────────────────────────────────────────────────
-st.markdown(f'<div class="mv-logo" style="font-size:2.6rem">⚡ {t["titulo"]}</div>',
+st.markdown(f'<div class="mv-logo" style="font-size:2.6rem">{_ICONO_IMG_HTML}{t["titulo"]}</div>',
             unsafe_allow_html=True)
 st.markdown(f"<p style='color:#94a3b8; max-width:60rem'>{t['sub']}</p>",
             unsafe_allow_html=True)

@@ -24,6 +24,11 @@ from PIL import Image, ImageDraw, ImageFont
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 DESTINO = os.path.join(RAIZ, "installer", "lateral.bmp")
 
+# Mismo ícono que el favicon y el .ico de escritorio — fuente vectorial en
+# web/assets/logo-mv.svg, acá se reusa el raster ya generado para no sumar
+# una dependencia de rasterizado de SVG a este script.
+ICONO = os.path.join(RAIZ, "desktop", "build", "icon.png")
+
 # Tamaño exacto que exige MUI_WELCOMEFINISHPAGE_BITMAP.
 W, H = 164, 314
 
@@ -54,26 +59,10 @@ for y in range(H):
     b = int(HERO_A[2] + (NAVY[2] - HERO_A[2]) * t)
     d.line([(0, y), (W, y)], fill=(r, g, b))
 
-# Monograma "MV" en una caja redondeada, arriba (como el icono de la
-# captura de referencia, pero con la marca propia).
-caja_w, caja_h = 84, 84
-cx = (W - caja_w) // 2
-cy = 38
-d.rounded_rectangle([cx, cy, cx + caja_w, cy + caja_h], radius=16,
-                    fill=NAVY, outline=AMBER, width=3)
-f_mv = fuente(34)
-bb = d.textbbox((0, 0), "MV", font=f_mv)
-d.text((cx + (caja_w - (bb[2] - bb[0])) // 2 - bb[0],
-        cy + (caja_h - (bb[3] - bb[1])) // 2 - bb[1]),
-       "MV", font=f_mv, fill=AMBER)
-
-# Rayo (⚡) dibujado como polígono — Liberation Sans no tiene el glifo,
-# mismo truco que en generar_og_image.py. Centrado, grande, en ámbar.
-ry, esc = 168, 1.0
-rx = W // 2
-rayo = [(rx + int(dx * esc), ry + int(dy * esc)) for dx, dy in
-        [(8, -46), (-22, 8), (-4, 8), (-8, 46), (22, -8), (4, -8)]]
-d.polygon(rayo, fill=AMBER)
+# Ícono de marca, centrado arriba.
+icono_s = 108
+icono = Image.open(ICONO).convert("RGBA").resize((icono_s, icono_s), Image.LANCZOS)
+img.paste(icono, ((W - icono_s) // 2, 40), icono)
 
 # Marca al pie.
 f_nom = fuente(19)

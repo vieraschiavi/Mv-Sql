@@ -30,11 +30,14 @@
 <meta name="twitter:title" content="MV SQL NLP · Tu base de datos, en tu idioma">
 <meta name="twitter:description" content="Preguntale a tu base de datos en lenguaje natural. La IA escribe el SQL, lo valida contra tu esquema real y te devuelve tablas y graficos.">
 <meta name="twitter:image" content="https://mvsqlnlp.com/assets/og-image.png">
-<!-- Marca dibujada, no un emoji: el ⚡ de antes lo resolvía la fuente del
-     sistema, así que el favicon se veía distinto en cada máquina (y en
-     Windows salía la versión chata en blanco y negro). Los # de los colores
-     van escapados (%23) porque adentro de un data: URI cortan la URL. -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%23081527'/><path d='M57 12L27 60h20l-4 28 30-46H53l4-30z' fill='%23f2b441'/></svg>">
+<!-- Ícono de marca compartido con el resto del catálogo de productos
+     (mismo mvsql.ico/icon.ico del instalador). Fuente única en
+     assets/logo-mv.svg; el PNG es el fallback para navegadores que no
+     soportan favicon en SVG, y apple-touch-icon.png es lo que queda al
+     agregar el sitio a la pantalla de inicio en iOS (no acepta SVG). -->
+<link rel="icon" type="image/svg+xml" href="/assets/logo-mv.svg">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <style>
 :root{
   --navy:#081527; --navy2:#0c2137; --hero-a:#0d2440; --hero-b:#081324;
