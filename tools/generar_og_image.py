@@ -20,6 +20,12 @@ from PIL import Image, ImageDraw, ImageFont
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 DESTINO = os.path.join(RAIZ, "web", "assets", "og-image.png")
 
+# Mismo ícono que el favicon, el instalador y el .ico de escritorio — la
+# fuente vectorial es web/assets/logo-mv.svg; acá se reusa el raster ya
+# generado (desktop/build/icon.png) para no sumarle a este script una
+# dependencia de rasterizado de SVG que solo hace falta una vez.
+ICONO = os.path.join(RAIZ, "desktop", "build", "icon.png")
+
 W, H = 1200, 630
 
 # Misma paleta que la landing (:root de web/index.html)
@@ -59,14 +65,10 @@ def main():
     margen = 84
     y = 128
 
-    # El rayo va dibujado y no como emoji: Liberation Sans no tiene glifo
-    # para ⚡ y salía un cuadrito vacío.
     bx, by, s = margen, y - 4, 52
-    d.polygon([(bx + s * 0.55, by), (bx + s * 0.16, by + s * 0.56),
-               (bx + s * 0.44, by + s * 0.56), (bx + s * 0.30, by + s),
-               (bx + s * 0.72, by + s * 0.40), (bx + s * 0.44, by + s * 0.40),
-               (bx + s * 0.62, by)], fill=AMBER)
-    d.text((margen + 62, y), "MV SQL NLP", font=fuente(F_BOLD, 44), fill=AMBER)
+    icono = Image.open(ICONO).convert("RGBA").resize((s, s), Image.LANCZOS)
+    img.paste(icono, (bx, by), icono)
+    d.text((margen + s + 18, y), "MV SQL NLP", font=fuente(F_BOLD, 44), fill=AMBER)
     y += 96
 
     for linea in ["Tu base de datos,", "en tu idioma."]:
