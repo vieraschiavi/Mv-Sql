@@ -217,7 +217,7 @@ jobs:
         # "vence":"2099-12-31" y exenta del trial de 7 días.
         run: makensis "-DVERSION=${{ steps.version.outputs.version }}" -DPROPIETARIO=1 installer/mvsql.nsi
       - name: Subir zip autoinstalable (.bat) al Release
-        run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/mvsql-nlp-app.zip --clobber
+        run: gh release upload "${{ steps.version.outputs.tag }}" paquete/mvsql-nlp-app.zip --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -232,11 +232,11 @@ jobs:
       - uses: actions/upload-artifact@v7
         with:
           name: mvsql-zip-owner
-          path: web/downloads/mvsql-nlp-app-OWNER.zip
+          path: paquete/mvsql-nlp-app-OWNER.zip
           retention-days: 90
           if-no-files-found: error
       - name: Subir instalador .exe (NSIS) al Release
-        run: gh release upload "${{ steps.version.outputs.tag }}" web/downloads/MV-SQL-NLP-Setup.exe --clobber
+        run: gh release upload "${{ steps.version.outputs.tag }}" paquete/MV-SQL-NLP-Setup.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Guardar el instalador del propietario como artefacto privado
@@ -255,6 +255,6 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: mvsql-setup-owner
-          path: web/downloads/MV-SQL-NLP-Setup-OWNER.exe
+          path: paquete/MV-SQL-NLP-Setup-OWNER.exe
           retention-days: 90
           if-no-files-found: error

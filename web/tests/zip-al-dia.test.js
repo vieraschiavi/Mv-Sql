@@ -2,7 +2,7 @@
 
 /** El zip que descarga el que paga coincide con el fuente de app-python.
  *
- * /api/download sirve web/downloads/mvsql-nlp-app.zip tal cual está en el
+ * /api/download sirve paquete/mvsql-nlp-app.zip tal cual está en el
  * repo. Ese zip se genera con tools/empaquetar_zip.py, pero nada obligaba a
  * regenerarlo: se commiteó una vez y quedó congelado mientras app-python/
  * seguía cambiando. Resultado real detectado por la auditoría: el cliente
@@ -29,7 +29,7 @@ async function test(n, fn) {
 }
 
 const RAIZ = path.join(__dirname, "..", "..");
-const ZIP = path.join(RAIZ, "web", "downloads", "mvsql-nlp-app.zip");
+const ZIP = path.join(RAIZ, "paquete", "mvsql-nlp-app.zip");
 const SRC = path.join(RAIZ, "app-python");
 
 // Lector de ZIP mínimo: recorre el End Of Central Directory y las entradas.
@@ -69,7 +69,7 @@ function leerZip(buf) {
   console.log("\n== El zip descargable está al día con app-python/ ==");
 
   await test("el zip existe y se puede leer", () => {
-    assert.ok(fs.existsSync(ZIP), "falta web/downloads/mvsql-nlp-app.zip");
+    assert.ok(fs.existsSync(ZIP), "falta paquete/mvsql-nlp-app.zip");
     const a = leerZip(fs.readFileSync(ZIP));
     assert.ok(Object.keys(a).length > 5, "el zip tiene sospechosamente pocos archivos");
   });
@@ -91,13 +91,13 @@ function leerZip(buf) {
   });
 
   await test("EL ZIP DEL CLIENTE NO LLEVA LICENCIA ADENTRO", () => {
-    // Este es el zip que sirve la web, a un clic de cualquiera. La
+    // Este es el zip BASE que /api/download lee y le embebe la licencia de
+    // CADA comprador antes de entregarlo — si el archivo fuente ya trajera
+    // una, la del cliente real se pisaría o convivirían las dos. La
     // variante del propietario es el MISMO zip con un licencia_mvsql.json
-    // que vence en 2099: si ese archivo se colara acá, el trial de 7 días
-    // no aplicaría para nadie y el producto quedaría gratis y sin
-    // vencimiento. Es el mismo error que ya se cometió publicando el .exe
-    // del propietario en un Release, y no da ningún síntoma: el zip se
-    // descarga igual, la app abre igual, solo que nunca vence.
+    // que vence en 2099: si ese archivo se colara acá, todo comprador
+    // recibiría acceso gratis y sin vencimiento sin que nada lo avise — la
+    // descarga y la app abren igual, solo que nunca vencen.
     const archivos = leerZip(fs.readFileSync(ZIP));
     const licencias = Object.keys(archivos).filter((n) => /licencia_mvsql/.test(n));
     assert.deepStrictEqual(licencias, [],

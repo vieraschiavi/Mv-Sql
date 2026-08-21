@@ -3,9 +3,13 @@
 """
 empaquetar_zip.py — arma el zip que descarga el cliente.
 ==================================================================
-`web/downloads/mvsql-nlp-app.zip` es lo que se entrega después de la
-compra. Antes se pisaba a mano, así que quedaba desactualizado respecto
-de `app-python/` sin que nadie se enterara. Esto lo arma siempre igual.
+`paquete/mvsql-nlp-app.zip` es lo que entrega /api/download después de
+la compra. Vive FUERA de web/ (que es lo que Vercel sirve como
+estático sin ningún gate) a propósito: adentro de web/ cualquiera con
+el link directo se lo baja sin pagar ni pedir demo, aunque ningún
+botón lo enlace. Antes se pisaba a mano, así que quedaba desactualizado
+respecto de `app-python/` sin que nadie se enterara. Esto lo arma
+siempre igual.
 
 Deja afuera lo que no le sirve al cliente (tests, caché, la base demo
 que se genera sola en el primer arranque) y lo que es dato privado
@@ -32,13 +36,13 @@ import zipfile
 
 RAIZ = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 ORIGEN = os.path.join(RAIZ, "app-python")
-DESTINO = os.path.join(RAIZ, "web", "downloads", "mvsql-nlp-app.zip")
+DESTINO = os.path.join(RAIZ, "paquete", "mvsql-nlp-app.zip")
 # Variante del propietario: el mismo zip con una licencia adentro, para
-# usar la via .bat en una PC donde no se pueden abrir .exe. NO se publica
+# usar la via .bat en una PC donde no se pueden abrir .exe. NO se commitea
 # (esta en .gitignore y el workflow lo sube como artefacto, nunca al
 # Release): lleva licencia hasta 2099, asi que publicarlo seria regalar
 # el producto. Es la misma regla que ya rige para el .exe del propietario.
-DESTINO_OWNER = os.path.join(RAIZ, "web", "downloads", "mvsql-nlp-app-OWNER.zip")
+DESTINO_OWNER = os.path.join(RAIZ, "paquete", "mvsql-nlp-app-OWNER.zip")
 LICENCIA_OWNER = {
     "producto": "MV SQL NLP",
     "plan": "propietario",

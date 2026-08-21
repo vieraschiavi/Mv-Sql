@@ -47,6 +47,7 @@ const crearPreferencia = require(path.join(API, "create-preference.js"));
 const verificarYEmitir = require(path.join(API, "verify-and-issue.js"));
 const descargar = require(path.join(API, "download.js"));
 const descargarLicencia = require(path.join(API, "download-licencia.js"));
+const descargarInstalador = require(path.join(API, "download-instalador.js"));
 const { verifyLicense, CREDITS_BY_PLAN } = require(path.join(API, "_license.js"));
 const { PRODUCTS } = require(path.join(API, "_products.js"));
 
@@ -269,6 +270,40 @@ async function test(nombre, fn) {
     assert.strictEqual(licenciaJson.token, licenciaValida);
     assert.ok(licenciaJson.vence, "debe traer fecha de vencimiento");
     assert.strictEqual(licenciaJson.modo, "credits");
+  });
+
+  console.log("\n== 5. Descarga del instalador completo (.exe) — antes era un link público ==");
+
+  // MV-SQL-NLP-Setup.exe no tenía NINGÚN endpoint que lo entregara gateado
+  // (a diferencia del zip): era un link público sin chequeo. Al sacar la
+  // descarga pública del trial, este es el único camino que le queda al
+  // cliente que pagó y quiere justo este formato de instalador.
+
+  await test("rechaza sin licencia", async () => {
+    const r = await llamar(descargarInstalador, { method: "GET", query: {} });
+    assert.notStrictEqual(r.statusCode, 200);
+  });
+
+  await test("rechaza licencia falsificada", async () => {
+    const r = await llamar(descargarInstalador, {
+      method: "GET", query: { token: "esto.no.es.un.jwt" },
+    });
+    assert.notStrictEqual(r.statusCode, 200);
+  });
+
+  await test("rechaza licencia firmada con otro secreto", async () => {
+    const jwt = require("jsonwebtoken");
+    const falsa = jwt.sign({ email: "h@x.com", plan: "empresa", mode: "credits", credits: 2000 },
+      "secreto-del-atacante", { expiresIn: "365d" });
+    const r = await llamar(descargarInstalador, { method: "GET", query: { token: falsa } });
+    assert.notStrictEqual(r.statusCode, 200, "una licencia firmada por un tercero no puede pasar");
+  });
+
+  await test("acepta la licencia legítima y entrega el .exe", async () => {
+    const r = await llamar(descargarInstalador, { method: "GET", query: { token: licenciaValida } });
+    assert.strictEqual(r.statusCode, 200, `esperaba 200, vino ${r.statusCode}: ${JSON.stringify(r.body).slice(0, 200)}`);
+    assert.ok(/octet-stream/i.test(r.headers["Content-Type"] || r.headers["content-type"] || ""));
+    assert.ok(/MV-SQL-NLP-Setup\.exe/.test(r.headers["Content-Disposition"] || ""));
   });
 
   console.log(`\n${"=".repeat(52)}`);
