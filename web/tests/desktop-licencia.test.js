@@ -57,9 +57,10 @@ function marcaTrial(dirs, hace_dias) {
   return inicio;
 }
 
-function licencia(dirs, archivo, dias_hasta_vencer) {
-  fs.writeFileSync(path.join(dirs.datos, archivo), JSON.stringify(
-    { producto: "MV SQL NLP", vence: new Date(Date.now() + dias_hasta_vencer * DIA).toISOString() }));
+function licencia(dirs, archivo, dias_hasta_vencer, plan) {
+  const datos = { producto: "MV SQL NLP", vence: new Date(Date.now() + dias_hasta_vencer * DIA).toISOString() };
+  if (plan) datos.plan = plan;
+  fs.writeFileSync(path.join(dirs.datos, archivo), JSON.stringify(datos));
 }
 
 (async () => {
@@ -202,6 +203,47 @@ function licencia(dirs, archivo, dias_hasta_vencer) {
     assert.ok(m, "no se pudo leer TRIAL_DIAS de licencia.py");
     assert.strictEqual(lic.TRIAL_DIAS, Number(m[1]),
       `Electron da ${lic.TRIAL_DIAS} días y Python ${m[1]}`);
+  });
+
+  console.log("\n== Funciones que sí distinguen por plan (stored procedures / optimizador CTE) ==");
+
+  await test("durante el trial, todo incluido (la landing lo promete así)", () => {
+    const dirs = entorno();
+    marcaTrial(dirs, 1); // trial vigente, sin licencia paga
+    assert.strictEqual(lic.funcionesAvanzadasHabilitadas(dirs), true);
+  });
+
+  await test("con licencia Personal vigente, las funciones avanzadas quedan afuera", () => {
+    const dirs = entorno();
+    licencia(dirs, "licencia_mvsql.json", 30, "personal");
+    assert.strictEqual(lic.funcionesAvanzadasHabilitadas(dirs), false);
+  });
+
+  await test("con licencia Profesional vigente, sí están disponibles", () => {
+    const dirs = entorno();
+    licencia(dirs, "licencia_mvsql.json", 30, "profesional");
+    assert.strictEqual(lic.funcionesAvanzadasHabilitadas(dirs), true);
+  });
+
+  await test("con licencia Empresa vigente, sí están disponibles", () => {
+    const dirs = entorno();
+    licencia(dirs, "licencia_mvsql.json", 30, "empresa");
+    assert.strictEqual(lic.funcionesAvanzadasHabilitadas(dirs), true);
+  });
+
+  await test("el propietario nunca queda restringido, ni con licencia Personal vencida al lado", () => {
+    const dirs = entorno();
+    fs.writeFileSync(path.join(dirs.recursos, "licencia_owner.json"), JSON.stringify(
+      { plan: "propietario", vence: "2099-12-31T00:00:00+00:00" }));
+    licencia(dirs, "licencia_mvsql.json", -5, "personal"); // vencida, no debería importar
+    assert.strictEqual(lic.funcionesAvanzadasHabilitadas(dirs), true);
+  });
+
+  await test("licencia Personal VENCIDA no restringe: cae al trial, que da todo incluido", () => {
+    const dirs = entorno();
+    marcaTrial(dirs, 1); // trial vigente
+    licencia(dirs, "licencia_mvsql.json", -5, "personal");
+    assert.strictEqual(lic.funcionesAvanzadasHabilitadas(dirs), true);
   });
 
   console.log(`\n  ${pasadas} pasadas · ${falladas} falladas\n`);

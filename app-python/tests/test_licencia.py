@@ -59,10 +59,10 @@ def marca_con_inicio(hace_dias, firma_valida=True):
     return inicio
 
 
-def licencia_con_vencimiento(dias_desde_hoy):
+def licencia_con_vencimiento(dias_desde_hoy, plan="profesional"):
     vence = (datetime.now(timezone.utc) + timedelta(days=dias_desde_hoy)).isoformat()
     with open(licencia.RUTA_LICENCIA, "w", encoding="utf-8") as fh:
-        json.dump({"vence": vence, "plan": "profesional", "modo": "own_ai"}, fh)
+        json.dump({"vence": vence, "plan": plan, "modo": "own_ai"}, fh)
 
 
 print("\n== La promesa de negocio: 7 días, ni más ni menos ==")
@@ -248,6 +248,52 @@ def _():
     for var in ("MVSQL_LICENCIA_SECRETO", "MVSQL_SECRET_KEY"):
         os.environ.pop(var, None)
     assert licencia._firma("x") == hashlib.sha256((licencia._SAL + "x").encode()).hexdigest()
+
+
+print("\n== Funciones que sí distinguen por plan (stored procedures / optimizador CTE) ==")
+
+
+@test("durante el trial, todo incluido (la landing lo promete así)")
+def _():
+    aislar()
+    marca_con_inicio(hace_dias=1)  # trial vigente, sin licencia paga
+    assert licencia.funciones_avanzadas_habilitadas() is True
+
+
+@test("con licencia Personal vigente, las funciones avanzadas quedan afuera")
+def _():
+    aislar()
+    licencia_con_vencimiento(dias_desde_hoy=30, plan="personal")
+    assert licencia.funciones_avanzadas_habilitadas() is False
+
+
+@test("con licencia Profesional vigente, sí están disponibles")
+def _():
+    aislar()
+    licencia_con_vencimiento(dias_desde_hoy=30, plan="profesional")
+    assert licencia.funciones_avanzadas_habilitadas() is True
+
+
+@test("con licencia Empresa vigente, sí están disponibles")
+def _():
+    aislar()
+    licencia_con_vencimiento(dias_desde_hoy=30, plan="empresa")
+    assert licencia.funciones_avanzadas_habilitadas() is True
+
+
+@test("el propietario (plan 'propietario') nunca queda restringido")
+def _():
+    aislar()
+    licencia_con_vencimiento(dias_desde_hoy=365 * 70, plan="propietario")
+    assert licencia.funciones_avanzadas_habilitadas() is True
+
+
+@test("licencia Personal VENCIDA no restringe: cae al trial, que da todo incluido")
+def _():
+    aislar()
+    marca_con_inicio(hace_dias=1)  # trial vigente
+    licencia_con_vencimiento(dias_desde_hoy=-5, plan="personal")  # personal vencida
+    assert licencia.funciones_avanzadas_habilitadas() is True
 
 
 print(f"\n  {pasadas} pasadas · {falladas} falladas\n")

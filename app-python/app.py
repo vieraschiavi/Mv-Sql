@@ -32,7 +32,8 @@ from PIL import Image
 from conectores import ConexionBD, MOTORES
 from eula import eula_aceptado, registrar_aceptacion, texto_eula
 from exportar import a_csv, a_excel, a_pdf, a_html, a_json
-from licencia import TRIAL_DIAS, renovar_si_corresponde, verificar_acceso
+from licencia import (TRIAL_DIAS, renovar_si_corresponde, verificar_acceso,
+                       funciones_avanzadas_habilitadas)
 from motor import MotorMVSQL
 from proveedores_ia import ErrorProveedor, PROVEEDORES, cargar_licencia_creditos, listar_modelos, probar_conexion
 import auditoria
@@ -111,6 +112,8 @@ T = {
         "sin_permiso": "No tenés permiso para consultar: {tablas}. El intento quedó registrado.",
         "sin_exportar": "Tu rol no permite exportar datos. Pedile a un administrador que te cambie el rol.",
         "sin_sp": "Tu rol no permite generar stored procedures.",
+        "sin_sp_plan": "Disponible desde el plan Profesional. Mejorá tu licencia en mvsqlnlp.com.",
+        "sin_optimizar_plan": "El optimizador de CTE está disponible desde el plan Profesional. Mejorá tu licencia en mvsqlnlp.com.",
         "aud_titulo": "Auditoría", "aud_total": "Consultas (30 días)",
         "aud_rechazadas": "Rechazadas", "aud_errores": "Con error",
         "aud_confianza": "Confianza media", "aud_por_usuario": "Consultas por usuario",
@@ -214,6 +217,8 @@ T = {
         "sin_permiso": "You don't have permission to query: {tablas}. The attempt was logged.",
         "sin_exportar": "Your role can't export data. Ask an administrator to change your role.",
         "sin_sp": "Your role can't generate stored procedures.",
+        "sin_sp_plan": "Available from the Professional plan. Upgrade your licence at mvsqlnlp.com.",
+        "sin_optimizar_plan": "The CTE optimizer is available from the Professional plan. Upgrade your licence at mvsqlnlp.com.",
         "aud_titulo": "Audit", "aud_total": "Queries (30 days)",
         "aud_rechazadas": "Blocked", "aud_errores": "With errors",
         "aud_confianza": "Average confidence", "aud_por_usuario": "Queries per user",
@@ -317,6 +322,8 @@ T = {
         "sin_permiso": "Você não tem permissão para consultar: {tablas}. A tentativa foi registrada.",
         "sin_exportar": "Seu perfil não permite exportar dados. Peça a um administrador para alterar seu perfil.",
         "sin_sp": "Seu perfil não permite gerar stored procedures.",
+        "sin_sp_plan": "Disponível a partir do plano Profissional. Melhore sua licença em mvsqlnlp.com.",
+        "sin_optimizar_plan": "O otimizador de CTE está disponível a partir do plano Profissional. Melhore sua licença em mvsqlnlp.com.",
         "aud_titulo": "Auditoria", "aud_total": "Consultas (30 dias)",
         "aud_rechazadas": "Bloqueadas", "aud_errores": "Com erro",
         "aud_confianza": "Confiança média", "aud_por_usuario": "Consultas por usuário",
@@ -1029,6 +1036,11 @@ with st.sidebar:
         st.stop()
 
     PERM = equipo.permisos(ss.usuario)
+    # Rol de equipo (PERM) y plan de licencia son dos restricciones
+    # independientes: un admin del equipo con licencia Personal sigue sin
+    # poder generar stored procedures ni usar el optimizador — eso es lo
+    # que compra Profesional, no un rol.
+    PLAN_OK = funciones_avanzadas_habilitadas()
     if ss.usuario:
         st.divider()
         c_u1, c_u2 = st.columns([3, 1])
@@ -1722,6 +1734,8 @@ if r:
         with a2:
           if not PERM.get("puede_sp", True):
             st.button(f"{t['sp']}", disabled=True, help=t["sin_sp"])
+          elif not PLAN_OK:
+            st.button(f"{t['sp']}", disabled=True, help=t["sin_sp_plan"])
           else:
             with st.popover(f"{t['sp']}"):
                 sp_nombre = st.text_input(t["sp_nombre"], value="sp_mvsql_reporte",
@@ -1731,6 +1745,9 @@ if r:
                         codigo = ss.motor.generar_stored_procedure(r["sql"], sp_nombre)
                     st.code(codigo, language="sql")
         with a3:
+          if not PLAN_OK:
+            st.button(f"{t['optimizar']}", disabled=True, help=t["sin_optimizar_plan"])
+          else:
             if st.button(f"{t['optimizar']}"):
                 with st.spinner("…"):
                     st.code(ss.motor.optimizar_sql(r["sql"]), language="sql")

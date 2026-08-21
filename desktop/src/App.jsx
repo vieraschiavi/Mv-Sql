@@ -128,6 +128,7 @@ export default function App() {
               onSave={saveQuery}
               onStoredProcedure={(sql, name) => window.mvsql.storedProcedure({ sql, name, ai })}
               onOptimize={(sql) => window.mvsql.optimize({ sql, ai })}
+              planOk={licencia?.funcionesAvanzadas ?? true}
             />
             {history.length > 1 && (
               <details className="card" style={{ marginTop: "1rem" }}>

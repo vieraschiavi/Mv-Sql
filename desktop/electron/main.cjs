@@ -194,7 +194,10 @@ app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) creat
 
 // La UI lo usa para el aviso de "te quedan N días" y para el botón de
 // comprar. No vuelve a chequear nada: la puerta ya se cruzó arriba.
-ipcMain.handle("licencia:estado", () => licencia.verificarAcceso());
+ipcMain.handle("licencia:estado", () => ({
+  ...licencia.verificarAcceso(),
+  funcionesAvanzadas: licencia.funcionesAvanzadasHabilitadas(),
+}));
 
 // ── IPC: base de datos ─────────────────────────────────────────
 ipcMain.handle("db:connect", async (_e, cfg) => {
@@ -239,10 +242,25 @@ ipcMain.handle("query:run-sql", async (_e, { sql }) => {
   return db.run(sql, 5000);
 });
 
-ipcMain.handle("query:stored-procedure", (_e, { sql, name, ai }) =>
-  engine.storedProcedure(sql, name, ai));
+// Stored procedures y optimizador de CTE: solo desde el plan Profesional
+// (ver licencia.funcionesAvanzadasHabilitadas). Se frena ACA, del lado
+// del proceso principal, y no solo ocultando el boton en React -- un
+// renderer siempre puede armar el mensaje IPC a mano.
+function exigirFuncionesAvanzadas() {
+  if (!licencia.funcionesAvanzadasHabilitadas()) {
+    throw new Error("FUNCION_REQUIERE_PLAN_PROFESIONAL");
+  }
+}
 
-ipcMain.handle("query:optimize", (_e, { sql, ai }) => engine.optimize(sql, ai));
+ipcMain.handle("query:stored-procedure", (_e, { sql, name, ai }) => {
+  exigirFuncionesAvanzadas();
+  return engine.storedProcedure(sql, name, ai);
+});
+
+ipcMain.handle("query:optimize", (_e, { sql, ai }) => {
+  exigirFuncionesAvanzadas();
+  return engine.optimize(sql, ai);
+});
 
 ipcMain.handle("ai:test", (_e, ai) => engine.testProvider(ai));
 ipcMain.handle("ai:refresh-models", (_e, ai) => engine.refreshModels(ai));
