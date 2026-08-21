@@ -20,9 +20,11 @@ app-python/catalogo_demo.json
 .mvsql/
 
 # instalador del propietario (makensis -DPROPIETARIO=1): solo se publica
-# como asset de GitHub Releases (ver build-desktop.yml), nunca se comitea
-# ni se sirve desde web/downloads/ — esa carpeta la publica Vercel.
-web/downloads/MV-SQL-NLP-Setup-OWNER.exe
+# como asset privado de GitHub Actions (ver build-desktop.yml), nunca se
+# comitea. paquete/ no la sirve nadie públicamente (a diferencia de la vieja
+# web/downloads/), pero igual no va al repo: lleva una licencia real
+# embebida que no tiene por qué quedar en el historial de git.
+paquete/MV-SQL-NLP-Setup-OWNER.exe
 
 # entornos
 .env
@@ -44,8 +46,8 @@ auditoria.db
 desktop/licencia_owner.json
 
 # Zip del propietario (via .bat, con licencia hasta 2099 adentro). Nunca
-# se commitea ni se publica: web/downloads/ lo sirve Vercel.
-web/downloads/mvsql-nlp-app-OWNER.zip
+# se commitea — mismo motivo que el .exe del propietario arriba.
+paquete/mvsql-nlp-app-OWNER.zip
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/

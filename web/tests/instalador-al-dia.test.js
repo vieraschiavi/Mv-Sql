@@ -1,11 +1,11 @@
 /* © 2026 Martín Viera. Todos los derechos reservados. */
 
-/** El instalador .exe que sirve la web está al día con app-python/.
+/** El instalador .exe que sirve /api/download-instalador está al día con app-python/.
  *
- * web/downloads/ NO es un artefacto del CI: son archivos commiteados que
- * Vercel publica tal cual, y la landing enlaza directo a ellos
- * (/downloads/MV-SQL-NLP-Setup.exe). O sea que lo que baja el cliente es
- * lo que hay en el repo, no lo que compiló el último Release.
+ * paquete/ NO es un artefacto del CI: son archivos commiteados que
+ * /api/download-instalador lee del disco y entrega gateados por licencia.
+ * O sea que lo que recibe el cliente que pagó es lo que hay en el repo, no
+ * lo que compiló el último Release.
  *
  * Eso ya salió mal una vez: el .exe quedó congelado 12 días mientras
  * app-python/ seguía cambiando. En el medio se corrigió el NameError que
@@ -35,7 +35,7 @@ async function test(n, fn) {
 }
 
 const RAIZ = path.join(__dirname, "..", "..");
-const EXE = path.join(RAIZ, "web", "downloads", "MV-SQL-NLP-Setup.exe");
+const EXE = path.join(RAIZ, "paquete", "MV-SQL-NLP-Setup.exe");
 
 /** Timestamp del último commit que tocó una ruta (0 si nunca se commiteó). */
 function ultimoCommit(rutaRelativa) {
@@ -85,13 +85,13 @@ function esShallow() {
   });
 
   await test("el instalador existe y no es un archivo vacío", () => {
-    assert.ok(fs.existsSync(EXE), "no está web/downloads/MV-SQL-NLP-Setup.exe");
+    assert.ok(fs.existsSync(EXE), "no está paquete/MV-SQL-NLP-Setup.exe");
     const kb = fs.statSync(EXE).size / 1024;
     assert.ok(kb > 100, `pesa ${kb.toFixed(0)} KB: quedó truncado o no compiló`);
   });
 
   await test("NINGÚN archivo de app-python/ es más nuevo que el instalador", () => {
-    const tExe = ultimoCommit("web/downloads/MV-SQL-NLP-Setup.exe");
+    const tExe = ultimoCommit("paquete/MV-SQL-NLP-Setup.exe");
     assert.ok(tExe > 0, "el instalador no está commiteado");
 
     const viejos = [];
@@ -101,7 +101,7 @@ function esShallow() {
       if (t > tExe) viejos.push(`${f} (+${Math.round((t - tExe) / 86400)}d)`);
     }
     assert.deepStrictEqual(viejos, [],
-      "el .exe que sirve la web es más viejo que el código; regeneralo con:\n" +
+      "el .exe que sirve /api/download-instalador es más viejo que el código; regeneralo con:\n" +
       "        makensis \"-DVERSION=<version>\" installer/mvsql.nsi");
   });
 
@@ -118,7 +118,7 @@ function esShallow() {
     // que el código, y eso se mide contra app-python/, no uno contra el
     // otro. Para el zip hay además un chequeo más fuerte que este, por
     // CONTENIDO, en zip-al-dia.test.js.
-    const tZip = ultimoCommit("web/downloads/mvsql-nlp-app.zip");
+    const tZip = ultimoCommit("paquete/mvsql-nlp-app.zip");
     assert.ok(tZip > 0, "el zip no está commiteado");
 
     const viejos = [];
@@ -128,7 +128,7 @@ function esShallow() {
       if (t > tZip) viejos.push(`${f} (+${Math.round((t - tZip) / 86400)}d)`);
     }
     assert.deepStrictEqual(viejos, [],
-      "el zip que sirve la web es más viejo que el código; regeneralo con:\n" +
+      "el zip que sirve /api/download es más viejo que el código; regeneralo con:\n" +
       "        python3 tools/empaquetar_zip.py");
   });
 

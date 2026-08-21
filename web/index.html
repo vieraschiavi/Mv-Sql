@@ -229,6 +229,7 @@ nav .wrap{display:flex;align-items:center;gap:14px;height:60px;min-width:0}
   border:1px solid var(--line-d);border-radius:10px;padding:11px 13px;min-width:280px}
 .buy-email-row input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(242,180,65,.18)}
 #buy-status{font-size:13.5px;color:var(--muted-d);min-height:20px;margin-top:6px}
+#demoStatus{font-size:13.5px;color:var(--muted-d);min-height:20px;margin-top:10px}
 .paynote{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:20px;color:var(--muted-d);font-size:13px}
 .paybadge{background:var(--tint);border:1px solid var(--line-d);border-radius:8px;padding:6px 11px;font-size:12px;font-weight:600;color:var(--ink-d)}
 
@@ -333,7 +334,7 @@ footer .legal{max-width:74ch;line-height:1.6}
     <a href="#plataforma" data-i="nav1">Funciones</a>
     <a href="#video" data-i="nav2">Video</a>
     <a href="#precios" data-i="nav3">Planes</a>
-    <a href="#descargas" data-i="nav4">Descargas</a>
+    <a href="#descargas" data-i="nav4">Demo</a>
     <a href="#resenas" data-i="navr">Reseñas</a>
     <a href="#contacto" data-i="navc">Contacto</a>
   </div>
@@ -366,7 +367,7 @@ footer .legal{max-width:74ch;line-height:1.6}
     Claude, ChatGPT, Copilot, Gemini y más.</p>
     <div class="hcta">
       <a href="#video" class="btn btn-a"><svg class="i i-t"><use href="#i-play"/></svg><span data-i="hb1">Ver el video demo</span></a>
-      <a href="#descargas" class="btn btn-o" data-i="hb2">Probar gratis 7 días</a>
+      <a href="#descargas" class="btn btn-o" data-i="hb2">Pedir una demo</a>
     </div>
     <div class="metrics">
       <div class="metric"><div class="v tnum">10<span class="am">+</span></div><div class="l" data-i="m1">IAs a elección, con tu propia clave</div></div>
@@ -485,8 +486,8 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   ERP real — Odoo corre sobre PostgreSQL, SAP Business One y Dynamics NAV/Business Central sobre SQL Server,
   la mayoría de los sistemas de gestión locales sobre MySQL/MariaDB — mapeamos tu esquema y dejamos andando
   las consultas que tu equipo pide todas las semanas. Después, la licencia mensual mantiene el programa
-  actualizado. Precios de referencia en dólares; se cobra vía MercadoPago. Antes de todo, podés probarlo
-  gratis 7 días.</p>
+  actualizado. Precios de referencia en dólares; se cobra vía MercadoPago. Antes de todo, pedí una demo
+  y probalo gratis 7 días.</p>
 
   <div class="servicio">
     <div class="servicio-txt">
@@ -558,30 +559,25 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   </div>
 </div></section>
 
-<!-- DESCARGAS -->
+<!-- DEMO (antes: descarga pública del trial — ver git log de esta sección) -->
 <section id="descargas" class="panel"><div class="wrap">
-  <div class="eyebrow" data-i="dey">Descargas</div>
-  <h2 class="h2" data-i="dh">Probá gratis 7 días — todo incluido</h2>
-  <p class="lead-d" data-i="dl">Descargá la versión que prefieras y usala completa por 7 días, sin tarjeta.
-  Después, comprás la licencia en un clic.</p>
-  <div class="dl-grid">
-    <div class="dl"><h3><svg class="i i-t"><use href="#i-monitor"/></svg><span data-i="dl1t">Instalador liviano (.exe)</span></h3>
-      <p data-i="dl1p">Programa de PC (React + Electron): instalador clásico, acceso directo, actualizaciones. Versión
-      liviana — sin cuadernos, equipo ni auditoría (esas funciones están en el instalador completo, abajo).</p>
-      <a class="btn btn-d" href="https://github.com/vieraschiavi/Mv-Sql/releases/latest/download/MV-SQL-NLP-App-Setup.exe" data-i="dl1cta">Descargar .exe</a></div>
-    <div class="dl"><h3><svg class="i i-t"><use href="#i-tool"/></svg><span data-i="dl4t">Instalador completo (.exe) — todas las funciones</span></h3>
-      <p data-i="dl4p">El producto completo (cuadernos, equipo, auditoría, SHAP, diagrama de esquema, EXPLAIN...) como
-      instalador de Windows de verdad: elegís la carpeta, queda en "Aplicaciones y características" con desinstalador. Más funciones que el instalador liviano de arriba.</p>
-      <a class="btn btn-d" href="/downloads/MV-SQL-NLP-Setup.exe" data-i="dl4cta">Descargar instalador completo</a></div>
-    <div class="dl"><h3><svg class="i i-t"><use href="#i-bolt"/></svg><span data-i="dl2t">Autoinstalable (.bat + Python)</span></h3>
-      <p data-i="dl2p">Doble clic en INICIAR_MVSQL.bat: instala todo solo, genera una base demo y abre la app en tu
-      navegador en 2 minutos. Sin conocimientos técnicos.</p>
-      <a class="btn btn-d" href="/downloads/mvsql-nlp-app.zip" data-i="dl2cta">Descargar .zip</a></div>
-    <div class="dl"><h3><svg class="i i-t"><use href="#i-plug"/></svg><span data-i="dl3t">Conector MCP para Claude Desktop</span></h3>
-      <p data-i="dl3p">¿Ya usás Claude Desktop? CONECTAR_CLAUDE_MCP.bat conecta tu Claude directo a tu base
-      (SQL Server, MySQL, PostgreSQL o SQLite) — viene incluido en el zip.</p>
-      <a class="btn btn-od" href="/downloads/mvsql-nlp-app.zip" data-i="dl3cta">Incluido en el .zip</a></div>
-  </div>
+  <div class="eyebrow" data-i="dey">Demo</div>
+  <h2 class="h2" data-i="dh">Pedí una demo en vivo</h2>
+  <p class="lead-d" data-i="dl">Te mostramos MV SQL NLP funcionando, agendado con vos. No es una descarga
+  abierta: completá tus datos y coordinamos por email — así vemos tu caso real, no una demo genérica.</p>
+  <form id="demoform" class="cform" novalidate>
+    <div class="frow">
+      <label><span data-i="dfn">Nombre completo</span><input name="nombre" autocomplete="name" required maxlength="200"></label>
+      <label><span data-i="dfp">País</span><input name="pais" autocomplete="country-name" required maxlength="200"></label>
+      <label><span data-i="dfem2">Empresa</span><input name="empresa" autocomplete="organization" required maxlength="200"></label>
+    </div>
+    <label><span data-i="dfem">Tu email</span><input type="email" name="email" autocomplete="email" required></label>
+    <div class="actions">
+      <button type="submit" class="btn btn-a" data-i="dfb">Solicitar demo</button>
+      <span class="hint" id="demoHint" data-i="dfh">Te escribimos para coordinar un horario.</span>
+    </div>
+  </form>
+  <div id="demoStatus" aria-live="polite"></div>
 </div></section>
 
 <!-- MCP band -->
@@ -590,7 +586,7 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   <h2 data-i="bandt" style="margin-top:10px">Tu Claude, conectado a tu base de datos</h2>
   <p data-i="bandp">Doble clic en <code>CONECTAR_CLAUDE_MCP.bat</code>, elegís el motor, ponés los datos de conexión —
   y Claude Desktop queda consultando tu base por MCP, con tu propia cuenta de Claude. Sin instalar nada más.</p>
-  <a href="#descargas" class="btn btn-a" data-i="bandcta">Conseguirlo</a>
+  <a href="#descargas" class="btn btn-a" data-i="bandcta">Pedir demo</a>
 </div></div></section>
 
 <!-- RESEÑAS -->
@@ -659,11 +655,11 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
 var I18N={
   pt:{
     skip:"Pular para o conteúdo",
-    nav1:"Funcionalidades",nav2:"Vídeo",nav3:"Planos",nav4:"Downloads",navr:"Avaliações",navc:"Contato",navbuy:"Comprar",
+    nav1:"Funcionalidades",nav2:"Vídeo",nav3:"Planos",nav4:"Demo",navr:"Avaliações",navc:"Contato",navbuy:"Comprar",
     kick:"IA para seus dados · sem saber SQL",
     h1:'Pergunte ao seu banco de dados <span class="am">no seu idioma</span>',
     lead:"O MV SQL NLP converte suas perguntas em SQL profissional otimizado com CTEs, valida contra seu esquema real e devolve tabelas, gráficos e análises exportáveis — com a IA que você escolher: Claude, ChatGPT, Copilot, Gemini e mais.",
-    hb1:"Ver o vídeo demo",hb2:"Testar grátis por 7 dias",
+    hb1:"Ver o vídeo demo",hb2:"Pedir uma demo",
     m1:"IAs à escolha, com a sua própria chave",m2:"motores: SQL Server · MySQL · PostgreSQL · SQLite · arquivos",m3:"idiomas: espanhol · inglês · português",
     chs:"conectado ao seu banco",cb1:"Quanto cobramos por mês em 2026?",
     cb2:'O melhor mês foi maio: <span class="hl">$U 31.033.659</span> cobrados. A tendência é crescente: +45% desde janeiro.',
@@ -701,7 +697,7 @@ var I18N={
     lich:"Licença do programa",
     susc_desc:"Licença mensal com sua própria chave de IA (Claude, ChatGPT, Gemini, Copilot…). Cobrada todo mês, cancele quando quiser.",
     ey3:"Planos",st3:"Comece pela implementação, siga com a licença",
-    sl3:"A maioria começa pela implementação: conectamos o MV SQL NLP ao seu banco ou ERP real — o Odoo roda sobre PostgreSQL, o SAP Business One e o Dynamics NAV/Business Central sobre SQL Server, a maioria dos sistemas de gestão locais sobre MySQL/MariaDB — mapeamos seu esquema e deixamos rodando as consultas que sua equipe pede toda semana. Depois, a licença mensal mantém o programa atualizado. Preços de referência em dólares; cobrado via MercadoPago. Antes de tudo, teste grátis por 7 dias.",
+    sl3:"A maioria começa pela implementação: conectamos o MV SQL NLP ao seu banco ou ERP real — o Odoo roda sobre PostgreSQL, o SAP Business One e o Dynamics NAV/Business Central sobre SQL Server, a maioria dos sistemas de gestão locais sobre MySQL/MariaDB — mapeamos seu esquema e deixamos rodando as consultas que sua equipe pede toda semana. Depois, a licença mensal mantém o programa atualizado. Preços de referência em dólares; cobrado via MercadoPago. Antes de tudo, peça uma demo e teste grátis por 7 dias.",
     tg1:"Assinatura mensal",
     byok_desc:"Você traz sua própria chave de IA (Claude, ChatGPT, Gemini, Copilot…) e paga só a licença do programa. Ideal se você já usa IA.",
     
@@ -713,14 +709,12 @@ var I18N={
     
     emailhint:"Sua licença e o link de download chegam neste email.",
     paylead:"Meios de pagamento:",payb0:"Cartão",payb1:"Transferência",paysec:"Pagamento verificado no servidor antes de liberar o download.",
-    dey:"Downloads",dh:"Teste grátis por 7 dias — tudo incluído",dl:"Baixe a versão que preferir e use completa por 7 dias, sem cartão. Depois, compre a licença em um clique.",
-    dl1t:"Instalador leve (.exe)",dl1p:"Programa de PC (React + Electron): instalador clássico, atalho, atualizações. Versão leve — sem cadernos, equipe nem auditoria (esses recursos estão no instalador completo, abaixo).",dl1cta:"Baixar .exe",
-    dl4t:"Instalador completo (.exe) — todos os recursos",dl4p:"O produto completo (cadernos, equipe, auditoria, SHAP, diagrama de esquema, EXPLAIN...) como instalador de Windows de verdade: você escolhe a pasta, aparece em \"Aplicativos e recursos\" com desinstalador. Mais recursos que o instalador leve acima.",dl4cta:"Baixar instalador completo",
-    dl2t:"Autoinstalável (.bat + Python)",dl2p:"Duplo clique no INICIAR_MVSQL.bat: instala tudo sozinho, gera um banco demo e abre o app no navegador em 2 minutos. Sem conhecimentos técnicos.",dl2cta:"Baixar .zip",
-    dl3t:"Conector MCP para Claude Desktop",dl3p:"Já usa o Claude Desktop? O CONECTAR_CLAUDE_MCP.bat conecta seu Claude direto ao seu banco (SQL Server, MySQL, PostgreSQL ou SQLite) — vem incluído no zip.",dl3cta:"Incluído no .zip",
+    dey:"Demo",dh:"Peça uma demo ao vivo",dl:"Mostramos o MV SQL NLP funcionando, agendado com você. Não é um download aberto: preencha seus dados e combinamos por email — assim vemos o seu caso real, não uma demo genérica.",
+    dfn:"Nome completo",dfp:"País",dfem2:"Empresa",dfem:"Seu email",dfb:"Solicitar demo",dfh:"Escrevemos para combinar um horário.",
+    dfsend:"Enviando…",dfok:"Recebido — vamos escrever para combinar um horário.",dferr:"Não foi possível enviar. Tente de novo ou escreva direto para vieraschiavi@gmail.com.",dfval:"Preencha nome, país, empresa e um email válido.",dfmany:"Muitas tentativas seguidas. Espere um minuto e tente de novo.",
     bey:"Novo",bandt:"Seu Claude, conectado ao seu banco de dados",
     bandp:'Duplo clique no <code>CONECTAR_CLAUDE_MCP.bat</code>, escolha o motor, informe os dados de conexão — e o Claude Desktop passa a consultar seu banco via MCP, com sua própria conta do Claude. Sem instalar mais nada.',
-    bandcta:"Quero isso",
+    bandcta:"Pedir demo",
     eyr:"Confiança",str:"Avaliações e compromissos verificáveis",
     slr:"Preferimos mostrar pouco e verdadeiro a muito e inventado. Estes são compromissos que você pode verificar, e as avaliações reais de clientes.",
     tb1t:"Somente leitura, sempre",tb1p:"O programa só executa SELECT/WITH. Nada de INSERT, UPDATE ou DELETE — verificável no código.",
@@ -735,11 +729,11 @@ var I18N={
   },
   en:{
     skip:"Skip to content",
-    nav1:"Features",nav2:"Video",nav3:"Plans",nav4:"Downloads",navr:"Reviews",navc:"Contact",navbuy:"Buy",
+    nav1:"Features",nav2:"Video",nav3:"Plans",nav4:"Demo",navr:"Reviews",navc:"Contact",navbuy:"Buy",
     kick:"AI for your data · no SQL required",
     h1:'Ask your database <span class="am">in your language</span>',
     lead:"MV SQL NLP turns your questions into professional CTE-optimized SQL, validates it against your real schema, and returns exportable tables, charts and analysis — with the AI you choose: Claude, ChatGPT, Copilot, Gemini and more.",
-    hb1:"Watch the demo video",hb2:"Try free for 7 days",
+    hb1:"Watch the demo video",hb2:"Request a demo",
     m1:"AIs to choose from, with your own key",m2:"engines: SQL Server · MySQL · PostgreSQL · SQLite · files",m3:"languages: Spanish · English · Portuguese",
     chs:"connected to your database",cb1:"How much did we collect per month in 2026?",
     cb2:'The best month was May: <span class="hl">$U 31,033,659</span> collected. The trend is growing: +45% since January.',
@@ -777,7 +771,7 @@ var I18N={
     lich:"Program license",
     susc_desc:"Monthly license with your own AI key (Claude, ChatGPT, Gemini, Copilot…). Billed every month, cancel whenever you want.",
     ey3:"Plans",st3:"Start with the implementation, continue with the license",
-    sl3:"Most people start with the implementation: we connect MV SQL NLP to your real database or ERP — Odoo runs on PostgreSQL, SAP Business One and Dynamics NAV/Business Central on SQL Server, most local systems on MySQL/MariaDB — map your schema, and leave the questions your team asks every week already working. After that, the monthly license keeps the program up to date. Reference prices in US dollars, charged via MercadoPago. Before any of it, try it free for 7 days.",
+    sl3:"Most people start with the implementation: we connect MV SQL NLP to your real database or ERP — Odoo runs on PostgreSQL, SAP Business One and Dynamics NAV/Business Central on SQL Server, most local systems on MySQL/MariaDB — map your schema, and leave the questions your team asks every week already working. After that, the monthly license keeps the program up to date. Reference prices in US dollars, charged via MercadoPago. Before any of it, request a demo and try it free for 7 days.",
     tg1:"Monthly subscription",
     byok_desc:"Bring your own AI key (Claude, ChatGPT, Gemini, Copilot…) and pay only for the program license. Ideal if you already use AI.",
     
@@ -789,14 +783,12 @@ var I18N={
     
     emailhint:"Your license and download link arrive at this email.",
     paylead:"Payment methods:",payb0:"Card",payb1:"Bank transfer",paysec:"Payment verified server-side before enabling the download.",
-    dey:"Downloads",dh:"Try free for 7 days — everything included",dl:"Download whichever version you prefer and use it in full for 7 days, no card. Then buy the license in one click.",
-    dl1t:"Lightweight installer (.exe)",dl1p:"PC program (React + Electron): classic installer, shortcut, updates. Lightweight version — no notebooks, team or audit log (those are in the full installer below).",dl1cta:"Download .exe",
-    dl4t:"Full installer (.exe) — every feature",dl4p:"The complete product (notebooks, team, audit log, SHAP, schema diagram, EXPLAIN...) as a real Windows installer: pick the install folder, shows up in \"Apps & features\" with a proper uninstaller. More features than the lightweight installer above.",dl4cta:"Download full installer",
-    dl2t:"Self-installing (.bat + Python)",dl2p:"Double-click INICIAR_MVSQL.bat: it installs everything by itself, generates a demo database and opens the app in your browser in 2 minutes. No technical knowledge.",dl2cta:"Download .zip",
-    dl3t:"MCP connector for Claude Desktop",dl3p:"Already use Claude Desktop? CONECTAR_CLAUDE_MCP.bat connects your Claude straight to your database (SQL Server, MySQL, PostgreSQL or SQLite) — included in the zip.",dl3cta:"Included in the .zip",
+    dey:"Demo",dh:"Request a live demo",dl:"We'll show you MV SQL NLP running, scheduled with you. This isn't an open download: fill in your details and we'll coordinate by email — so we cover your real case, not a generic demo.",
+    dfn:"Full name",dfp:"Country",dfem2:"Company",dfem:"Your email",dfb:"Request demo",dfh:"We'll email you to set up a time.",
+    dfsend:"Sending…",dfok:"Received — we'll email you to set up a time.",dferr:"Couldn't send it. Try again or email vieraschiavi@gmail.com directly.",dfval:"Fill in name, country, company and a valid email.",dfmany:"Too many attempts in a row. Wait a minute and try again.",
     bey:"New",bandt:"Your Claude, connected to your database",
     bandp:'Double-click <code>CONECTAR_CLAUDE_MCP.bat</code>, pick the engine, enter the connection details — and Claude Desktop starts querying your database via MCP, with your own Claude account. Nothing else to install.',
-    bandcta:"Get it",
+    bandcta:"Request demo",
     eyr:"Trust",str:"Reviews and verifiable commitments",
     slr:"We'd rather show you little and true than a lot and invented. These are commitments you can verify yourself, and real customer reviews.",
     tb1t:"Read-only, always",tb1p:"The program only runs SELECT/WITH. No INSERT, UPDATE or DELETE — verifiable in the code.",
@@ -942,6 +934,64 @@ if(cform){cform.addEventListener('submit',function(e){
   var body=(pregunta||'')+"\n\n----------------------------\nDatos de contacto\n"+
            "Nombre: "+(nombre||'-')+"\nEmail: "+(email||'-')+"\nTeléfono: "+(tel||'-')+"\nEnviado desde: web MV SQL NLP";
   window.location.href="mailto:"+CONTACT_TO+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
+});}
+
+// Pedido de demo: a diferencia del form de contacto (mailto, sin backend),
+// este SÍ pasa por el servidor (/api/solicitar-demo con Resend) — así el
+// pedido llega solo, sin depender de que el visitante tenga un cliente de
+// correo configurado en esa máquina.
+var demoform=document.getElementById('demoform');
+if(demoform){demoform.addEventListener('submit',function(e){
+  e.preventDefault();
+  var dict=(window.I18N&&window.I18N[window.LANG])||{};
+  var status=document.getElementById('demoStatus');
+  var boton=demoform.querySelector('button[type="submit"]');
+  var d=new FormData(demoform);
+  var nombre=(d.get('nombre')||'').trim(),pais=(d.get('pais')||'').trim(),
+      empresa=(d.get('empresa')||'').trim(),email=(d.get('email')||'').trim();
+
+  if(!nombre||!pais||!empresa||!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)){
+    status.style.color='#f87171';
+    status.textContent=dict.dfval||'Completá nombre, país, empresa y un email válido.';
+    return;
+  }
+
+  status.style.color='var(--muted)';
+  status.textContent=dict.dfsend||'Enviando…';
+  boton.disabled=true;
+
+  var corte=new AbortController();
+  var reloj=setTimeout(function(){corte.abort();},15000);
+
+  fetch('/api/solicitar-demo',{
+    method:'POST',
+    headers:{'content-type':'application/json'},
+    body:JSON.stringify({nombre:nombre,pais:pais,empresa:empresa,email:email}),
+    signal:corte.signal,
+  }).then(function(r){
+    if(r.status===429){
+      status.style.color='#f87171';
+      status.textContent=dict.dfmany||'Demasiados intentos seguidos. Esperá un minuto y probá otra vez.';
+      boton.disabled=false;
+      return;
+    }
+    if(!r.ok){
+      status.style.color='#f87171';
+      status.textContent=dict.dferr||'No pudimos enviar tu pedido. Probá de nuevo o escribinos directo a vieraschiavi@gmail.com.';
+      boton.disabled=false;
+      return;
+    }
+    status.style.color='var(--green)';
+    status.textContent=dict.dfok||'Recibido — te escribimos para coordinar un horario.';
+    demoform.reset();
+    // El botón queda deshabilitado a propósito: ya se mandó, un segundo
+    // clic solo generaría otro mail idéntico.
+  }).catch(function(err){
+    console.error('solicitar demo:',err);
+    status.style.color='#f87171';
+    status.textContent=dict.dferr||'No pudimos enviar tu pedido. Probá de nuevo o escribinos directo a vieraschiavi@gmail.com.';
+    boton.disabled=false;
+  }).finally(function(){clearTimeout(reloj);});
 });}
 
 // Reseñas reales desde resenas.json (arranca vacío a propósito — cero contenido inventado)

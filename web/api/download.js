@@ -18,14 +18,18 @@ const { verifyLicense } = require("./_license.js");
 const { archivoLicencia } = require("./_licencia-archivo.js");
 const { limitar } = require("./_guard.js");
 
-// El zip está en web/downloads/. Según desde dónde publique Vercel (la raíz
-// del repo o web/), el cwd de la función es uno u otro: se prueban ambos en
-// vez de asumir, que es lo que hacía que la descarga fallara al mover la raíz.
+// El zip está en paquete/, HERMANA de web/ (no adentro) — a propósito: todo
+// lo que cuelga de web/ es lo que Vercel sirve como estático sin gate
+// ninguno (outputDirectory: web), así que un archivo ahí es tan "público"
+// como el resto de la landing aunque ningún botón lo enlace. paquete/ solo
+// llega a esta función vía includeFiles (ver vercel.json) — nunca se sirve
+// solo. Según desde dónde publique Vercel, el cwd de la función es uno u
+// otro: se prueban varios candidatos en vez de asumir.
 function rutaDelZip() {
   const candidatas = [
-    path.join(process.cwd(), "downloads", "mvsql-nlp-app.zip"),
-    path.join(process.cwd(), "web", "downloads", "mvsql-nlp-app.zip"),
-    path.join(__dirname, "..", "downloads", "mvsql-nlp-app.zip"),
+    path.join(process.cwd(), "paquete", "mvsql-nlp-app.zip"),
+    path.join(process.cwd(), "..", "paquete", "mvsql-nlp-app.zip"),
+    path.join(__dirname, "..", "..", "paquete", "mvsql-nlp-app.zip"),
   ];
   const encontrada = candidatas.find((p) => fs.existsSync(p));
   if (!encontrada) {

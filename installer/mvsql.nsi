@@ -57,14 +57,20 @@ Unicode true
 !endif
 
 Name "${PRODUCT_NAME}"
-; Nombre de archivo estable (sin la version en el nombre): la web enlaza
-; directo a este .exe, igual que ya hace con mvsql-nlp-app.zip. La version
-; real vive en el registro (DisplayVersion) y en las propiedades del
-; archivo (VIProductVersion), no en el nombre del archivo.
+; Nombre de archivo estable (sin la version en el nombre): /api/download-instalador
+; lo sirve gateado por licencia con este nombre fijo, igual que ya hace con
+; mvsql-nlp-app.zip via /api/download. La version real vive en el registro
+; (DisplayVersion) y en las propiedades del archivo (VIProductVersion), no
+; en el nombre del archivo.
+;
+; Sale a ..\paquete\, HERMANA de ..\web\ y no adentro: web\ es lo que Vercel
+; sirve como estatico sin gate ninguno (outputDirectory: web en vercel.json).
+; Un .exe ahi seria descargable por cualquiera con el link directo, pagara
+; o no -- justo lo que la demo agendada existe para evitar.
 !ifdef PROPIETARIO
-  OutFile "..\web\downloads\MV-SQL-NLP-Setup-OWNER.exe"
+  OutFile "..\paquete\MV-SQL-NLP-Setup-OWNER.exe"
 !else
-  OutFile "..\web\downloads\MV-SQL-NLP-Setup.exe"
+  OutFile "..\paquete\MV-SQL-NLP-Setup.exe"
 !endif
 ; Instala en el perfil del usuario: sin esto, escribir en Archivos de
 ; programa pide permisos de administrador que muchas PCs de empresa no

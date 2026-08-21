@@ -45,7 +45,10 @@
   ],
   "functions": {
     "api/download.js": {
-      "includeFiles": "web/downloads/**"
+      "includeFiles": "paquete/**"
+    },
+    "api/download-instalador.js": {
+      "includeFiles": "paquete/**"
     }
   },
   "redirects": [

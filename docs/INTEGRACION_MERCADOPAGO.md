@@ -51,7 +51,7 @@ web/api/verify-and-issue.js   GET  → re-verifica el pago y emite el token
 web/api/webhook.js          POST → notificación IPN de MP (solo logging)
 web/api/download.js         GET  → sirve el zip, gateado por token
 web/api/ai-proxy.js         POST → IA server-side para el modo "créditos"
-web/downloads/mvsql-nlp-app.zip   paquete descargable (app-python empaquetada)
+paquete/mvsql-nlp-app.zip   paquete descargable (app-python empaquetada)
 web/gracias/index.html      página de éxito: verifica pago y ofrece descarga
 web/pago-fallido/index.html   página de pago no completado
 web/assets/purchase.js      lógica de compra en la landing (#download)
@@ -78,7 +78,7 @@ Opcional (recomendado antes de vender créditos en volumen):
 3. Deploy (`vercel --prod` o conectar el repo por Git — ver README del repo).
 4. Probar el flujo completo con una compra real de bajo monto antes de anunciar.
 5. (Opcional) Agregar Vercel KV para metering real de créditos.
-6. (Opcional) Reemplazar el zip base por builds más recientes: pisar `web/downloads/mvsql-nlp-app.zip` con el contenido actualizado de `app-python/` antes de cada release.
+6. (Opcional) Reemplazar el zip base por builds más recientes: pisar `paquete/mvsql-nlp-app.zip` con el contenido actualizado de `app-python/` antes de cada release.
 
 ## Nota sobre las suscripciones recurrentes
 
