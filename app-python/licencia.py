@@ -88,6 +88,52 @@ def _licencia_vigente():
         return False
 
 
+# ── Funciones que sí distinguen por plan ────────────────────────────
+#
+# verificar_acceso() de arriba es todo o nada: adentro o el cartel de
+# comprar licencia. Pero la landing (web/index.html, planes Personal vs
+# Profesional) promete una diferencia concreta entre esos dos planes:
+# "Stored procedures + optimizador CTE" arranca en Profesional, no en
+# Personal. Antes de esto no existía ningún código que la hiciera
+# cumplir — un cliente de Personal (US$15) tenía exactamente las mismas
+# funciones que uno de Profesional (US$29), pagara lo que pagara.
+#
+# El trial SÍ da estas funciones (la landing promete "todo incluido" los
+# 7 días) y el propietario también (plan "propietario", nunca está en el
+# set de abajo). Solo el plan Personal se queda afuera.
+PLANES_SIN_FUNCIONES_AVANZADAS = {"personal"}
+
+
+def _plan_licencia_vigente():
+    """El campo `plan` de la licencia paga vigente, o None si no hay
+    licencia paga vigente (trial, sin licencia, vencida o corrupta)."""
+    if not os.path.exists(RUTA_LICENCIA):
+        return None
+    try:
+        with open(RUTA_LICENCIA, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        vence = data.get("vence", "")
+        if datetime.fromisoformat(vence.replace("Z", "+00:00")) <= datetime.now(timezone.utc):
+            return None
+        return data.get("plan")
+    except (json.JSONDecodeError, KeyError, ValueError, OSError, TypeError):
+        return None
+
+
+def funciones_avanzadas_habilitadas():
+    """Stored procedures y optimizador de CTE.
+
+    True durante el trial (sin licencia paga: se asume que
+    verificar_acceso() ya cortó el paso si el trial venció) y con
+    cualquier licencia paga cuyo plan no sea "personal". Con Personal
+    vigente, False — es la única función del producto que hoy discrimina
+    por plan y no por rol de equipo (eso lo sigue resolviendo
+    equipo.permisos() aparte, sin relación con esto).
+    """
+    plan = _plan_licencia_vigente()
+    return plan is None or plan not in PLANES_SIN_FUNCIONES_AVANZADAS
+
+
 # ── Renovación automática de la suscripción ────────────────────────
 #
 # Espejo de desktop/electron/services/licencia.cjs: los dos productos

@@ -155,6 +155,38 @@ function verificarAcceso(dirs) {
   };
 }
 
+// ── Funciones que sí distinguen por plan ────────────────────────────
+//
+// verificarAcceso() de arriba es todo o nada: adentro o el cartel de
+// comprar licencia. Pero la landing (web/index.html, planes Personal vs
+// Profesional) promete una diferencia concreta entre esos dos planes:
+// "Stored procedures + optimizador CTE" arranca en Profesional, no en
+// Personal. Antes de esto no existia ningun codigo que la hiciera
+// cumplir en el programa de escritorio (espejo exacto del mismo agujero
+// que tenia app-python/licencia.py).
+//
+// El trial SI da estas funciones (la landing promete "todo incluido" los
+// 7 dias) y el propietario tambien (plan "propietario", nunca esta en el
+// set de abajo). Solo el plan Personal se queda afuera.
+const PLANES_SIN_FUNCIONES_AVANZADAS = new Set(["personal"]);
+
+/** Stored procedures y optimizador de CTE: mismo criterio que su espejo
+ *  en app-python/licencia.py (funciones_avanzadas_habilitadas). */
+function funcionesAvanzadasHabilitadas(dirs) {
+  const { datos, recursos } = rutas(dirs);
+
+  const licOwner = leerJson(path.join(recursos, "licencia_owner.json"));
+  if (vigente(licOwner)) return true;
+
+  const licPaga = leerJson(path.join(datos, "licencia_mvsql.json"));
+  if (vigente(licPaga)) return !PLANES_SIN_FUNCIONES_AVANZADAS.has(licPaga.plan);
+
+  // Sin licencia paga ni de propietario: el llamador ya sabe (via
+  // verificarAcceso) si el trial sigue vigente o no. Si llegamos hasta
+  // aca es porque si, y el trial da todo incluido.
+  return true;
+}
+
 // ── Renovacion automatica de la suscripcion ────────────────────────
 //
 // Una suscripcion cobra todos los meses; la licencia se emite una sola
@@ -284,6 +316,7 @@ module.exports = {
   verificarAcceso,
   instalarLicencia,
   renovarSiCorresponde,
+  funcionesAvanzadasHabilitadas,
   TRIAL_DIAS,
   DIAS_ANTES_DE_RENOVAR,
   _firma: firma,

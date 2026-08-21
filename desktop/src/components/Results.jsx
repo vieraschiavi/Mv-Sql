@@ -93,7 +93,7 @@ function AutoChart({ columns, rows, t }) {
   return <p style={{ color: "var(--muted)" }}>{t.no_chart}</p>;
 }
 
-export default function Results({ r, t, onSave, onStoredProcedure, onOptimize }) {
+export default function Results({ r, t, onSave, onStoredProcedure, onOptimize, planOk = true }) {
   const [tab, setTab] = useState("table");
   const [modal, setModal] = useState(null);       // { title, body }
   const [saveName, setSaveName] = useState("");
@@ -123,7 +123,8 @@ export default function Results({ r, t, onSave, onStoredProcedure, onOptimize })
         setModal({ title: t.optimize, body: code });
       }
     } catch (e) {
-      setModal({ title: "Error", body: e.message });
+      const body = e.message === "FUNCION_REQUIERE_PLAN_PROFESIONAL" ? t.plan_locked : e.message;
+      setModal({ title: "Error", body });
     } finally {
       setBusyAction(null);
     }
@@ -200,10 +201,12 @@ export default function Results({ r, t, onSave, onStoredProcedure, onOptimize })
             <input style={{ width: 190 }} placeholder={t.query_name} value={saveName}
                    onChange={(e) => setSaveName(e.target.value)} />
             <button className="small" onClick={() => saveName && onSave(saveName)}><Icono n="estrella" /> {t.save_query}</button>
-            <button className="ghost small" disabled={busyAction === "sp"} onClick={() => runAction("sp")}>
+            <button className="ghost small" disabled={busyAction === "sp" || !planOk}
+                    title={!planOk ? t.plan_locked : undefined} onClick={() => runAction("sp")}>
               <Icono n="bloques" /> {t.sp}
             </button>
-            <button className="ghost small" disabled={busyAction === "opt"} onClick={() => runAction("opt")}>
+            <button className="ghost small" disabled={busyAction === "opt" || !planOk}
+                    title={!planOk ? t.plan_locked : undefined} onClick={() => runAction("opt")}>
               <Icono n="acelerar" /> {t.optimize}
             </button>
           </div>
