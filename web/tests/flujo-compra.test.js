@@ -46,6 +46,7 @@ const API = path.join(__dirname, "..", "api");
 const crearPreferencia = require(path.join(API, "create-preference.js"));
 const verificarYEmitir = require(path.join(API, "verify-and-issue.js"));
 const descargar = require(path.join(API, "download.js"));
+const descargarLicencia = require(path.join(API, "download-licencia.js"));
 const { verifyLicense, CREDITS_BY_PLAN } = require(path.join(API, "_license.js"));
 const { PRODUCTS } = require(path.join(API, "_products.js"));
 
@@ -222,6 +223,52 @@ async function test(nombre, fn) {
     assert.strictEqual(r.statusCode, 200, `esperaba 200, vino ${r.statusCode}: ${JSON.stringify(r.body).slice(0, 200)}`);
     assert.ok(/zip/i.test(r.headers["Content-Type"] || r.headers["content-type"] || ""),
       "debe entregar un archivo zip");
+  });
+
+  console.log("\n== 4. Descarga de la licencia suelta (para el programa de escritorio) ==");
+
+  // El programa de escritorio (Electron) no lee el .zip: su pantalla "Ya
+  // tengo una licencia" pide un archivo .json suelto (ver
+  // desktop/electron/main.cjs). Este endpoint es la única forma
+  // descubrible de conseguir ese archivo — antes había que bajar el zip
+  // entero y encontrarlo a mano adentro de nl2sql_rag/. Mismo gate de
+  // seguridad que /api/download: se prueba la misma superficie.
+
+  await test("rechaza sin licencia", async () => {
+    const r = await llamar(descargarLicencia, { method: "GET", query: {} });
+    assert.notStrictEqual(r.statusCode, 200);
+  });
+
+  await test("rechaza licencia falsificada", async () => {
+    const r = await llamar(descargarLicencia, {
+      method: "GET", query: { token: "esto.no.es.un.jwt" },
+    });
+    assert.notStrictEqual(r.statusCode, 200);
+  });
+
+  await test("rechaza licencia firmada con otro secreto", async () => {
+    const jwt = require("jsonwebtoken");
+    const falsa = jwt.sign({ email: "h@x.com", plan: "empresa", mode: "credits", credits: 2000 },
+      "secreto-del-atacante", { expiresIn: "365d" });
+    const r = await llamar(descargarLicencia, { method: "GET", query: { token: falsa } });
+    assert.notStrictEqual(r.statusCode, 200, "una licencia firmada por un tercero no puede pasar");
+  });
+
+  await test("acepta la licencia legítima y entrega SOLO el .json, sin el zip alrededor", async () => {
+    const r = await llamar(descargarLicencia, { method: "GET", query: { token: licenciaValida } });
+    assert.strictEqual(r.statusCode, 200, `esperaba 200, vino ${r.statusCode}: ${JSON.stringify(r.body).slice(0, 200)}`);
+    const tipo = r.headers["Content-Type"] || r.headers["content-type"] || "";
+    assert.ok(/json/i.test(tipo), `debe entregar JSON, entregó "${tipo}"`);
+    assert.ok(/licencia_mvsql\.json/.test(r.headers["Content-Disposition"] || ""),
+      "el nombre del archivo debe ser licencia_mvsql.json, igual que el que va adentro del zip");
+
+    // Tiene que ser el MISMO contenido que download.js embebe en el zip:
+    // dos endpoints armando el archivo de formas distintas es justo el bug
+    // que _licencia-archivo.js existe para evitar (ver su comentario).
+    const licenciaJson = JSON.parse(r.body);
+    assert.strictEqual(licenciaJson.token, licenciaValida);
+    assert.ok(licenciaJson.vence, "debe traer fecha de vencimiento");
+    assert.strictEqual(licenciaJson.modo, "credits");
   });
 
   console.log(`\n${"=".repeat(52)}`);

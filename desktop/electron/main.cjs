@@ -19,8 +19,9 @@ const T = {
   es: {
     titulo: "Se terminó la prueba",
     cuerpo: "Los 7 días de prueba de MV SQL NLP terminaron.",
-    detalle: "Comprá tu licencia en mvsqlnlp.com y, cuando la recibas por email, " +
-      "elegí \"Ya tengo una licencia\" para activarla.",
+    detalle: "Comprá tu licencia en mvsqlnlp.com: cuando el pago se confirme, " +
+      "esa misma página te deja descargar tu archivo de licencia. Elegí " +
+      "\"Ya tengo una licencia\" y seleccioná ese archivo para activarla.",
     comprar: "Comprar licencia",
     tengo: "Ya tengo una licencia",
     salir: "Salir",
@@ -32,8 +33,9 @@ const T = {
   en: {
     titulo: "Your trial has ended",
     cuerpo: "The 7-day MV SQL NLP trial has ended.",
-    detalle: "Buy your licence at mvsqlnlp.com and, once it arrives by email, " +
-      "choose \"I already have a licence\" to activate it.",
+    detalle: "Buy your licence at mvsqlnlp.com: once the payment is confirmed, " +
+      "that same page lets you download your licence file. Choose " +
+      "\"I already have a licence\" and pick that file to activate it.",
     comprar: "Buy a licence",
     tengo: "I already have a licence",
     salir: "Quit",
@@ -45,8 +47,9 @@ const T = {
   pt: {
     titulo: "Seu teste terminou",
     cuerpo: "Os 7 dias de teste do MV SQL NLP terminaram.",
-    detalle: "Compre sua licença em mvsqlnlp.com e, quando ela chegar por email, " +
-      "escolha \"Já tenho uma licença\" para ativá-la.",
+    detalle: "Compre sua licença em mvsqlnlp.com: assim que o pagamento for " +
+      "confirmado, a própria página deixa baixar o arquivo da sua licença. " +
+      "Escolha \"Já tenho uma licença\" e selecione esse arquivo para ativá-la.",
     comprar: "Comprar licença",
     tengo: "Já tenho uma licença",
     salir: "Sair",

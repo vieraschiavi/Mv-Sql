@@ -45,6 +45,9 @@
         listo: "Tu descarga está lista, plan {plan} {modo}.",
         descargar: "Descargar MV SQL NLP",
         guarda: "Guardá este link — es tu licencia:",
+        licTitulo: "¿Instalaste el programa de escritorio (.exe)?",
+        licTexto: "Bajá tu archivo de licencia y elegilo en la app: \"Ya tengo una licencia\".",
+        licBoton: "Descargar licencia (.json)",
         no_verificado: "No se pudo verificar el pago",
         no_verificado_sub: "Tu pago está a salvo. Reintentá en un momento; si sigue igual, escribinos a vieraschiavi@gmail.com con tu comprobante y te mandamos la descarga.",
         reintentar: "Reintentar"
@@ -63,6 +66,9 @@
         listo: "Your download is ready — {plan} plan {modo}.",
         descargar: "Download MV SQL NLP",
         guarda: "Save this link — it is your licence:",
+        licTitulo: "Did you install the desktop program (.exe)?",
+        licTexto: "Download your licence file and pick it in the app: \"I already have a licence\".",
+        licBoton: "Download licence (.json)",
         no_verificado: "We could not verify the payment",
         no_verificado_sub: "Your payment is safe. Try again in a moment; if it persists, write to vieraschiavi@gmail.com with your receipt and we will send you the download.",
         reintentar: "Try again"
@@ -81,6 +87,9 @@
         listo: "Seu download está pronto — plano {plan} {modo}.",
         descargar: "Baixar o MV SQL NLP",
         guarda: "Guarde este link — é a sua licença:",
+        licTitulo: "Instalou o programa de desktop (.exe)?",
+        licTexto: "Baixe o arquivo da sua licença e escolha-o no app: \"Já tenho uma licença\".",
+        licBoton: "Baixar licença (.json)",
         no_verificado: "Não foi possível verificar o pagamento",
         no_verificado_sub: "Seu pagamento está seguro. Tente de novo em instantes; se continuar, escreva para vieraschiavi@gmail.com com o seu comprovante e enviaremos o download.",
         reintentar: "Tentar de novo"
@@ -185,6 +194,28 @@
         nota.appendChild(code);
         result.appendChild(boton);
         result.appendChild(nota);
+
+        // El programa de escritorio (Electron) no lee el .zip: su pantalla
+        // "Ya tengo una licencia" pide un archivo .json suelto. Sin este
+        // segundo botón, la única forma de llegar a ese archivo era bajar
+        // el zip entero y encontrarlo enterrado adentro a mano.
+        const licBloque = document.createElement("div");
+        licBloque.style.cssText = "margin-top:2rem;padding-top:1.6rem;border-top:1px solid var(--border)";
+        const licTitulo = document.createElement("p");
+        licTitulo.style.cssText = "font-weight:700;margin-bottom:.3rem";
+        licTitulo.textContent = T.licTitulo;
+        const licTexto = document.createElement("p");
+        licTexto.style.cssText = "color:var(--muted);font-size:.9rem;margin-bottom:1rem";
+        licTexto.textContent = T.licTexto;
+        const licEnlace = `${location.origin}/api/download-licencia?token=${encodeURIComponent(data.token)}`;
+        const licBoton = document.createElement("a");
+        licBoton.className = "btn btn-ghost";
+        licBoton.href = licEnlace;
+        licBoton.textContent = T.licBoton;
+        licBloque.appendChild(licTitulo);
+        licBloque.appendChild(licTexto);
+        licBloque.appendChild(licBoton);
+        result.appendChild(licBloque);
       } catch (e) {
         // El detalle técnico va a la consola, no a la cara del cliente:
         // "Failed to fetch" no le dice nada y encima asusta a alguien que
