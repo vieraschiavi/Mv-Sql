@@ -104,9 +104,13 @@ def _licencia_vigente():
 PLANES_SIN_FUNCIONES_AVANZADAS = {"personal"}
 
 
-def _plan_licencia_vigente():
+def plan_licencia_vigente():
     """El campo `plan` de la licencia paga vigente, o None si no hay
-    licencia paga vigente (trial, sin licencia, vencida o corrupta)."""
+    licencia paga vigente (trial, sin licencia, vencida o corrupta).
+
+    Pública (sin guión bajo) a propósito: además de usarla este módulo
+    para las funciones avanzadas, la usa equipo.py para el límite de
+    puestos por plan (Personal/Profesional: 1, Empresa: 5)."""
     if not os.path.exists(RUTA_LICENCIA):
         return None
     try:
@@ -130,7 +134,7 @@ def funciones_avanzadas_habilitadas():
     por plan y no por rol de equipo (eso lo sigue resolviendo
     equipo.permisos() aparte, sin relación con esto).
     """
-    plan = _plan_licencia_vigente()
+    plan = plan_licencia_vigente()
     return plan is None or plan not in PLANES_SIN_FUNCIONES_AVANZADAS
 
 

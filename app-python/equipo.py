@@ -26,7 +26,30 @@ import re
 import secrets
 from datetime import datetime
 
+from licencia import plan_licencia_vigente
+
 RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "equipo.json")
+
+# Cuántos usuarios de equipo permite cada plan. La landing lo promete así
+# (web/index.html, planes Personal/Profesional: "1 usuario"; Empresa:
+# "hasta 5 puestos") — hasta acá no había ningún código que lo hiciera
+# cumplir, cualquier plan pago podía cargar equipos sin límite.
+#
+# None = sin límite (propietario, y durante el trial: la landing promete
+# "todo incluido" los 7 días, mismo criterio que funciones_avanzadas_habilitadas
+# en licencia.py para stored procedures/optimizador CTE).
+LIMITE_PUESTOS_DEFECTO = 1
+LIMITE_PUESTOS_EMPRESA = 5
+
+
+def limite_puestos():
+    """Cuántos usuarios de equipo admite la licencia vigente ahora mismo."""
+    plan = plan_licencia_vigente()
+    if plan is None or plan == "propietario":
+        return None
+    if plan == "empresa":
+        return LIMITE_PUESTOS_EMPRESA
+    return LIMITE_PUESTOS_DEFECTO
 
 # Permisos de cada rol. `tablas` con "*" significa todas.
 ROLES = {
@@ -103,6 +126,13 @@ def crear_usuario(nombre: str, rol: str, pin: str, tablas=None) -> dict:
     cfg = cargar()
     if any(u["nombre"].lower() == nombre.lower() for u in cfg["usuarios"]):
         raise ValueError(f"Ya existe un usuario llamado {nombre}.")
+
+    limite = limite_puestos()
+    if limite is not None and len(cfg["usuarios"]) >= limite:
+        raise ValueError(
+            f"Tu licencia permite hasta {limite} usuario(s) de equipo. "
+            "Mejorá tu plan en mvsqlnlp.com para agregar más."
+        )
 
     sal = secrets.token_hex(16)
     usuario = {

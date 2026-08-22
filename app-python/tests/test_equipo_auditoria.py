@@ -290,5 +290,96 @@ def _():
     equipo.eliminar_usuario("Ana Pérez-Gómez")
 
 
+print("\n== Puestos de equipo: hasta donde promete cada plan ==")
+
+# Aisladas del resto del archivo (que comparte equipo.RUTA en todos los
+# tests anteriores): estas necesitan controlar tanto equipo.RUTA como
+# licencia.RUTA_LICENCIA a la vez, así que arrancan de un temporal propio
+# en cada test para no heredar usuarios ni licencia de ningún otro caso.
+import json
+from datetime import datetime, timedelta, timezone
+import licencia as _licencia
+
+
+def _entorno_puestos():
+    tmp = tempfile.mkdtemp()
+    equipo.RUTA = os.path.join(tmp, "equipo.json")
+    _licencia.RUTA_LICENCIA = os.path.join(tmp, "licencia_mvsql.json")
+
+
+def _licencia_con_plan(plan):
+    vence = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+    with open(_licencia.RUTA_LICENCIA, "w", encoding="utf-8") as fh:
+        json.dump({"vence": vence, "plan": plan, "modo": "own_ai"}, fh)
+
+
+@test("durante el trial (sin licencia) no hay límite de puestos")
+def _():
+    _entorno_puestos()
+    for i in range(6):
+        equipo.crear_usuario(f"Trial{i}", "lector", "1234")
+    assert len(equipo.cargar()["usuarios"]) == 6
+
+
+@test("con licencia Personal, el 2do usuario se rechaza (1 puesto)")
+def _():
+    _entorno_puestos()
+    _licencia_con_plan("personal")
+    equipo.crear_usuario("Uno", "lector", "1234")
+    try:
+        equipo.crear_usuario("Dos", "lector", "1234")
+        assert False, "debía rechazar el segundo usuario"
+    except ValueError as e:
+        assert "1" in str(e)
+    assert len(equipo.cargar()["usuarios"]) == 1
+
+
+@test("con licencia Profesional, mismo límite que Personal (1 puesto)")
+def _():
+    _entorno_puestos()
+    _licencia_con_plan("profesional")
+    equipo.crear_usuario("Uno", "lector", "1234")
+    try:
+        equipo.crear_usuario("Dos", "lector", "1234")
+        assert False, "debía rechazar el segundo usuario"
+    except ValueError:
+        pass
+
+
+@test("con licencia Empresa, entran hasta 5 puestos y el 6to se rechaza")
+def _():
+    _entorno_puestos()
+    _licencia_con_plan("empresa")
+    for i in range(5):
+        equipo.crear_usuario(f"Emp{i}", "lector", "1234")
+    assert len(equipo.cargar()["usuarios"]) == 5
+    try:
+        equipo.crear_usuario("Emp5", "lector", "1234")
+        assert False, "debía rechazar el 6to usuario"
+    except ValueError as e:
+        assert "5" in str(e)
+    assert len(equipo.cargar()["usuarios"]) == 5
+
+
+@test("el propietario nunca tiene límite de puestos")
+def _():
+    _entorno_puestos()
+    _licencia_con_plan("propietario")
+    for i in range(8):
+        equipo.crear_usuario(f"Owner{i}", "lector", "1234")
+    assert len(equipo.cargar()["usuarios"]) == 8
+
+
+@test("una licencia Personal VENCIDA no restringe: cae al trial (sin límite)")
+def _():
+    _entorno_puestos()
+    vencida = (datetime.now(timezone.utc) - timedelta(days=5)).isoformat()
+    with open(_licencia.RUTA_LICENCIA, "w", encoding="utf-8") as fh:
+        json.dump({"vence": vencida, "plan": "personal", "modo": "own_ai"}, fh)
+    equipo.crear_usuario("Uno", "lector", "1234")
+    equipo.crear_usuario("Dos", "lector", "1234")
+    assert len(equipo.cargar()["usuarios"]) == 2
+
+
 print(f"\n  {pasadas} pasadas · {falladas} falladas\n")
 sys.exit(1 if falladas else 0)
