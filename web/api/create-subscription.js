@@ -6,6 +6,7 @@
 // hasta que el cliente cancela: es lo que hace que los clientes se acumulen.
 const { SUSCRIPCIONES } = require("./_products.js");
 const { emailValido, limitar } = require("./_guard.js");
+const { avisarIntentoDeCompra } = require("./_aviso-compra.js");
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido." });
@@ -24,6 +25,10 @@ module.exports = async (req, res) => {
     }
 
     const origin = `https://${req.headers.host}`;
+    // En paralelo con el alta del preapproval: no puede sumar latencia al
+    // checkout, y avisarIntentoDeCompra() ya se traga cualquier error por
+    // dentro (Resend caído, sin RESEND_API_KEY).
+    const aviso = avisarIntentoDeCompra({ plan, modo: "suscripcion", email, producto });
     // El SDK de MercadoPago no cubre preapproval de forma estable entre
     // versiones, así que se usa la API REST directo.
     const r = await fetch("https://api.mercadopago.com/preapproval", {
@@ -48,6 +53,7 @@ module.exports = async (req, res) => {
     });
 
     const data = await r.json();
+    await aviso;
     if (!r.ok) {
       return res.status(r.status).json({
         error: data.message || "MercadoPago rechazó la suscripción.",

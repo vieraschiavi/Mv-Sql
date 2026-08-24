@@ -2,10 +2,11 @@
 
 // MV SQL NLP — envío de mail transaccional (Resend), sin SDK.
 //
-// Un solo uso hoy: avisar al dueño cuando alguien pide una demo. No
-// justifica sumar el paquete `resend` como dependencia — la API es un
-// POST con JSON, igual de simple hecha con fetch. Mismo criterio que
-// verify-and-issue.js con la consulta de preapproval a MercadoPago.
+// Lo usan solicitar-demo.js (pedido de demo) y _aviso-compra.js (alguien
+// generó un link de pago). No justifica sumar el paquete `resend` como
+// dependencia — la API es un POST con JSON, igual de simple hecha con
+// fetch. Mismo criterio que verify-and-issue.js con la consulta de
+// preapproval a MercadoPago.
 //
 // "from" usa el dominio sandbox de Resend (onboarding@resend.dev) por
 // default: funciona sin verificar ningún dominio propio. El día que
