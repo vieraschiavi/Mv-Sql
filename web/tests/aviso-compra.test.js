@@ -38,7 +38,7 @@ Module._load = function (pedido, _padre, _esMain) {
   return cargaOriginal.apply(this, arguments);
 };
 
-global.fetch = async (url, opts) => {
+global.fetch = async (url, _opts) => {
   if (String(url).includes("/preapproval")) {
     return { ok: true, status: 200,
              json: async () => ({ init_point: "https://mp.test/suscribir", id: "sub_1" }) };
