@@ -5,6 +5,7 @@
 const { client, Preference } = require("./_mp.js");
 const { PRODUCTS, esRecurrente } = require("./_products.js");
 const { emailValido, limitar } = require("./_guard.js");
+const { avisarIntentoDeCompra } = require("./_aviso-compra.js");
 
 module.exports = async (req, res) => {
   if (req.method !== "POST") return res.status(405).json({ error: "Método no permitido." });
@@ -29,6 +30,10 @@ module.exports = async (req, res) => {
     }
 
     const origin = `https://${req.headers.host}`;
+    // En paralelo con la creación de la preferencia: el aviso nunca puede
+    // sumar latencia extra al checkout, y avisarIntentoDeCompra() ya se
+    // traga cualquier error (Resend caído, sin RESEND_API_KEY) por dentro.
+    const aviso = avisarIntentoDeCompra({ plan, modo: mode, email, producto: product });
     const preference = await new Preference(client()).create({
       body: {
         items: [{
@@ -46,6 +51,7 @@ module.exports = async (req, res) => {
         notification_url: `${origin}/api/webhook`,
       },
     });
+    await aviso;
     res.status(200).json({ init_point: preference.init_point });
   } catch (e) {
     res.status(500).json({ error: e.message });
