@@ -79,4 +79,10 @@ proveedores_ia.completar = _fingir
 with open(os.path.join(APP, "app.py"), encoding="utf-8") as fh:
     codigo = fh.read()
 
-exec(compile(codigo, os.path.join(APP, "app.py"), "exec"), {"__name__": "__main__"})
+# __file__ va sí o sí: app.py lo usa para encontrar archivos que viven
+# junto a él (mvsql.ico para el ícono de marca, entre otros). Sin esta
+# clave, exec() lo deja indefinido y la app entera muere con
+# "NameError: name '__file__' is not defined" apenas arranca — que es lo
+# que tuvo el pipeline del video roto y sin poder regenerarse.
+exec(compile(codigo, os.path.join(APP, "app.py"), "exec"),
+     {"__name__": "__main__", "__file__": os.path.join(APP, "app.py")})

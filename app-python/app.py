@@ -66,6 +66,19 @@ T = {
         "tablas_rag": "Tablas relevantes detectadas", "sql_gen": "SQL generado",
         "validado": "SQL validado contra el esquema real (sin nombres inventados)",
         "confianza": "Confianza", "supuestos": "Supuestos del modelo",
+        # La barra de confianza tenía estas tres palabras escritas a mano en
+        # castellano dentro del HTML, así que se leían igual con la app en
+        # inglés o portugués — y es de lo más visible de la pantalla.
+        "conf_intervalo": "intervalo", "conf_modelo": "modelo",
+        "conf_validacion": "validación",
+        # El pie decía "tu esquema nunca sale sin tu permiso, los datos
+        # jamás". Lo segundo no es cierto: con el análisis escrito activado
+        # viaja una muestra del resultado (ver tests/test_privacidad.py) —
+        # es la misma sobre-promesa que se corrigió en la narración del
+        # video. Acá dice lo que el producto hace de verdad.
+        "pie": "MV SQL NLP · vos decidís qué viaja a la IA: el esquema para generar "
+               "el SQL, y ni una fila de datos con el modo privacidad activado · "
+               "solo SELECT · CTEs optimizados · mvsqlnlp.com",
         "resultado": "Resultado", "filas": "Filas", "columnas": "Columnas",
         "tabla": "Tabla", "grafico": "Gráfico", "analisis": "Análisis",
         "exportar": "Exportar", "guardar": "Guardar consulta",
@@ -123,6 +136,15 @@ T = {
         "aud_pie": "El registro se guarda solo en esta computadora (auditoria.db). No sale de tu red.",
         "eq_titulo": "Equipo y permisos", "eq_abierto": "Sin usuarios creados, la app funciona en modo abierto: cualquiera que la abra ve toda la base. Creá el primer usuario para activar el control de acceso.",
         "eq_agregar": "Agregar usuario", "eq_nombre": "Nombre", "eq_rol": "Rol",
+        # Nombre y descripción de cada rol. Viven acá y no en equipo.ROLES
+        # porque ese diccionario es lógica de permisos (compartida con la
+        # auditoría y el recorte del catálogo), no texto de pantalla: con
+        # la app en inglés se leía "Administrador · Acceso total. Gestiona
+        # el equipo y ve la auditoría." en medio de una interfaz en inglés.
+        "rol_admin": "Administrador", "rol_analista": "Analista", "rol_lector": "Lector",
+        "rold_admin": "Acceso total. Gestiona el equipo y ve la auditoría.",
+        "rold_analista": "Consulta y exporta las tablas asignadas.",
+        "rold_lector": "Solo consulta. No exporta ni genera procedures.",
         "eq_pin": "PIN (mínimo 4 dígitos)", "eq_crear": "Crear usuario",
         "eq_creado": "Usuario {nombre} creado.", "eq_todas": "todas las tablas",
         "eq_tablas": "tablas", "eq_todas_check": "Acceso a todas las tablas",
@@ -171,6 +193,11 @@ T = {
         "tablas_rag": "Relevant tables detected", "sql_gen": "Generated SQL",
         "validado": "SQL validated against the real schema (no invented names)",
         "confianza": "Confidence", "supuestos": "Model assumptions",
+        "conf_intervalo": "range", "conf_modelo": "model",
+        "conf_validacion": "validation",
+        "pie": "MV SQL NLP · you decide what travels to the AI: the schema to write "
+               "the SQL, and not a single row of data with strict privacy mode on · "
+               "SELECT only · optimized CTEs · mvsqlnlp.com",
         "resultado": "Result", "filas": "Rows", "columnas": "Columns",
         "tabla": "Table", "grafico": "Chart", "analisis": "Analysis",
         "exportar": "Export", "guardar": "Save query",
@@ -228,6 +255,10 @@ T = {
         "aud_pie": "The log is stored only on this computer (auditoria.db). It never leaves your network.",
         "eq_titulo": "Team and permissions", "eq_abierto": "With no users created, the app runs in open mode: anyone who opens it sees the whole database. Create the first user to turn on access control.",
         "eq_agregar": "Add user", "eq_nombre": "Name", "eq_rol": "Role",
+        "rol_admin": "Administrator", "rol_analista": "Analyst", "rol_lector": "Reader",
+        "rold_admin": "Full access. Manages the team and sees the audit log.",
+        "rold_analista": "Queries and exports the tables assigned to them.",
+        "rold_lector": "Query only. Cannot export or generate procedures.",
         "eq_pin": "PIN (at least 4 digits)", "eq_crear": "Create user",
         "eq_creado": "User {nombre} created.", "eq_todas": "all tables",
         "eq_tablas": "tables", "eq_todas_check": "Access to all tables",
@@ -276,6 +307,11 @@ T = {
         "tablas_rag": "Tabelas relevantes detectadas", "sql_gen": "SQL gerado",
         "validado": "SQL validado contra o esquema real (sem nomes inventados)",
         "confianza": "Confiança", "supuestos": "Suposições do modelo",
+        "conf_intervalo": "intervalo", "conf_modelo": "modelo",
+        "conf_validacion": "validação",
+        "pie": "MV SQL NLP · você decide o que viaja para a IA: o esquema para gerar "
+               "o SQL, e nenhuma linha de dados com o modo privacidade ativado · "
+               "somente SELECT · CTEs otimizados · mvsqlnlp.com",
         "resultado": "Resultado", "filas": "Linhas", "columnas": "Colunas",
         "tabla": "Tabela", "grafico": "Gráfico", "analisis": "Análise",
         "exportar": "Exportar", "guardar": "Salvar consulta",
@@ -333,6 +369,10 @@ T = {
         "aud_pie": "O registro fica só neste computador (auditoria.db). Não sai da sua rede.",
         "eq_titulo": "Equipe e permissões", "eq_abierto": "Sem usuários criados, o app funciona em modo aberto: qualquer um que abrir vê todo o banco. Crie o primeiro usuário para ativar o controle de acesso.",
         "eq_agregar": "Adicionar usuário", "eq_nombre": "Nome", "eq_rol": "Perfil",
+        "rol_admin": "Administrador", "rol_analista": "Analista", "rol_lector": "Leitor",
+        "rold_admin": "Acesso total. Gerencia a equipe e vê a auditoria.",
+        "rold_analista": "Consulta e exporta as tabelas atribuídas.",
+        "rold_lector": "Somente consulta. Não exporta nem gera procedures.",
         "eq_pin": "PIN (mínimo 4 dígitos)", "eq_crear": "Criar usuário",
         "eq_creado": "Usuário {nombre} criado.", "eq_todas": "todas as tabelas",
         "eq_tablas": "tabelas", "eq_todas_check": "Acesso a todas as tabelas",
@@ -984,15 +1024,33 @@ def barra_confianza(conf, t):
     comp = conf["componentes"]
     st.markdown(f"""
 <div class="conf-box">
-  <b>{t['confianza']}: {p}% &nbsp;<span style="color:#94a3b8">(±{conf['margen']} → intervalo {lo}–{hi}%)</span></b>
+  <b>{t['confianza']}: {p}% &nbsp;<span style="color:#94a3b8">(±{conf['margen']} → {t['conf_intervalo']} {lo}–{hi}%)</span></b>
   <div class="conf-bar-bg" style="margin-top:.5rem">
     <div class="conf-bar" style="width:{p}%"></div>
     <div class="conf-interval" style="left:{lo}%; width:{hi - lo}%"></div>
   </div>
   <div style="color:#94a3b8; font-size:.75rem; margin-top:.4rem">
-    modelo {comp['modelo']} · RAG {comp['rag']} · validación {comp['validacion']}
+    {t['conf_modelo']} {comp['modelo']} · RAG {comp['rag']} · {t['conf_validacion']} {comp['validacion']}
   </div>
 </div>""", unsafe_allow_html=True)
+
+
+def nombre_rol(clave, t):
+    """Nombre del rol en el idioma de la pantalla.
+
+    equipo.ROLES guarda el nombre en castellano porque ahí es lógica de
+    permisos, no texto de interfaz. Con la app en inglés o portugués el
+    rol se leía igual en castellano en medio de todo lo demás traducido.
+    Si apareciera un rol nuevo sin traducir, cae al de equipo.ROLES: es
+    preferible una palabra en castellano a una pantalla rota.
+    """
+    return t.get(f"rol_{clave}", equipo.ROLES.get(clave, {}).get("nombre", clave))
+
+
+def descripcion_rol(clave, t):
+    """Descripción del rol en el idioma de la pantalla (ver nombre_rol)."""
+    return t.get(f"rold_{clave}",
+                 equipo.ROLES.get(clave, {}).get("descripcion", ""))
 
 
 # ──────────────────────────────────────────────────────────────
@@ -1044,7 +1102,7 @@ with st.sidebar:
     if ss.usuario:
         st.divider()
         c_u1, c_u2 = st.columns([3, 1])
-        c_u1.markdown(f"**{ss.usuario['nombre']}** · {equipo.ROLES[ss.usuario['rol']]['nombre']}")
+        c_u1.markdown(f"**{ss.usuario['nombre']}** · {nombre_rol(ss.usuario['rol'], t)}")
         if c_u2.button(t["login_salir"], key="btn_salir"):
             ss.usuario = None
             ss.motor = None
@@ -1318,7 +1376,7 @@ with st.sidebar:
                 # admin. equipo.crear_usuario() ya rechaza esos nombres,
                 # pero esto cubre los que hayan quedado guardados de antes.
                 _nombre_seguro = html.escape(str(_u["nombre"]))
-                _c1.markdown(f"**{_nombre_seguro}** · {equipo.ROLES[_u['rol']]['nombre']}  \n"
+                _c1.markdown(f"**{_nombre_seguro}** · {nombre_rol(_u['rol'], t)}  \n"
                              f"<span style='color:#94a3b8;font-size:.78rem'>{_detalle}</span>",
                              unsafe_allow_html=True)
                 if _c2.button("✕", key=f"del_u_{_u['nombre']}", help=t["borrar"]):
@@ -1330,8 +1388,8 @@ with st.sidebar:
             st.markdown(f"**{t['eq_agregar']}**")
             _n = st.text_input(t["eq_nombre"], key="eq_nombre")
             _r = st.selectbox(t["eq_rol"], list(equipo.ROLES.keys()), key="eq_rol",
-                              format_func=lambda k: equipo.ROLES[k]["nombre"])
-            st.caption(equipo.ROLES[_r]["descripcion"])
+                              format_func=lambda k: nombre_rol(k, t))
+            st.caption(descripcion_rol(_r, t))
             _p = st.text_input(t["eq_pin"], type="password", key="eq_pin")
             _todas = st.checkbox(t["eq_todas_check"], value=True, key="eq_todas_check")
             _tablas_sel = None
@@ -1760,5 +1818,4 @@ if ss.historial:
             st.code(h["sql"], language="sql")
 
 st.divider()
-st.caption("MV SQL NLP · RAG local (tu esquema nunca sale sin tu permiso, los datos jamás) · "
-           "solo SELECT · CTEs optimizados · mvsqlnlp.com")
+st.caption(t["pie"])
