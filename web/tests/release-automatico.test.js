@@ -56,17 +56,23 @@ const JOBS_QUE_PUBLICAN = Object.keys(WF.jobs).filter((j) => j !== "decidir");
       "electron-builder va a leer eso como una ruta de archivo, no como config");
   });
 
-  await test("el instalador del propietario se renombra y nunca va al Release", () => {
+  await test("el instalador del propietario se renombra y solo va al Release si el repo es privado", () => {
     // Sale del build con el mismo nombre que el del cliente. Si el
     // renombrado no estuviera, quedaría un .exe con licencia hasta 2099
     // llamado igual que el que baja cualquiera.
     assert.ok(/MV-SQL-NLP-App-Setup-OWNER\.exe/.test(CRUDO),
       "no se renombra el instalador del propietario");
-    // Y no puede subirse con gh release upload en ningún lado.
-    const subidas = CRUDO.split("\n").filter(
-      (l) => /gh release upload/.test(l) && /OWNER/i.test(l));
-    assert.deepStrictEqual(subidas, [],
-      "se está subiendo una build del propietario al Release público");
+    // Con el repositorio privado ese asset es cómo el dueño baja la versión
+    // completa (ver owner/INSTALADOR.md); en uno público sería regalar el
+    // producto. Se exige la guarda, no la ausencia del upload.
+    for (const m of CRUDO.matchAll(/gh release upload[^\n]*/g)) {
+      if (!/OWNER/i.test(m[0])) continue;
+      const inicioPaso = CRUDO.lastIndexOf("\n      - name:", m.index);
+      assert.match(CRUDO.slice(inicioPaso, m.index),
+        /if:\s*github\.event\.repository\.private/,
+        "se sube la build del propietario al Release sin exigir repo privado: " +
+        m[0].trim());
+    }
   });
 
   await test("el workflow dispara en push a main", () => {

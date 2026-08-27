@@ -147,6 +147,33 @@ jobs:
           retention-days: 90
           if-no-files-found: error
 
+      # El mismo instalador, tambien como asset del Release. El artefacto de
+      # arriba se borra a los 90 dias y hay que ir a buscarlo a la pestana
+      # Actions; el asset del Release queda para siempre y esta a un clic
+      # desde la portada del repositorio, que es lo que el duenio necesita
+      # para probar la version completa sin pasos extra.
+      #
+      # LA CONDICION NO ES OPCIONAL: en un repositorio PUBLICO cualquiera
+      # baja un asset de Release sin loguearse, y este .exe abre sin trial y
+      # con licencia hasta 2099 — publicarlo ahi es regalar el producto que
+      # se esta vendiendo. Con "github.event.repository.private" eso es
+      # imposible por construccion: si el repo vuelve a ser publico, el paso
+      # simplemente no corre. No depende de que nadie se acuerde.
+      - name: Publicar el instalador del propietario en el Release (SOLO si el repo es privado)
+        if: github.event.repository.private
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $V = node -p "require('./package.json').version"
+          gh release upload "v$V" release/MV-SQL-NLP-App-Setup-OWNER.exe --clobber --repo $env:GITHUB_REPOSITORY
+
+      - name: Avisar por que no se publico el instalador del propietario
+        if: ${{ !github.event.repository.private }}
+        run: |
+          "El instalador del propietario NO se publico en el Release porque este repositorio es PUBLICO." >> $env:GITHUB_STEP_SUMMARY
+          "Abre sin trial y con licencia hasta 2099: como asset publico lo bajaria cualquiera." >> $env:GITHUB_STEP_SUMMARY
+          "Quedo como artefacto 'mvsql-app-owner' (requiere acceso al repositorio)." >> $env:GITHUB_STEP_SUMMARY
+
   build-cython-windows:
     needs: decidir
     if: needs.decidir.outputs.seguir == 'true'

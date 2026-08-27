@@ -62,16 +62,29 @@ const WORKFLOW = fs.readFileSync(
     }
   });
 
-  await test("el .exe del dueño NO se sube a un Release público (el repo es público)", () => {
+  await test("el .exe del dueño NUNCA llega a un Release PÚBLICO", () => {
     // Sigue vigente aunque cambie el modelo de descarga: la build del
     // propietario lleva licencia embebida hasta 2099. Un Release público
     // la deja a un clic de cualquiera.
-    const subeOwner = [...WORKFLOW.matchAll(/gh release upload[^\n]*/g)]
-      .map((m) => m[0])
-      .filter((l) => /OWNER/i.test(l));
-    assert.deepStrictEqual(subeOwner, [],
-      "build-desktop.yml sube la versión sin trial a un Release público: " +
-      subeOwner.join(" | "));
+    //
+    // La regla es "nunca a un Release público", no "nunca a un Release":
+    // con el repositorio privado, ese asset es justamente cómo el dueño
+    // baja la versión completa para probar (ver owner/INSTALADOR.md). Lo
+    // que se exige entonces es que CADA upload del .exe del propietario
+    // esté condicionado a que el repositorio sea privado — un upload sin
+    // esa guarda es exactamente el bug que este test existe para frenar.
+    const sinGuarda = [];
+    for (const m of WORKFLOW.matchAll(/gh release upload[^\n]*/g)) {
+      if (!/OWNER/i.test(m[0])) continue;
+      const inicioPaso = WORKFLOW.lastIndexOf("\n      - name:", m.index);
+      const bloque = WORKFLOW.slice(inicioPaso, m.index);
+      if (!/if:\s*github\.event\.repository\.private/.test(bloque)) {
+        sinGuarda.push(m[0].trim());
+      }
+    }
+    assert.deepStrictEqual(sinGuarda, [],
+      "build-desktop.yml sube la versión sin trial a un Release sin exigir " +
+      "que el repositorio sea privado: " + sinGuarda.join(" | "));
   });
 
   await test("la landing no menciona el .exe del dueño en ningún lado", () => {
