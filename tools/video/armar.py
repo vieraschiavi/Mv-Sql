@@ -103,23 +103,33 @@ def fondo():
     return Image.fromarray(mezcla)
 
 
-def rayo(d, x, y, alto, color):
-    """El ⚡ de la marca, dibujado (no depende de fuentes con emoji)."""
-    a = alto
-    puntos = [(x + a * .55, y), (x + a * .12, y + a * .56), (x + a * .42, y + a * .56),
-              (x + a * .22, y + a), (x + a * .78, y + a * .40),
-              (x + a * .46, y + a * .40), (x + a * .70, y)]
-    d.polygon(puntos, fill=color)
+# El ícono de marca ya generado, el mismo que usan la web (favicon,
+# og-image), el instalador y la app. Antes acá se dibujaba a mano un rayo
+# ⚡ que era la marca VIEJA: al cambiarse el logo, los tres videos
+# siguieron saliendo con el rayo mientras el resto del producto ya
+# mostraba la M/V. Reusar el archivo es lo que evita que se vuelvan a
+# separar.
+ICONO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "..", "..", "desktop", "build", "icon.png")
 
 
-def marca(d, y=92):
-    """Logo, una sola vez por cuadro y siempre en el mismo lugar."""
+def marca(img, d, y=92, lado=46):
+    """Logo, una sola vez por cuadro y siempre en el mismo lugar.
+
+    Recibe la imagen además del lienzo de dibujo porque el ícono se pega
+    (con su canal alfa), no se dibuja con primitivas.
+    """
     f = fuente(F_BOLD, 40)
     txt_a, txt_b = "MV SQL ", "NLP"
-    ancho = 34 + 16 + d.textlength(txt_a, font=f) + d.textlength(txt_b, font=f)
-    x = (W - ancho) / 2
-    rayo(d, x, y - 4, 44, AMBAR)
-    x += 34 + 16
+    ancho = lado + 16 + d.textlength(txt_a, font=f) + d.textlength(txt_b, font=f)
+    x = int((W - ancho) / 2)
+    try:
+        icono = Image.open(ICONO).convert("RGBA").resize((lado, lado), Image.LANCZOS)
+        img.paste(icono, (x, y - 4), icono)
+    except OSError:
+        # Sin el archivo, mejor el logotipo solo que un cuadro roto.
+        pass
+    x += lado + 16
     d.text((x, y), txt_a, font=f, fill=BLANCO)
     x += d.textlength(txt_a, font=f)
     d.text((x, y), txt_b, font=f, fill=AMBAR)
@@ -181,7 +191,7 @@ def cuadro(indice, total, titular, captura_path, pie=None, grande=False):
     centrados. Cada cosa tiene su franja: nunca se pisan entre sí."""
     img = fondo()
     d = ImageDraw.Draw(img)
-    marca(d)
+    marca(img, d)
 
     ARRIBA, ABAJO = 230, 1780          # franja utilizable (logo arriba, puntos abajo)
     f_tit = fuente(F_BOLD, 76 if grande else 52)
@@ -328,6 +338,21 @@ def main():
         destino], check=True)
 
     print(f"\n✓ {destino}  ({sum(duraciones):.0f}s)")
+
+    # 3) el poster (lo que se ve antes de darle play) es el PRIMER CUADRO
+    # de este mismo video.
+    #
+    # Antes había un solo video-poster.png para los tres idiomas, y era la
+    # og-image horizontal (1200x630) metida a la fuerza en un marco
+    # vertical: el texto quedaba cortado a mitad de palabra ("MV SQL NL|",
+    # "Tu base d|"). Generarlo acá, del cuadro que ya está armado en
+    # 1080x1920, hace imposible las dos cosas: no puede quedar recortado
+    # ni puede quedar en otro idioma que el del video que acompaña.
+    poster = os.path.join(os.path.dirname(destino) or ".",
+                          f"poster_{idioma}.png")
+    subprocess.run([ffmpeg(), "-y", "-v", "error", "-i", destino,
+                    "-frames:v", "1", "-vf", "scale=540:960", poster], check=True)
+    print(f"✓ {poster}")
 
 
 if __name__ == "__main__":

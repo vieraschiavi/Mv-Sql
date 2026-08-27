@@ -1,17 +1,21 @@
 # 🎬 Video de demo — cómo se regenera
 
-> ⚠️ **Pendiente de regenerar.** El cierre del guion cambió (antes decía
-> "tus datos nunca salen de tu red", que era impreciso: el análisis manda
-> una muestra del resultado — ver `app-python/tests/test_privacidad.py`).
-> `guion.py` ya dice lo correcto, pero los `web/assets/video/demo_*.mp4`
-> publicados todavía tienen la narración vieja. Regenerarlos corriendo los
-> pasos de abajo en una máquina con salida a internet directa (edge-tts usa
-> WebSockets, que no pasan por proxies corporativos). Borrar este aviso al
-> regenerarlos.
-
 Los tres videos de la landing (`web/assets/video/demo_es.mp4`, `demo_en.mp4`,
 `demo_pt.mp4`) no se editan a mano: se generan desde acá. Si cambia la app o
 cambia el mensaje comercial, se corre esto y quedan los tres al día.
+
+**El poster sale del mismo comando.** `armar.py` guarda además
+`web/assets/video/poster_<idioma>.png`, que es el primer cuadro del video
+que acaba de armar. Antes había un único `video-poster.png` para los tres
+idiomas — y era la og-image horizontal metida en un marco vertical, así que
+el texto salía cortado a mitad de palabra. Generarlo acá hace imposible que
+se vuelva a descuadrar o a quedar en otro idioma que el del video.
+
+**Sobre el proxy:** `edge-tts` habla por WebSocket y falla la verificación
+TLS detrás del proxy del entorno. `armar.py` ya lo resuelve agregando la CA
+de `/root/.ccr/ca-bundle.crt` al bundle de `certifi` al importarse, así que
+no hace falta salida directa a internet. Si el servicio de voz devuelve
+`NoAudioReceived`, es transitorio: reintentar el idioma que falló.
 
 **Los tres videos son distintos de verdad:** la interfaz de la app se graba en
 cada idioma, no solo la narración. Un prospecto brasileño no ve una pantalla en

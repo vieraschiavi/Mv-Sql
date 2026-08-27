@@ -397,7 +397,7 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
   interfaz en tu idioma: pregunta, SQL con CTEs validado, intervalo de confianza, tabla, gráfico, relación entre variables,
   auditoría y permisos por usuario.</p>
   <div class="vidwrap">
-    <video id="demoVideo" controls preload="metadata" playsinline poster="/assets/video-poster.png" aria-label="Video demo de MV SQL NLP" style="width:100%;display:block;background:#0E1117;aspect-ratio:9/16">
+    <video id="demoVideo" controls preload="metadata" playsinline poster="/assets/video/poster_es.png" aria-label="Video demo de MV SQL NLP" style="width:100%;display:block;background:#0E1117;aspect-ratio:9/16">
       <source id="demoSrc" src="/assets/video/demo_es.mp4" type="video/mp4">
       Tu navegador no soporta la reproducción de video HTML5.
     </video>
@@ -865,6 +865,11 @@ function setLang(lang){
 document.querySelectorAll('.lang button').forEach(function(b){b.addEventListener('click',function(){setLang(b.getAttribute('data-lang'));});});
 
 // Video narrado por idioma: demo_es.mp4 / demo_en.mp4 / demo_pt.mp4
+// El poster acompaña al video: es el primer cuadro de ESE video (lo genera
+// tools/video/armar.py). Antes había un solo poster para los tres idiomas,
+// y encima era la og-image horizontal encajada en un marco vertical, así
+// que el texto salía cortado a mitad de palabra ("MV SQL NL|") — y es lo
+// primero que ve el visitante, antes de darle play.
 function cambiarVideo(lang){
   var src=document.getElementById('demoSrc');
   var vid=document.getElementById('demoVideo');
@@ -872,7 +877,11 @@ function cambiarVideo(lang){
   var nuevo='/assets/video/demo_'+lang+'.mp4';
   if(src.getAttribute('src')===nuevo)return;
   fetch(nuevo,{method:'HEAD'}).then(function(r){
-    if(r.ok){src.setAttribute('src',nuevo);vid.load();}
+    if(r.ok){
+      src.setAttribute('src',nuevo);
+      vid.setAttribute('poster','/assets/video/poster_'+lang+'.png');
+      vid.load();
+    }
   }).catch(function(){});
 }
 
@@ -918,7 +927,30 @@ function pintarPaisPrecios(){
   var qs=new URLSearchParams(location.search).get('lang');
   var langGuardado=null;
   try{langGuardado=localStorage.getItem('mvsql_lang');}catch(e){}
-  var lang=(qs&&I18N[qs])?qs:(langGuardado&&langGuardado!=='es'?langGuardado:'es');
+  // Idioma del navegador. Hasta acá el sitio servía castellano a TODO el
+  // mundo: un visitante de Estados Unidos o de Brasil entraba y le
+  // aparecía la página en castellano aunque existieran las tres
+  // versiones. Peor que quedar en el idioma equivocado: Chrome le ofrece
+  // traducirla y la traducción automática destroza los nombres de los
+  // planes ("hasta 5 puestos" -> "hasta 5 postes", "Profesional" ->
+  // "Professional"), que es justo lo que el prospecto ve antes de pagar.
+  function idiomaDelNavegador(){
+    var lista=(navigator.languages&&navigator.languages.length)
+      ? navigator.languages : [navigator.language||''];
+    for(var i=0;i<lista.length;i++){
+      var base=String(lista[i]||'').toLowerCase().split('-')[0];
+      if(base==='es'||base==='en'||base==='pt')return base;
+    }
+    return null;   // idioma que no hablamos: se cae al castellano
+  }
+  // Prioridad: lo que pidió explícitamente en la URL > lo que ya eligió
+  // antes en el selector > el idioma de su navegador > castellano.
+  // El guardado se respeta aunque sea 'es': si alguien con el navegador
+  // en inglés eligió castellano a mano, no se lo volvemos a cambiar.
+  var lang='es';
+  if(qs&&I18N[qs])lang=qs;
+  else if(langGuardado&&(langGuardado==='es'||I18N[langGuardado]))lang=langGuardado;
+  else lang=idiomaDelNavegador()||'es';
   if(lang!=='es')setLang(lang); else pintarPaisPrecios();
 })();
 
