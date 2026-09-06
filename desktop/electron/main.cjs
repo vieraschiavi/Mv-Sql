@@ -5,6 +5,14 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
+// VA PRIMERO, antes de cualquier módulo que escriba en disco y antes de
+// que la app esté lista: en la build portable esto manda los datos a una
+// carpeta al lado del .exe en vez de %APPDATA%. Después de este punto
+// Electron ya abrió archivos en la ruta vieja, y moverla deja la mitad de
+// los datos de cada lado. Ver services/rutas.cjs.
+const rutas = require("./services/rutas.cjs");
+rutas.configurarCarpetaDatos(app);
+
 const db = require("./services/db.cjs");
 const engine = require("./services/engine.cjs");
 const store = require("./services/store.cjs");

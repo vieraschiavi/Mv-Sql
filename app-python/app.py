@@ -40,6 +40,7 @@ import auditoria
 import cuadernos
 import equipo
 import esquema_visual
+import frescura
 import guardadas
 
 # ──────────────────────────────────────────────────────────────
@@ -159,6 +160,28 @@ T = {
         "plan_no_disponible": "Este motor no expone el plan de ejecución desde acá.",
         "plan_pie": "Lectura del plan que devuelve tu motor de base de datos. No se ejecutó la consulta de nuevo.",
         "diagrama": "Diagrama de relaciones", "diagrama_tablas": "Tablas a mostrar",
+        # Panel de frescura: cuándo se cargó por última vez cada tabla.
+        "fr_titulo": "Frescura de los datos",
+        "fr_ayuda": "Última carga de cada tabla del esquema. Una consulta impecable "
+                    "sobre una tabla que no se actualiza hace cinco días devuelve un "
+                    "número impecable y equivocado.",
+        "fr_frecuencia": "Frecuencia de carga esperada",
+        "fr_diaria": "Diaria", "fr_semanal": "Semanal", "fr_mensual": "Mensual",
+        "fr_revisar": "Revisar ahora",
+        "fr_corriendo": "Consultando la última carga de cada tabla…",
+        "fr_tabla": "Tabla", "fr_columna": "Columna de fecha",
+        "fr_ultima": "Última carga", "fr_antiguedad": "Antigüedad",
+        "fr_filas": "Filas", "fr_estado": "Estado",
+        "fr_al_dia": "Al día", "fr_atrasada": "Atrasada",
+        "fr_sin_fecha": "Sin fecha", "fr_error": "Error", "fr_futura": "Fecha futura",
+        "fr_aprox": "aproximada",
+        "fr_aprox_ayuda": "La columna es de fecha, pero su nombre no indica que sea "
+                          "una marca de carga: tomalo como referencia, no como dato firme.",
+        "fr_sin_conexion": "Conectate a una base para ver la frescura de sus tablas.",
+        "fr_nada": "Ninguna tabla del esquema tiene una columna de fecha, así que no "
+                   "hay de dónde deducir cuándo se cargó.",
+        "fr_nota_futura": "Hay tablas con fecha posterior a hoy: revisá el reloj del "
+                          "servidor o si la carga usa fecha proyectada.",
         "diagrama_pie": "Cada línea es una relación real entre tablas (clave foránea).",
         "diagrama_rel": "Relaciones detectadas", "diagrama_desde": "Desde",
         "diagrama_col": "Columna", "diagrama_hacia": "Hacia", "diagrama_col_dest": "Columna destino",
@@ -273,6 +296,27 @@ T = {
         "plan_no_disponible": "This engine doesn't expose the execution plan from here.",
         "plan_pie": "Reading of the plan your database engine returned. The query was not run again.",
         "diagrama": "Relationship diagram", "diagrama_tablas": "Tables to show",
+        "fr_titulo": "Data freshness",
+        "fr_ayuda": "Last load of every table in the schema. A flawless query against "
+                    "a table that hasn't been refreshed in five days returns a flawless, "
+                    "wrong number.",
+        "fr_frecuencia": "Expected load frequency",
+        "fr_diaria": "Daily", "fr_semanal": "Weekly", "fr_mensual": "Monthly",
+        "fr_revisar": "Check now",
+        "fr_corriendo": "Reading the last load of each table…",
+        "fr_tabla": "Table", "fr_columna": "Date column",
+        "fr_ultima": "Last load", "fr_antiguedad": "Age",
+        "fr_filas": "Rows", "fr_estado": "Status",
+        "fr_al_dia": "Up to date", "fr_atrasada": "Stale",
+        "fr_sin_fecha": "No date", "fr_error": "Error", "fr_futura": "Future date",
+        "fr_aprox": "approximate",
+        "fr_aprox_ayuda": "The column is a date, but its name doesn't suggest it marks "
+                          "a load: treat it as a hint, not a hard fact.",
+        "fr_sin_conexion": "Connect to a database to see how fresh its tables are.",
+        "fr_nada": "No table in the schema has a date column, so there is nothing to "
+                   "infer the load time from.",
+        "fr_nota_futura": "Some tables have a date later than today: check the server "
+                          "clock, or whether the load uses a projected date.",
         "diagrama_pie": "Each line is a real relationship between tables (foreign key).",
         "diagrama_rel": "Relationships found", "diagrama_desde": "From",
         "diagrama_col": "Column", "diagrama_hacia": "To", "diagrama_col_dest": "Target column",
@@ -387,6 +431,27 @@ T = {
         "plan_no_disponible": "Este motor não expõe o plano de execução daqui.",
         "plan_pie": "Leitura do plano que seu motor de banco devolveu. A consulta não foi executada de novo.",
         "diagrama": "Diagrama de relações", "diagrama_tablas": "Tabelas a mostrar",
+        "fr_titulo": "Atualidade dos dados",
+        "fr_ayuda": "Última carga de cada tabela do esquema. Uma consulta impecável "
+                    "sobre uma tabela que não é atualizada há cinco dias devolve um "
+                    "número impecável e errado.",
+        "fr_frecuencia": "Frequência de carga esperada",
+        "fr_diaria": "Diária", "fr_semanal": "Semanal", "fr_mensual": "Mensal",
+        "fr_revisar": "Verificar agora",
+        "fr_corriendo": "Consultando a última carga de cada tabela…",
+        "fr_tabla": "Tabela", "fr_columna": "Coluna de data",
+        "fr_ultima": "Última carga", "fr_antiguedad": "Idade",
+        "fr_filas": "Linhas", "fr_estado": "Estado",
+        "fr_al_dia": "Em dia", "fr_atrasada": "Atrasada",
+        "fr_sin_fecha": "Sem data", "fr_error": "Erro", "fr_futura": "Data futura",
+        "fr_aprox": "aproximada",
+        "fr_aprox_ayuda": "A coluna é de data, mas o nome não indica que seja uma marca "
+                          "de carga: use como referência, não como dado firme.",
+        "fr_sin_conexion": "Conecte-se a um banco para ver a atualidade das tabelas.",
+        "fr_nada": "Nenhuma tabela do esquema tem coluna de data, então não há de onde "
+                   "deduzir quando foi carregada.",
+        "fr_nota_futura": "Há tabelas com data posterior a hoje: verifique o relógio do "
+                          "servidor ou se a carga usa data projetada.",
         "diagrama_pie": "Cada linha é uma relação real entre tabelas (chave estrangeira).",
         "diagrama_rel": "Relações encontradas", "diagrama_desde": "De",
         "diagrama_col": "Coluna", "diagrama_hacia": "Para", "diagrama_col_dest": "Coluna destino",
@@ -1441,6 +1506,74 @@ st.markdown('<span class="mv-badge">SELECT-only</span>'
             '<span class="mv-badge">Multi-IA</span>'
             '<span class="mv-badge">ES · EN · PT</span>', unsafe_allow_html=True)
 st.write("")
+
+# ── Frescura de los datos ───────────────────────────────────────
+# Va en el área principal y no en la barra lateral porque es una tabla de
+# seis columnas: en la lateral entra apretada y se vuelve ilegible. Va
+# colapsado, así no le roba lugar a lo que la gente viene a hacer (hacer
+# una pregunta) y está a un clic cuando hace falta.
+#
+# Corre solo al apretar el botón: son N consultas contra la base del
+# cliente, una por tabla. Hacerlo en cada render convertiría abrir la app
+# en un barrido del esquema entero.
+with st.expander(f"{t['fr_titulo']}"):
+    st.caption(t["fr_ayuda"])
+    if not ss.motor:
+        st.info(t["fr_sin_conexion"])
+    else:
+        _FREQ = {"diaria": t["fr_diaria"], "semanal": t["fr_semanal"],
+                 "mensual": t["fr_mensual"]}
+        _f1, _f2 = st.columns([2, 1])
+        _frec = _f1.selectbox(t["fr_frecuencia"], list(_FREQ.keys()),
+                              format_func=lambda k: _FREQ[k], key="fr_frec")
+        _f2.write("")
+        if _f2.button(t["fr_revisar"], key="fr_btn", use_container_width=True):
+            with st.spinner(t["fr_corriendo"]):
+                # El catálogo ya viene recortado por rol más arriba, así que
+                # el panel no puede revelar una tabla que el usuario no
+                # tendría por qué saber que existe.
+                ss.frescura = frescura.analizar(ss.motor.cx, ss.motor.catalogo,
+                                                frecuencia=_frec)
+
+        _filas = ss.get("frescura")
+        if _filas is not None:
+            if not _filas:
+                st.info(t["fr_nada"])
+            else:
+                _ETIQ = {"al_dia": t["fr_al_dia"], "atrasada": t["fr_atrasada"],
+                         "sin_fecha": t["fr_sin_fecha"], "error": t["fr_error"],
+                         "futura": t["fr_futura"]}
+                _r = frescura.resumen(_filas)
+                _m = st.columns(4)
+                _m[0].metric(t["fr_al_dia"], _r["al_dia"])
+                _m[1].metric(t["fr_atrasada"], _r["atrasada"])
+                _m[2].metric(t["fr_sin_fecha"], _r["sin_fecha"])
+                _m[3].metric(t["fr_error"], _r["error"])
+                if _r["futura"]:
+                    st.warning(t["fr_nota_futura"])
+
+                _vista = []
+                for _fila in _filas:
+                    _col = _fila["columna"] or "—"
+                    if _col != "—" and not _fila["columna_confiable"]:
+                        _col = f"{_col} ({t['fr_aprox']})"
+                    _vista.append({
+                        t["fr_estado"]: _ETIQ.get(_fila["estado"], _fila["estado"]),
+                        t["fr_tabla"]: _fila["tabla"],
+                        t["fr_ultima"]: (_fila["ultima_carga"].strftime("%Y-%m-%d %H:%M")
+                                         if _fila["ultima_carga"] else "—"),
+                        t["fr_antiguedad"]: frescura.antiguedad_legible(_fila["horas"]),
+                        t["fr_columna"]: _col,
+                        t["fr_filas"]: fmt_numero(_fila["n_filas"], dec=0)
+                                       if _fila["n_filas"] is not None else "—",
+                    })
+                st.dataframe(pd.DataFrame(_vista), use_container_width=True,
+                             hide_index=True, height=min(420, 40 + 35 * len(_vista)))
+                if any(not f["columna_confiable"] and f["columna"] for f in _filas):
+                    st.caption(t["fr_aprox_ayuda"])
+                for _fila in _filas:
+                    if _fila["error"]:
+                        st.caption(f"{_fila['tabla']}: {_fila['error']}")
 
 st.markdown(f"**{t['ejemplos']}:**")
 cols_ej = st.columns(4)
