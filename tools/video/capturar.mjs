@@ -48,17 +48,20 @@ const L = {
         grafico: 'Gráfico', analisis: 'Análisis', explorar: 'Explorar',
         equipo: /Equipo y permisos/, ejemplo: /Cuánto cobramos por mes/,
         fuente: 'Analizar', usuario: 'Usuario', entrar: /^Entrar$/,
-        auditoria: 'Auditoría' },
+        auditoria: 'Auditoría',
+        frescura: /Frescura de los datos/, revisar: /Revisar ahora/ },
   en: { motor: 'Engine', conectar: /Connect/, consultar: /Run/, tabla: 'Table',
         grafico: 'Chart', analisis: 'Analysis', explorar: 'Explore',
         equipo: /Team and permissions/, ejemplo: /Monthly collections/,
         fuente: 'Analyze', usuario: 'User', entrar: /^Sign in$/,
-        auditoria: 'Audit' },
+        auditoria: 'Audit',
+        frescura: /Data freshness/, revisar: /Check now/ },
   pt: { motor: 'Motor', conectar: /Conectar/, consultar: /Consultar/, tabla: 'Tabela',
         grafico: 'Gráfico', analisis: 'Análise', explorar: 'Explorar',
         equipo: /Equipe e permiss/, ejemplo: /Quanto cobramos por m/,
         fuente: 'Analisar', usuario: 'Usuário', entrar: /^Entrar$/,
-        auditoria: 'Auditoria' },
+        auditoria: 'Auditoria',
+        frescura: /Atualidade dos dados/, revisar: /Verificar agora/ },
 }[IDIOMA];
 
 fs.mkdirSync(SALIDA, { recursive: true });
@@ -189,6 +192,23 @@ await tirar('explorar', main().locator('.js-plotly-plot').first());
 
 // 8) influencia de variables (SHAP: magnitud + dirección del efecto)
 await tirar('influencia', main().locator('.js-plotly-plot').last());
+
+// 8b) frescura: cuándo se cargó por última vez cada tabla. El panel vive
+// arriba de todo y arranca colapsado, así que hay que subir, abrirlo y
+// pedirle que consulte — no se llena solo (son N consultas contra la base).
+const panelFrescura = main().getByText(L.frescura).first();
+await panelFrescura.scrollIntoViewIfNeeded();
+await panelFrescura.click();
+await esperar(1500);
+const botonRevisar = main().getByRole('button', { name: L.revisar }).first();
+await botonRevisar.click();
+await esperar(9000);
+await sinExcepciones('frescura');
+// Se le pasa el ENCABEZADO del panel, no la tabla: tirar() alinea al ras
+// de arriba lo que reciba y después fotografía el alto completo. Con la
+// tabla como ancla, las métricas de arriba ("Al día / Atrasada") quedaban
+// cortadas fuera de cuadro; con el encabezado entra el panel entero.
+await tirar('frescura', panelFrescura);
 
 // 9) auditoría: quién consultó qué (lo que un chatbot no registra)
 await pg.getByRole('tab', { name: new RegExp(L.auditoria) }).first().click();

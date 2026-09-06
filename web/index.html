@@ -433,6 +433,16 @@ SELECT mes, SUM(monto) AS total_cobrado ...</div>
       el análisis usa una muestra del resultado. Con el <b>modo privacidad estricta</b> (un clic) no viaja ningún valor
       real: solo nombres. Con Ollama local, nada sale de tu máquina. Conexión de solo lectura, siempre. Detalle completo
       abajo, en <a href="#seguridad" style="color:inherit">Seguridad</a>.</p></div>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-target"/></svg></div><h3 data-i="f7t">¿Están al día los datos que estás consultando?</h3>
+      <p data-i="f7p">Una consulta impecable sobre una tabla que no se carga hace cinco días devuelve un número
+      impecable y equivocado. El panel de <b>frescura</b> muestra, tabla por tabla, cuándo fue su última carga, qué
+      antigüedad tiene y si eso entra en la frecuencia esperada — diaria, semanal o mensual. Detecta solo la columna
+      de fecha de carga y, cuando no puede afirmarlo, lo marca como aproximado en vez de inventarlo.</p></div>
+    <div class="feat"><div class="ic"><svg class="i"><use href="#i-monitor"/></svg></div><h3 data-i="f8t">Instalada o portable, según de quién sea la máquina</h3>
+      <p data-i="f8p">En tu PC, se instala normal: sin permisos de administrador y eligiendo vos la carpeta. En la VM o
+      la laptop de un cliente, usás la versión <b>portable</b>: se copia y se ejecuta, y guarda todo —conexiones,
+      licencia, caché— al lado del propio archivo. Terminás el trabajo, borrás esa carpeta y en la máquina del cliente
+      no queda nada tuyo ni suyo.</p></div>
     <div class="feat"><div class="ic"><svg class="i"><use href="#i-plug"/></svg></div><h3 data-i="f6t">Bonus: Claude Desktop directo a tu base (MCP)</h3>
       <p data-i="f6p">Incluye un instalador de un clic que conecta tu Claude Desktop a tu base por MCP: le preguntás a
       Claude y consulta la base solo, desde el chat.</p></div>
@@ -689,6 +699,8 @@ var I18N={
     s6t:"Certificações?",
     s6p:"Ainda não temos certificações formais, e preferimos dizer isso a esquivar. A arquitetura reduz o que haveria para certificar: nunca recebemos nem armazenamos os seus dados. O código da barreira somente leitura e da validação é público e auditável no GitHub.",
     f6t:"Bônus: Claude Desktop direto no seu banco (MCP)",f6p:"Inclui um instalador de um clique que conecta seu Claude Desktop ao seu banco via MCP: você pergunta ao Claude e ele consulta o banco sozinho, do chat.",
+    f7t:"Os dados que você está consultando estão atualizados?",f7p:"Uma consulta impecável sobre uma tabela que não é carregada há cinco dias devolve um número impecável e errado. O painel de <b>atualidade</b> mostra, tabela por tabela, quando foi a última carga, que idade tem e se isso entra na frequência esperada — diária, semanal ou mensal. Detecta sozinho a coluna de data de carga e, quando não pode afirmar, marca como aproximado em vez de inventar.",
+    f8t:"Instalada ou portátil, conforme de quem seja a máquina",f8p:"No seu PC, instala normal: sem permissões de administrador e com você escolhendo a pasta. Na VM ou no notebook de um cliente, use a versão <b>portátil</b>: copia e executa, e guarda tudo —conexões, licença, cache— ao lado do próprio arquivo. Termina o trabalho, apaga essa pasta e na máquina do cliente não fica nada seu nem dele.",
     svtag:"O mais pedido",svt:"Implementação no seu banco de dados ou ERP",
     svp:"Levantamento do seu esquema, conexão somente leitura, mapeamento das tabelas que importam, as consultas de negócio que sua equipe usa toda semana já carregadas, e treinamento da equipe. Você sai rodando, não com um instalador.",
     sva:"SQL Server, MySQL, PostgreSQL, SQLite ou arquivos",svb:"Consultas do seu negócio, com o seu vocabulário",svc:"Inclui 3 meses de licença Profissional",
@@ -763,6 +775,8 @@ var I18N={
     s6t:"Certifications?",
     s6p:"We don't hold formal certifications yet, and we'd rather tell you than dodge it. The architecture shrinks what there would be to certify: we never receive or store your data. The code for the read-only barrier and the validation is public and auditable on GitHub.",
     f6t:"Bonus: Claude Desktop straight to your database (MCP)",f6p:"Includes a one-click installer that connects your Claude Desktop to your database via MCP: you ask Claude and it queries the database itself, from chat.",
+    f7t:"Is the data you're querying actually up to date?",f7p:"A flawless query against a table that hasn't been loaded in five days returns a flawless, wrong number. The <b>freshness</b> panel shows, table by table, when it was last loaded, how old that is, and whether it fits the expected frequency — daily, weekly or monthly. It finds the load-date column on its own and, when it can't be sure, marks it as approximate instead of making it up.",
+    f8t:"Installed or portable, depending on whose machine it is",f8p:"On your own PC it installs normally: no admin rights, and you pick the folder. On a client's VM or laptop, use the <b>portable</b> build: copy it, run it, and it keeps everything —connections, licence, cache— next to the file itself. When the job is done you delete that folder and nothing of yours or theirs is left on their machine.",
     svtag:"Most requested",svt:"Implementation on your database or ERP",
     svp:"We survey your schema, set up the read-only connection, map the tables that matter, load the business questions your team asks every week, and train the team. You end up running, not with an installer.",
     sva:"SQL Server, MySQL, PostgreSQL, SQLite or files",svb:"Your business questions, in your own vocabulary",svc:"Includes 3 months of the Professional license",
