@@ -79,6 +79,13 @@ GUION = {
         ("influencia", "Y cuál pesa de verdad sobre cuál",
          "Y con SHAP ves cuánto pesa cada variable sobre la que te importa, y "
          "para qué lado: verde la sube, rojo la baja."),
+        # Va DESPUÉS del análisis y ANTES de la auditoría a propósito: primero
+        # se muestra la respuesta, y recién ahí la pregunta incómoda de si los
+        # datos que la produjeron estaban al día.
+        ("frescura", "¿Y estaban al día esos datos?",
+         "Una consulta impecable sobre una tabla que no se carga hace cinco días "
+         "te devuelve un número impecable y equivocado. Acá ves, tabla por tabla, "
+         "cuándo fue su última carga y si eso entra en lo que esperabas."),
         ("auditoria", "Quién consultó qué, con fecha y usuario",
          "Todo lo que se consulta queda registrado: quién preguntó qué, cuándo, "
          "y qué intentos se rechazaron. Exportable para auditoría."),
@@ -119,6 +126,10 @@ GUION = {
         ("influencia", "And which one actually drives which",
          "And with SHAP you see how much each variable weighs on the one you care "
          "about, and in which direction: green pushes it up, red pulls it down."),
+        ("frescura", "And was that data even up to date?",
+         "A flawless query against a table that hasn't been loaded in five days "
+         "gives you a flawless, wrong number. Here you see, table by table, when "
+         "each one was last loaded and whether that matches what you expected."),
         ("auditoria", "Who queried what, with date and user",
          "Everything queried is logged: who asked what, when, and which attempts "
          "were rejected. Exportable for audit."),
@@ -155,6 +166,10 @@ GUION = {
         ("influencia", "E qual realmente pesa sobre qual",
          "E com SHAP você vê o quanto cada variável pesa sobre aquela que te "
          "importa, e para que lado: verde aumenta, vermelho reduz."),
+        ("frescura", "E esses dados estavam atualizados?",
+         "Uma consulta impecável sobre uma tabela que não é carregada há cinco "
+         "dias te devolve um número impecável e errado. Aqui você vê, tabela por "
+         "tabela, quando foi a última carga e se isso bate com o que esperava."),
         ("auditoria", "Quem consultou o quê, com data e usuário",
          "Tudo o que é consultado fica registrado: quem perguntou o quê, quando, "
          "e quais tentativas foram rejeitadas. Exportável para auditoria."),

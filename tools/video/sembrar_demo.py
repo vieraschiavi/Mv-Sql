@@ -66,6 +66,16 @@ def main():
     with open(os.path.join(APP, "licencia_mvsql.json"), "w", encoding="utf-8") as fh:
         json.dump(licencia, fh, ensure_ascii=False, indent=2)
     print("✓ licencia de créditos (para que no salga el aviso en cámara)")
+
+    # El EULA se acepta una vez por instalación y queda marcado en un
+    # archivo. Sin esto, en una máquina limpia la app abre en la pantalla
+    # del acuerdo, el capturador se queda esperando la barra lateral que
+    # nunca llega, y falla con un timeout que no dice nada del EULA.
+    # Pasó de verdad al regenerar los videos tras limpiar la escenografía.
+    import eula
+    eula.registrar_aceptacion()
+    print("✓ EULA aceptado (si no, la captura arranca en esa pantalla)")
+
     print(f"\nPIN del admin para la captura: {PIN_ADMIN}")
 
 
