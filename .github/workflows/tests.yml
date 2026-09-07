@@ -66,6 +66,16 @@ jobs:
         with:
           python-version: "3.11"
 
+      # instalador-nsis.test.js compila desktop/build/installer.nsh de verdad
+      # (no lo lee: lo compila) para probar que entra en el release. Sin
+      # makensis ese test se omite, y omitirse es justo lo que NO puede
+      # pasar en CI: el .nsh solo se compila de nuevo al armar un release,
+      # o sea que un error ahí se descubriría con el tag ya puesto. Por eso
+      # el test falla explícitamente si está en CI y no encuentra makensis
+      # — si alguien saca este paso, se entera acá y no en el release.
+      - name: Instalar NSIS (para compilar el instalador de escritorio)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq nsis
+
       - name: Instalar dependencias
         run: npm ci
 

@@ -85,6 +85,49 @@ copiá el `.exe` a una carpeta donde puedas escribir antes de abrirlo.
 
 ---
 
+## Si el instalador falla por espacio
+
+Error real, en la máquina de un cliente:
+
+```
+Extrayendo: error escribiendo al archivo
+C:\Users\Martin\AppData\Local\Temp\nsx4368.tmp\app-64.7z
+```
+
+Eso no es un problema del programa: es Windows quedándose sin lugar. Conviene
+saber por qué aparece nombrando `C:` aunque la instalación vaya a otra unidad.
+
+**Qué pasa.** Todo instalador de Windows se descomprime primero en la carpeta
+temporal del perfil (`%TEMP%`), que vive en la unidad donde está el usuario —
+casi siempre `C:` — y recién después copia los archivos a la carpeta que
+elegiste. Esa carpeta temporal **no la puede mover el instalador**: en NSIS
+`$TEMP` es una constante de solo lectura.
+
+**Qué cambió en 1.0.9.** El instalador usaba la temporal dos veces: le volcaba
+el paquete comprimido y además lo descomprimía entero ahí antes de copiarlo. En
+total pedía unos **440 MB** libres en `C:`. Ahora descomprime directo a la
+carpeta de instalación, así que pide unos **130 MB**. Y si ni eso hay, avisa
+antes de empezar — en tu idioma, diciendo qué unidad, cuánto hay libre y cuánto
+falta — en vez de fallar a mitad de camino con la ruta temporal en pantalla.
+
+**Las tres salidas, de menor a mayor esfuerzo:**
+
+1. **Liberar espacio en `C:`.** Con 200 MB alcanza. Papelera, `Descargas`, o
+   Configuración → Sistema → Almacenamiento → Archivos temporales.
+2. **Usar el `.zip` del programa.** En el mismo Release está
+   `MV-SQL-NLP-<versión>.zip`: lo descomprimís en la unidad que quieras y
+   ejecutás `MV SQL NLP.exe`. **No instala nada y no toca `C:`.** Es el mismo
+   programa completo, sin acceso directo ni entrada en el menú Inicio.
+3. **Apuntar `%TEMP%` a otra unidad.** Configuración → Sistema → Acerca de →
+   Configuración avanzada del sistema → Variables de entorno → `TEMP` y `TMP`.
+   Es lo más invasivo y lo último que probaría.
+
+**Si `C:` tiene lugar de sobra y falla igual**, no es espacio: casi siempre es
+el antivirus interrumpiendo la extracción. Agregá el instalador a las
+excepciones, o usá el `.zip` del punto 2.
+
+---
+
 ## Preguntas que aparecen siempre
 
 **¿La portable tiene menos funciones?**
