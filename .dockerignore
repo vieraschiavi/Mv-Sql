@@ -1,0 +1,48 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+#
+# El build usa la RAÍZ del repo como contexto (servidor/docker-compose.yml:
+# context: ..), porque la imagen necesita app-python/ y tools/. Sin este
+# archivo, Docker le manda al daemon el repo entero — node_modules, la
+# historia de git, los instaladores compilados: cientos de MB que no entran
+# en la imagen pero que igual se copian en cada build, en el servidor de un
+# cliente y por su red.
+#
+# Y hay algo peor que lento: TODO lo que entra al contexto puede terminar en
+# una capa de la imagen por un COPY distraído. Las exclusiones de secretos de
+# más abajo no son prolijidad, son la razón principal de este archivo.
+
+# ── Nunca, bajo ningún concepto ──────────────────────────────────────────
+.env
+.env.*
+*.pem
+*.key
+licencia_owner.json
+desktop/licencia_owner.json
+owner/dist/
+paquete/
+app-python/licencia_mvsql.json
+app-python/.mvsql_trial.json
+app-python/equipo.json
+app-python/auditoria.db
+
+# ── Peso muerto ──────────────────────────────────────────────────────────
+.git/
+.github/
+**/node_modules/
+desktop/
+web/
+installer/
+tools/video/
+docs/
+graft/
+.claude/
+**/__pycache__/
+**/*.pyc
+**/.venv/
+servidor/.venv/
+**/.DS_Store
+
+# Ojo: tools/ NO está excluida entera (solo tools/video/), justamente porque
+# la imagen copia tools/generar_conversor_owner.py. Si algún día se excluye
+# tools/ completa, hay que re-incluir ese archivo con "!tools/generar_..."
+# o el build falla recién en el COPY, en el servidor del cliente.

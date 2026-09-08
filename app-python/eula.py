@@ -20,8 +20,12 @@ import json
 import os
 from datetime import datetime, timezone
 
+import rutas
+
 _DIR_APP = os.path.dirname(os.path.abspath(__file__))
-RUTA_MARCA_EULA = os.path.join(_DIR_APP, ".eula_aceptado")
+# El TEXTO del EULA es código fuente (viaja con la app); la marca de
+# aceptación es estado del usuario y va con el resto del estado.
+RUTA_MARCA_EULA = rutas.en_datos(".eula_aceptado")
 
 _ARCHIVO_EULA = {"es": "EULA_ES.txt", "en": "EULA_EN.txt", "pt": "EULA_PT.txt"}
 

@@ -1,22 +1,29 @@
 # © 2026 Martín Viera. Todos los derechos reservados.
 
-# Las dos formas de instalar, y cuándo usar cada una
+# Las formas de instalar, y cuándo usar cada una
 
-No son dos versiones del producto: es el **mismo programa** instalado de dos
-maneras distintas, según de quién sea la máquina.
+No son versiones distintas del producto: es el **mismo programa** puesto a
+correr de tres maneras, según **de quién sea la máquina y de quién sean los
+datos**.
 
-| | **A · Instalada** | **B · Portable** |
-|---|---|---|
-| Para qué máquina | La tuya (o la del cliente que compró) | VM o laptop de un cliente donde sos consultor |
-| Ejemplo | Tu PC · la notebook del cliente que pagó la licencia | La VM de Conaprole · la laptop que te da Practia |
-| Necesita instalar | Sí (sin admin) | No: se copia y se ejecuta |
-| Necesita admin | **No** | **No** |
-| Dónde van los datos | `%APPDATA%\MV SQL NLP` | En una subcarpeta `datos-mvsql` **al lado del `.exe`** |
-| Al terminar | Queda instalada | **Borrás la carpeta y en esa máquina no queda nada** |
-| Sobrevive actualizaciones | Sí | Los datos viajan con la carpeta |
+| | **A · Instalada** | **B · Portable** | **C · En el servidor del cliente** |
+|---|---|---|---|
+| Para qué máquina | La tuya (o la del cliente que compró) | VM o laptop de un cliente donde sos consultor | Ninguna tuya: corre en infraestructura del cliente |
+| Ejemplo | Tu PC · la notebook del cliente que pagó | La VM de Conaprole · la laptop que te da Practia | Practia te pone en Conaprole y sus datos no pueden tocar tu laptop |
+| Necesita instalar | Sí (sin admin) | No: se copia y se ejecuta | **Nada en tu máquina**: entrás por el navegador |
+| Necesita admin | **No** | **No** | En el servidor, lo que pida el cliente |
+| Dónde van los datos | `%APPDATA%\MV SQL NLP` | Subcarpeta `datos-mvsql` **al lado del `.exe`** | **Un volumen del cliente. Nunca tocan tu máquina** |
+| Al terminar | Queda instalada | Borrás la carpeta y en esa máquina no queda nada | `docker compose down -v` y no queda nada en ningún lado |
 
-La diferencia que importa: **en la forma B no queda nada en la máquina del
-cliente.** No es una comodidad, es el punto entero.
+Las diferencias que importan, en una línea cada una:
+
+- **B** no deja nada en la máquina del cliente.
+- **C** no deja que los datos del cliente lleguen a la tuya — y eso es
+  estructural, no una promesa: la app corre allá y al navegador viaja HTML.
+
+Si tu laptop de trabajo no te deja instalar nada **y además** los datos del
+cliente no pueden pasar por ella, la única que sirve es la **C**: ver
+[MODO_SERVIDOR.md](MODO_SERVIDOR.md).
 
 ---
 
@@ -85,6 +92,37 @@ copiá el `.exe` a una carpeta donde puedas escribir antes de abrirlo.
 
 ---
 
+## C · En el servidor del cliente (los datos no llegan a tu máquina)
+
+El caso que ni A ni B resuelven: tu laptop de trabajo no te deja instalar nada
+**y** los datos del cliente no pueden pasar por ella.
+
+La app corre en un servidor, VM o contenedor **del cliente**; vos entrás solo
+con el navegador. Al navegador viaja HTML, así que la base nunca sale de la
+infraestructura del cliente. Al terminar, un comando borra todo.
+
+```bash
+cd servidor && docker compose up -d --build
+docker compose exec mvsql python /app/preparar-propietario.py   # solo el dueño
+```
+
+Y desde tu laptop, un túnel y el navegador:
+
+```bash
+ssh -L 8791:127.0.0.1:8791 usuario@servidor-del-cliente
+```
+
+Hay también un camino sin Docker (`servidor/arrancar-sin-docker.sh`) para
+servidores donde pedir Docker abre un ticket de tres semanas.
+
+**Todo el detalle —qué queda dónde, cómo borrarlo, qué endurecer antes de
+abrirlo a la red del cliente, y lo que este modo NO resuelve— está en
+[MODO_SERVIDOR.md](MODO_SERVIDOR.md).** Vale leerlo entero antes de la primera
+visita: la mitad de ese documento son las preguntas que hace el área de
+seguridad del cliente.
+
+---
+
 ## Si el instalador falla por espacio
 
 Error real, en la máquina de un cliente:
@@ -130,17 +168,24 @@ excepciones, o usá el `.zip` del punto 2.
 
 ## Preguntas que aparecen siempre
 
-**¿La portable tiene menos funciones?**
-No. Es el mismo programa: mismos conectores, misma IA, mismo motor, misma
-barrera de solo lectura.
+**¿La portable o la del servidor tienen menos funciones?**
+No. Es el mismo programa en las tres: mismos conectores, misma IA, mismo motor,
+misma barrera de solo lectura.
 
-**¿Puedo usar la misma licencia en las dos?**
+**¿Puedo usar la misma licencia en las tres?**
 Sí. La licencia es tuya, no de la máquina. En la portable va dentro de
-`datos-mvsql\`.
+`datos-mvsql\`; en el modo servidor, en el volumen del cliente.
 
 **¿Y si el cliente quiere quedarse con el programa?**
-Ahí compra su licencia y usa la forma A en su máquina. La forma B es para
-cuando la máquina no es de quien la usa.
+Ahí compra su licencia y usa la forma A en su máquina. B y C son para cuando la
+máquina no es de quien la usa.
+
+**Mi laptop no me deja instalar NADA y el cliente no me da servidor ni VM.**
+Entonces no hay solución técnica, ni de este producto ni de ningún otro: un
+programa tiene que ejecutarse en algún lado. Eso se negocia antes de empezar el
+proyecto. Ver la primera sección de [MODO_SERVIDOR.md](MODO_SERVIDOR.md), que
+explica por qué pedir un contenedor en un servidor del cliente suele ser MÁS
+fácil de conseguir que permiso para instalar en la laptop corporativa.
 
 **¿Escribe algo en la base del cliente?**
 Nunca. Toda conexión se abre en modo solo lectura y el motor rechaza cualquier

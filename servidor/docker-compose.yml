@@ -1,0 +1,80 @@
+# © 2026 Martín Viera. Todos los derechos reservados.
+
+# MV SQL NLP en modo servidor — se levanta con:
+#
+#     cd servidor && docker compose up -d
+#
+# Y se apaga y se borra ENTERO, sin dejar rastro, con:
+#
+#     docker compose down -v      # la -v es la que borra los datos
+#
+# Esa segunda línea es el punto de todo esto: cuando termina el trabajo en
+# el cliente, un comando se lleva la app, las credenciales de su base, la
+# auditoría y todo lo demás. No hay nada que buscar a mano en ninguna PC.
+
+services:
+  mvsql:
+    build:
+      context: ..
+      dockerfile: servidor/Dockerfile
+      args:
+        # 0 si el cliente no usa SQL Server: la imagen baja ~100 MB y no
+        # hay que aceptar la EULA del driver de Microsoft.
+        SQLSERVER: ${MVSQL_SQLSERVER:-1}
+    image: mvsql-nlp-servidor:latest
+    container_name: mvsql-nlp
+
+    # ────────────────────────────────────────────────────────────────────
+    # A quién le abre la puerta
+    # ────────────────────────────────────────────────────────────────────
+    # Por defecto SOLO a 127.0.0.1 del servidor: nadie más en la red del
+    # cliente lo ve, ni siquiera para probar PINes. Desde la laptop se llega
+    # con un túnel SSH, que además viaja cifrado:
+    #
+    #     ssh -L 8791:127.0.0.1:8791 usuario@servidor-del-cliente
+    #     y después http://localhost:8791 en el navegador
+    #
+    # Para publicarlo en la red interna del cliente (si el equipo entero lo
+    # va a usar), en el .env:  MVSQL_BIND=0.0.0.0
+    # Antes de hacer eso hay que tener el equipo con PIN creado — si no,
+    # cualquiera de esa red entra a la base del cliente sin credencial.
+    # Ver docs/MODO_SERVIDOR.md, sección "Antes de abrirlo a la red".
+    ports:
+      - "${MVSQL_BIND:-127.0.0.1}:${MVSQL_PUERTO:-8791}:8791"
+
+    # ────────────────────────────────────────────────────────────────────
+    # Dónde quedan los datos del cliente
+    # ────────────────────────────────────────────────────────────────────
+    # Un volumen nombrado, en el disco del cliente. Todo lo que la app
+    # escribe cae acá y en ningún otro lado.
+    volumes:
+      - mvsql-datos:/datos
+
+    environment:
+      MVSQL_DATOS: /datos
+      TZ: ${TZ:-America/Montevideo}
+
+    # Las credenciales de la base del cliente NO van acá. Se cargan desde la
+    # pantalla de conexión de la app y quedan en el volumen, del lado del
+    # cliente. Un docker-compose.yml se commitea, se copia y se manda por
+    # chat; un secreto adentro se filtra solo.
+
+    restart: unless-stopped
+
+    # ────────────────────────────────────────────────────────────────────
+    # Contención
+    # ────────────────────────────────────────────────────────────────────
+    # La app es de SOLO LECTURA sobre la base del cliente. El contenedor
+    # acompaña esa postura: el sistema de archivos va montado de solo
+    # lectura salvo /datos y /tmp, y no puede ganar privilegios nuevos.
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/mvsql/.streamlit
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  mvsql-datos:
