@@ -27,9 +27,11 @@
  */
 const assert = require("assert");
 const fs = require("fs");
+const os = require("os");
 const path = require("path");
+const { spawnSync } = require("child_process");
 
-let pasadas = 0, falladas = 0;
+let pasadas = 0, falladas = 0, omitidas = 0;
 async function test(n, fn) {
   try { await fn(); console.log(`  ✓ ${n}`); pasadas++; }
   catch (e) { console.log(`  ✗ ${n}\n      ${e.message}`); falladas++; }
@@ -37,6 +39,7 @@ async function test(n, fn) {
 
 const RAIZ = path.join(__dirname, "..", "..");
 const NSH = path.join(RAIZ, "desktop", "build", "installer.nsh");
+const YML = path.join(RAIZ, "desktop", "electron-builder.yml");
 
 /** Headers de NSIS que definen cada macro ${...} que usamos. */
 const DUENO = {
@@ -92,6 +95,152 @@ const DUENO = {
       "NSIS compila la Function en el acto, así que llega tarde");
   });
 
-  console.log(`\n  ${pasadas} pasadas · ${falladas} falladas\n`);
+  // ==========================================================================
+  // El gate de verdad: compilarlo con makensis
+  // ==========================================================================
+  // Todo lo de arriba mira el texto del archivo. Eso alcanza para la regla
+  // que ya se rompió una vez (el !include faltante), pero no para lo que
+  // venga después. Acá se lo compila de verdad, en el mismo orden en que lo
+  // mete electron-builder: el .nsh PRIMERO, sin ningún !include previo que
+  // le regale contexto. Si no compila así, no compila en el release.
+  console.log("\n== installer.nsh compila con makensis ==");
+
+  const hayMakensis =
+    spawnSync("makensis", ["-VERSION"], { encoding: "utf8" }).status === 0;
+
+  if (!hayMakensis) {
+    // En CI esto es un error: el workflow instala nsis a propósito, así que
+    // si falta es que alguien sacó ese paso y el gate quedó apagado sin
+    // que nadie lo note. En una máquina de desarrollo sin nsis, se omite
+    // — pero se dice, y NO cuenta como pasada.
+    await test("makensis está disponible (CI lo instala en tests.yml)", () => {
+      assert.ok(!process.env.CI,
+        "no hay makensis en el PATH y esto es CI: revisá el paso " +
+        "'Instalar NSIS' de .github/workflows/tests.yml");
+    });
+    if (!process.env.CI) {
+      console.log("  – omitido: no hay makensis en esta máquina " +
+                  "(instalalo con: sudo apt-get install nsis)");
+      omitidas++;
+    }
+  } else {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mvsql-nsis-"));
+    // Los defines y la Var son EXACTAMENTE los que installer.nsh consume del
+    // contexto de electron-builder, y nada más. Si mañana usa uno nuevo sin
+    // protegerlo con !ifdef, acá revienta — que es el punto.
+    const guion = [
+      '!define VERSION "9.9.9"',
+      '!define APP_64_UNPACKED_SIZE "358400"',
+      "Var perUserInstallationFolder",
+      `!include "${NSH.replace(/\\/g, "\\\\")}"`,
+      `OutFile "${path.join(dir, "salida.exe").replace(/\\/g, "\\\\")}"`,
+      "Function .onInit",
+      "  !insertmacro customInit",
+      "FunctionEnd",
+      "Section",
+      "SectionEnd",
+    ].join("\n");
+    const nsi = path.join(dir, "harness.nsi");
+    fs.writeFileSync(nsi, guion, "utf8");
+
+    const r = spawnSync("makensis", [nsi], { encoding: "utf8" });
+    const salida = `${r.stdout || ""}${r.stderr || ""}`;
+
+    await test("compila sin errores incluido de primero, como lo mete electron-builder", () => {
+      assert.strictEqual(r.status, 0,
+        `makensis salió con ${r.status}:\n${salida.split("\n").slice(-25).join("\n")}`);
+    });
+
+    await test("no deja warnings propios (los de NSIS también rompen releases)", () => {
+      // El único warning esperable es del arnés, no del .nsh: la Var
+      // perUserInstallationFolder se declara acá y installer.nsh la lee
+      // pero nadie la escribe, así que NSIS avisa que "desperdicia memoria".
+      const warnings = salida.split("\n")
+        .filter((l) => /^\s*(warning|!warning)/i.test(l))
+        .filter((l) => !l.includes("perUserInstallationFolder"));
+      assert.deepStrictEqual(warnings, [],
+        `warnings inesperados:\n${warnings.join("\n")}`);
+    });
+
+    await test("el mensaje de espacio queda en el .exe en los TRES idiomas", () => {
+      // Se lee el binario compilado, no el fuente: es la única forma de
+      // saber que los acentos sobreviven al pasaje a UTF-16 del instalador
+      // Unicode. Un mensaje con "Nao ha espaco" pasaría cualquier chequeo
+      // sobre el .nsh y quedaría feo en la pantalla del cliente.
+      const sinComp = path.join(dir, "sincomp.nsi");
+      fs.writeFileSync(sinComp, `SetCompress off\n${guion}`, "utf8");
+      const c = spawnSync("makensis", [sinComp], { encoding: "utf8" });
+      assert.strictEqual(c.status, 0, "no compiló la variante sin comprimir");
+
+      const exe = fs.readFileSync(path.join(dir, "salida.exe"));
+      for (const [idioma, frase] of Object.entries({
+        es: "No hay espacio suficiente en la unidad",
+        en: "Not enough free space on drive",
+        pt: "Não há espaço suficiente na unidade",
+      })) {
+        assert.ok(exe.includes(Buffer.from(frase, "utf16le")),
+          `falta el aviso en ${idioma}: "${frase}"`);
+      }
+    });
+
+    await test("el chequeo de espacio está ENGANCHADO a customInit, no solo escrito", () => {
+      // Sin esto el archivo pasaría todos los tests de arriba con la macro
+      // MvsqlChequearEspacio definida y jamás insertada: la Function del
+      // aviso se compila igual y sus tres mensajes quedan igual dentro del
+      // .exe, así que el test de los idiomas daría verde con el chequeo
+      // desconectado. Lo único que distingue "existe" de "corre" es que el
+      // cuerpo de la macro aparezca en la expansión de customInit.
+      const pp = spawnSync("makensis", ["-PPO", nsi], { encoding: "utf8" });
+      assert.strictEqual(pp.status, 0, "no se pudo preprocesar el arnés");
+      assert.ok(pp.stdout.includes("$TEMP"),
+        "customInit se expande sin tocar $TEMP: el chequeo de la carpeta " +
+        "temporal quedó definido pero nunca insertado");
+    });
+
+    await test("el aviso nombra el .zip con la versión real, no un placeholder", () => {
+      const exe = fs.readFileSync(path.join(dir, "salida.exe"));
+      assert.ok(exe.includes(Buffer.from("MV-SQL-NLP-9.9.9.zip", "utf16le")),
+        "el ${VERSION} del mensaje no se expandió: el cliente vería el literal");
+    });
+  }
+
+  // ==========================================================================
+  // La otra mitad del arreglo vive en electron-builder.yml
+  // ==========================================================================
+  console.log("\n== la carpeta temporal no tiene que aguantar el doble ==");
+
+  const yml = fs.readFileSync(YML, "utf8");
+  // Sin comentarios: "useZip" aparece cinco veces en la explicación de por
+  // qué está, y un indexOf sobre el archivo entero daría verde aunque la
+  // opción no estuviera puesta. Ya pasó dos veces en este repo.
+  const ymlSinComentarios = yml.split("\n")
+    .filter((l) => !/^\s*#/.test(l)).join("\n");
+
+  await test("useZip: el paquete se descomprime directo a la carpeta de instalación", () => {
+    assert.match(ymlSinComentarios, /^\s*useZip:\s*true\s*$/m,
+      "sin useZip, NSIS descomprime en $PLUGINSDIR\\7z-out (la carpeta " +
+      "temporal, en C:) y recién después copia: pide ~440 MB en la unidad " +
+      "del perfil aunque instales en otra");
+  });
+
+  await test("differentialPackage: false, si no useZip se ignora en silencio", () => {
+    assert.match(ymlSinComentarios, /^\s*differentialPackage:\s*false\s*$/m,
+      "app-builder-lib solo respeta useZip si !isBuildDifferentialAware " +
+      "(NsisTarget.js: `!isBuildDifferentialAware && options.useZip`). Con " +
+      "differentialPackage sin poner en false, useZip queda decorativo.");
+  });
+
+  await test("nadie usa electron-updater (que es lo que differentialPackage servía)", () => {
+    // Si algún día se agrega autoactualización, el .blockmap vuelve a hacer
+    // falta y hay que reconsiderar el cambio de arriba en vez de descubrir
+    // que las actualizaciones bajan el instalador entero cada vez.
+    const pkg = fs.readFileSync(path.join(RAIZ, "desktop", "package.json"), "utf8");
+    assert.ok(!/electron-updater/.test(pkg),
+      "apareció electron-updater: differentialPackage: false ahora tiene " +
+      "costo real (se pierden las actualizaciones diferenciales)");
+  });
+
+  console.log(`\n  ${pasadas} pasadas · ${falladas} falladas` +
+              `${omitidas ? ` · ${omitidas} omitidas` : ""}\n`);
   process.exit(falladas ? 1 : 0);
 })();

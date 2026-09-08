@@ -28,7 +28,9 @@ from datetime import datetime
 
 from licencia import plan_licencia_vigente
 
-RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "equipo.json")
+import rutas
+
+RUTA = rutas.en_datos("equipo.json")
 
 # Cuántos usuarios de equipo permite cada plan. La landing lo promete así
 # (web/index.html, planes Personal/Profesional: "1 usuario"; Empresa:

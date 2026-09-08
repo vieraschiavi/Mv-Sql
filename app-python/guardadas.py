@@ -14,7 +14,15 @@ import json
 import os
 from datetime import datetime
 
-ARCHIVO_DEFAULT = os.path.join(os.path.expanduser("~"), ".mvsql", "consultas_guardadas.json")
+import rutas
+
+# Con MVSQL_DATOS puesta van al mismo lugar que el resto del estado;
+# sin ella se quedan en ~/.mvsql como siempre (no se mueve nada de una
+# instalación que ya existe).
+ARCHIVO_DEFAULT = (rutas.en_datos("consultas_guardadas.json")
+                   if os.environ.get(rutas.VARIABLE, "").strip()
+                   else os.path.join(os.path.expanduser("~"), ".mvsql",
+                                     "consultas_guardadas.json"))
 
 
 def _cargar(archivo=ARCHIVO_DEFAULT):

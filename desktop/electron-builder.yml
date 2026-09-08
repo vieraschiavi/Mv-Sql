@@ -54,6 +54,37 @@ win:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  # Estas dos líneas existen por un error real de instalación en la máquina
+  # de un cliente:
+  #
+  #   Extrayendo: error escribiendo al archivo
+  #   C:\Users\...\AppData\Local\Temp\nsx4368.tmp\app-64.7z
+  #
+  # Con el default (7z), el instalador usa la carpeta temporal DOS veces: le
+  # vuelca el paquete comprimido (~92 MB) y además lo descomprime entero ahí
+  # (~350 MB en $PLUGINSDIR\7z-out) antes de copiarlo a la carpeta final. O
+  # sea que exige ~440 MB libres en la unidad del perfil — casi siempre C: —
+  # aunque el cliente elija instalar en otra unidad. Esa carpeta no se puede
+  # mover desde el script: $TEMP es constante de solo lectura en NSIS.
+  #
+  # Con useZip, el paquete se descomprime DIRECTO a la carpeta de
+  # instalación (nsisunz::Unzip ... "$INSTDIR"): la temporal solo tiene que
+  # aguantar el archivo comprimido. El pedido a la unidad del sistema baja
+  # de ~440 MB a ~130 MB.
+  #
+  # differentialPackage: false es obligatorio para que useZip tenga efecto
+  # (app-builder-lib: `!isBuildDifferentialAware && options.useZip`), y acá
+  # no cuesta nada: el .blockmap solo sirve para las actualizaciones
+  # diferenciales de electron-updater, y esta app no lo usa — no hay ni un
+  # require de electron-updater en desktop/electron/.
+  #
+  # Lo único que se pierde con useZip es el reintento "atómico" del camino
+  # de 7z (copiar, y si un archivo está tomado, reintentar 5 veces). No
+  # hace falta: la sección de instalación ya corre CHECK_APP_RUNNING y
+  # uninstallOldVersion ANTES de extraer, así que al momento de escribir
+  # en la carpeta la app está cerrada y la versión vieja ya no está.
+  useZip: true
+  differentialPackage: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: MV SQL NLP

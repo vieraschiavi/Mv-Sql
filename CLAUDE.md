@@ -66,7 +66,9 @@ del cliente: nunca ejecuta INSERT/UPDATE/DELETE/DDL.
 │                          exportar.py, generar_db_demo.py, tests/
 ├── api/                   copia de las funciones serverless de pago (espejo de web/api, usado por Vercel raíz)
 ├── docs/                  plan de negocio, guiones de venta ES/EN/PT, checklist de despliegue, MercadoPago
-├── installer/             mvsql.nsi — instalador NSIS del producto Python (Windows, no corre en Linux)
+├── installer/             mvsql.nsi — instalador NSIS del producto Python (el .exe es para
+│                          Windows, pero SÍ se compila en Linux con makensis: es lo que pide
+│                          instalador-al-dia.test.js cuando app-python/ cambió)
 ├── tools/                 empaquetado (zip) y generación del video demo
 ├── .github/workflows/     build-desktop.yml — compila el .exe en runner Windows al taggear v*
 ├── package.json           raíz: solo reexporta test hacia web/ (Vercel publica desde acá)
