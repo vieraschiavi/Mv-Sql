@@ -103,7 +103,21 @@ const DUENO = {
   // venga después. Acá se lo compila de verdad, en el mismo orden en que lo
   // mete electron-builder: el .nsh PRIMERO, sin ningún !include previo que
   // le regale contexto. Si no compila así, no compila en el release.
-  console.log("\n== installer.nsh compila con makensis ==");
+  //
+  // Y se compilan LAS DOS PASADAS, con -WX, porque electron-builder corre
+  // makensis dos veces sobre el mismo installer.nsi:
+  //
+  //   1. el instalador   → customInit SÍ se inserta
+  //   2. el desinstalador → con BUILD_UNINSTALLER definido, y ahí
+  //      installer.nsi NO inserta customInit
+  //
+  // Este archivo antes simulaba solo la primera, que es justo la que
+  // funcionaba, y por eso dejó pasar el bug que volteó el build de la
+  // 1.0.9: una Function definida y sin referencia en la pasada 2 dispara
+  // "warning 6010 ... not referenced", y con -WX (que es como lo corre
+  // electron-builder) ese warning es un error. Simular una sola pasada era
+  // otra versión del mismo error de método que ya cuenta el encabezado.
+  console.log("\n== installer.nsh compila con makensis (las dos pasadas) ==");
 
   const hayMakensis =
     spawnSync("makensis", ["-VERSION"], { encoding: "utf8" }).status === 0;
@@ -125,30 +139,56 @@ const DUENO = {
     }
   } else {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mvsql-nsis-"));
-    // Los defines y la Var son EXACTAMENTE los que installer.nsh consume del
-    // contexto de electron-builder, y nada más. Si mañana usa uno nuevo sin
-    // protegerlo con !ifdef, acá revienta — que es el punto.
-    const guion = [
-      '!define VERSION "9.9.9"',
-      '!define APP_64_UNPACKED_SIZE "358400"',
-      "Var perUserInstallationFolder",
-      `!include "${NSH.replace(/\\/g, "\\\\")}"`,
-      `OutFile "${path.join(dir, "salida.exe").replace(/\\/g, "\\\\")}"`,
-      "Function .onInit",
-      "  !insertmacro customInit",
-      "FunctionEnd",
-      "Section",
-      "SectionEnd",
-    ].join("\n");
-    const nsi = path.join(dir, "harness.nsi");
-    fs.writeFileSync(nsi, guion, "utf8");
+    const esc = (x) => x.replace(/\\/g, "\\\\");
 
-    const r = spawnSync("makensis", [nsi], { encoding: "utf8" });
-    const salida = `${r.stdout || ""}${r.stderr || ""}`;
+    /** Un arnés por pasada. Los defines y la Var son EXACTAMENTE los que
+     *  installer.nsh consume del contexto de electron-builder, y nada más:
+     *  si mañana usa uno nuevo sin protegerlo con !ifdef, acá revienta.
+     *  perUserInstallationFolder se escribe además de declararse porque en
+     *  el instalador real la escribe multiUser.nsh; sin eso NSIS avisaría
+     *  que "desperdicia memoria" y el arnés inventaría un warning propio. */
+    function armar(nombre, { desinstalador }) {
+      const guion = [
+        ...(desinstalador ? ["!define BUILD_UNINSTALLER"] : []),
+        '!define VERSION "9.9.9"',
+        '!define APP_64_UNPACKED_SIZE "358400"',
+        "Var perUserInstallationFolder",
+        `!include "${esc(NSH)}"`,
+        `OutFile "${esc(path.join(dir, `${nombre}.exe`))}"`,
+        "Function .onInit",
+        '  StrCpy $perUserInstallationFolder ""',
+        // La pasada del desinstalador NO inserta customInit: así lo hace
+        // installer.nsi cuando BUILD_UNINSTALLER está definido.
+        ...(desinstalador ? [] : ["  !insertmacro customInit"]),
+        "FunctionEnd",
+        "Section",
+        "SectionEnd",
+      ].join("\n");
+      const nsi = path.join(dir, `${nombre}.nsi`);
+      fs.writeFileSync(nsi, guion, "utf8");
+      // -WX: warnings como errores, igual que electron-builder.
+      const r = spawnSync("makensis", ["-WX", nsi], { encoding: "utf8" });
+      return { nsi, guion, r, salida: `${r.stdout || ""}${r.stderr || ""}` };
+    }
 
-    await test("compila sin errores incluido de primero, como lo mete electron-builder", () => {
+    const inst = armar("instalador", { desinstalador: false });
+    const desinst = armar("desinstalador", { desinstalador: true });
+    const { nsi, guion, r, salida } = inst;
+
+    await test("PASADA 1 (instalador): compila incluido de primero y sin warnings", () => {
       assert.strictEqual(r.status, 0,
-        `makensis salió con ${r.status}:\n${salida.split("\n").slice(-25).join("\n")}`);
+        `makensis -WX salió con ${r.status}:\n${salida.split("\n").slice(-25).join("\n")}`);
+    });
+
+    await test("PASADA 2 (desinstalador): compila con BUILD_UNINSTALLER y sin customInit", () => {
+      // Esta es la que volteó el build de la 1.0.9. Todo lo que installer.nsh
+      // defina y solo use desde customInit tiene que estar detrás de
+      // !ifndef BUILD_UNINSTALLER, o NSIS avisa que no se referencia y -WX
+      // convierte ese aviso en un release fallido.
+      assert.strictEqual(desinst.r.status, 0,
+        `makensis -WX salió con ${desinst.r.status} en la pasada del desinstalador.\n` +
+        "Si dice 'not referenced', poné eso adentro de !ifndef BUILD_UNINSTALLER:\n" +
+        desinst.salida.split("\n").filter((l) => /warning|error/i.test(l)).join("\n"));
     });
 
     await test("no deja warnings propios (los de NSIS también rompen releases)", () => {
@@ -167,12 +207,14 @@ const DUENO = {
       // saber que los acentos sobreviven al pasaje a UTF-16 del instalador
       // Unicode. Un mensaje con "Nao ha espaco" pasaría cualquier chequeo
       // sobre el .nsh y quedaría feo en la pantalla del cliente.
+      // Sin comprimir: si no, las cadenas viajan adentro del bloque LZMA y
+      // no se pueden buscar en el binario.
       const sinComp = path.join(dir, "sincomp.nsi");
       fs.writeFileSync(sinComp, `SetCompress off\n${guion}`, "utf8");
-      const c = spawnSync("makensis", [sinComp], { encoding: "utf8" });
+      const c = spawnSync("makensis", ["-WX", sinComp], { encoding: "utf8" });
       assert.strictEqual(c.status, 0, "no compiló la variante sin comprimir");
 
-      const exe = fs.readFileSync(path.join(dir, "salida.exe"));
+      const exe = fs.readFileSync(path.join(dir, "instalador.exe"));
       for (const [idioma, frase] of Object.entries({
         es: "No hay espacio suficiente en la unidad",
         en: "Not enough free space on drive",
@@ -198,7 +240,7 @@ const DUENO = {
     });
 
     await test("el aviso nombra el .zip con la versión real, no un placeholder", () => {
-      const exe = fs.readFileSync(path.join(dir, "salida.exe"));
+      const exe = fs.readFileSync(path.join(dir, "instalador.exe"));
       assert.ok(exe.includes(Buffer.from("MV-SQL-NLP-9.9.9.zip", "utf16le")),
         "el ${VERSION} del mensaje no se expandió: el cliente vería el literal");
     });
