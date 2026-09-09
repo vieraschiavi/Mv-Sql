@@ -174,6 +174,28 @@
   Pop $R1
 !macroend
 
+# Todo este bloque vive SOLO en la pasada del instalador.
+# ============================================================================
+# electron-builder compila el desinstalador en una corrida de makensis
+# APARTE, con BUILD_UNINSTALLER definido, sobre el mismo installer.nsi. En
+# esa pasada `customInit` NO se inserta (installer.nsi lo saltea entero), o
+# sea que MvsqlChequearEspacio nunca se expande y nadie llama a
+# MvsqlAvisarEspacio. NSIS ve una funcion definida y sin usar, avisa...
+#
+#   warning 6010: install function "MvsqlAvisarEspacio" not referenced
+#                 - zeroing code (0-22) out
+#   Error: warning treated as error
+#
+# ...y como electron-builder corre makensis con -WX, ese warning voltea el
+# release entero. Paso de verdad: el build de la 1.0.9 murio ahi.
+#
+# El bug se colo porque el test compilaba installer.nsh insertando SIEMPRE
+# customInit — o sea, simulando solo una de las dos pasadas, justo la que
+# funcionaba. El mismo error de metodo que ya esta documentado arriba de
+# instalador-nsis.test.js: un chequeo que crea las condiciones de su propio
+# exito no verifica nada. Ahora ese test compila las DOS pasadas con -WX.
+!ifndef BUILD_UNINSTALLER
+
 Var MvsqlUnidad       ; ej "C:"
 Var MvsqlLibres       ; MB libres en esa unidad
 Var MvsqlNecesarios   ; MB que hacen falta
@@ -256,6 +278,8 @@ Function MvsqlAvisarEspacio
   MessageBox MB_YESNO|MB_ICONEXCLAMATION "$MvsqlTexto" /SD IDYES IDYES +2
     Quit
 FunctionEnd
+
+!endif ; BUILD_UNINSTALLER
 
 # Callback de ${GetDrives}: recibe la letra de unidad (ej "D:\") en $0 y
 # tiene que terminar empujando algo a la pila para que la enumeracion
