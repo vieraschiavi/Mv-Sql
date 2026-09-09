@@ -23,6 +23,7 @@
 const assert = require("assert");
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
 
 let pasadas = 0, falladas = 0;
 async function test(n, fn) {
@@ -47,6 +48,26 @@ const sinComentarios = (txt) =>
   const IGNORE = leer(".dockerignore");
   const dfCodigo = sinComentarios(DOCKERFILE);
   const composeCodigo = sinComentarios(COMPOSE);
+
+  /** El compose RESUELTO por Docker, no el texto del archivo.
+   *
+   *  `docker compose config` no necesita demonio: parsea, valida el
+   *  esquema y expande las variables. Eso es mucho más fuerte que un
+   *  regex sobre el YAML crudo — un regex ve "${MVSQL_BIND:-127.0.0.1}"
+   *  y se da por satisfecho sin saber a qué resuelve, y no se entera de
+   *  un YAML mal indentado que reventaría recién en el servidor del
+   *  cliente (comprobado: con el archivo roto a propósito, sale con 1).
+   *
+   *  Si no hay CLI de docker se cae al regex, que igual cubre lo básico. */
+  function resolver(env = {}) {
+    const r = spawnSync("docker", ["compose", "config", "--format", "json"],
+      { cwd: path.join(RAIZ, "servidor"), encoding: "utf8",
+        env: { ...process.env, ...env } });
+    return r.status === 0 ? { ok: true, cfg: JSON.parse(r.stdout).services.mvsql }
+                          : { ok: false, error: `${r.stdout || ""}${r.stderr || ""}` };
+  }
+  const hayDocker = spawnSync("docker", ["--version"], { encoding: "utf8" }).status === 0;
+  const resuelto = hayDocker ? resolver() : { ok: false, error: "no hay CLI de docker" };
 
   console.log("\n== La imagen se lleva lo que necesita ==");
 
@@ -75,18 +96,91 @@ const sinComentarios = (txt) =>
     assert.match(dfCodigo, /ENV\s+MVSQL_DATOS=\/datos/,
       "sin MVSQL_DATOS la app escribe en /app, que se reemplaza entero en " +
       "cada build: el cliente pierde equipo, auditoría y licencia al actualizar");
+    if (resuelto.ok) {
+      const vol = (resuelto.cfg.volumes || []).find((v) => v.target === "/datos");
+      assert.ok(vol, "ningún volumen queda montado en /datos: el estado del " +
+        "cliente se perdería al recrear el contenedor");
+      assert.strictEqual(resuelto.cfg.environment.MVSQL_DATOS, "/datos");
+      return;
+    }
     assert.match(composeCodigo, /mvsql-datos:\/datos/,
       "el compose no monta el volumen en /datos");
+  });
+
+  await test("hay CLI de docker para resolver el compose (en CI es obligatorio)", () => {
+    // Sin docker, los tests de abajo caen al regex o directamente se
+    // saltean — o sea que el gate desaparece sin que nadie lo note. En una
+    // máquina de desarrollo eso es aceptable; en CI es que alguien rompió
+    // el runner, y tiene que doler. Mismo criterio que con makensis en
+    // instalador-nsis.test.js.
+    assert.ok(hayDocker || !process.env.CI,
+      "no hay CLI de docker y esto es CI: los chequeos del compose quedaron " +
+      "degradados a regex sin avisar. ubuntu-latest lo trae de fábrica, así " +
+      "que si falta es que cambió la imagen del runner.");
+  });
+
+  await test("el compose es válido para Docker, no solo texto que matchea un regex", () => {
+    if (!hayDocker) { console.log("      (sin CLI de docker: solo se validó por regex)"); return; }
+    assert.ok(resuelto.ok,
+      "`docker compose config` falló — el archivo no levanta en el servidor " +
+      `del cliente:\n${resuelto.error}`);
   });
 
   console.log("\n== No queda expuesto sin que alguien lo decida ==");
 
   await test("el puerto se publica SOLO en 127.0.0.1 por defecto", () => {
+    if (resuelto.ok) {
+      // Lo que Docker VA A HACER, no lo que dice el YAML.
+      assert.strictEqual(resuelto.cfg.ports[0].host_ip, "127.0.0.1",
+        `el bind resuelve a ${resuelto.cfg.ports[0].host_ip}: el puerto queda ` +
+        "abierto a toda la red del cliente sin que nadie lo haya pedido");
+      return;
+    }
     const linea = composeCodigo.split("\n").find((l) => /:8791"/.test(l));
     assert.ok(linea, "no se encontró el mapeo de puertos");
     assert.match(linea, /\$\{MVSQL_BIND:-127\.0\.0\.1\}/,
-      `el default del bind no es 127.0.0.1 (${linea.trim()}): así el puerto ` +
-      "queda abierto a toda la red del cliente sin que nadie lo haya pedido");
+      `el default del bind no es 127.0.0.1 (${linea.trim()})`);
+  });
+
+  await test("con MVSQL_BIND definida pero VACÍA sigue cerrado", () => {
+    // El caso que casi se cuela. En Docker Compose `${VAR:-def}` aplica el
+    // default si VAR está sin definir O VACÍA; `${VAR-def}` (sin los dos
+    // puntos) solo si está sin definir. Con la segunda forma y un
+    // "MVSQL_BIND=" suelto en el .env —que es lo más natural de escribir
+    // para decir "dejá el default"— host_ip queda vacío y Docker publica
+    // en TODAS las interfaces. Medido: con `:-` da 127.0.0.1, sin los dos
+    // puntos da None. No hay error, no hay aviso: la base del cliente
+    // queda expuesta a su red y nadie se entera.
+    if (!hayDocker) return;
+    const r = resolver({ MVSQL_BIND: "" });
+    assert.ok(r.ok, r.error);
+    assert.strictEqual(r.cfg.ports[0].host_ip, "127.0.0.1",
+      "con MVSQL_BIND vacía el bind quedó en " +
+      `${JSON.stringify(r.cfg.ports[0].host_ip)}: usá \${MVSQL_BIND:-127.0.0.1} ` +
+      "(con dos puntos), no ${MVSQL_BIND-127.0.0.1}");
+  });
+
+  await test("TODAS las variables del compose usan :- (no solo el bind)", () => {
+    // La misma trampa aplica a cualquier otra variable que se agregue
+    // después. Se chequea la forma, no un caso puntual, así que el próximo
+    // ${ALGO-default} se frena acá aunque nadie escriba un test nuevo.
+    const sinDosPuntos = [...composeCodigo.matchAll(/\$\{([A-Z_]+)([-?])/g)]
+      .filter((m) => m[2] === "-")
+      .map((m) => m[1]);
+    assert.deepStrictEqual(sinDosPuntos, [],
+      "estas variables usan ${VAR-default} en vez de ${VAR:-default}, así que " +
+      "una definición vacía las deja sin default: " + sinDosPuntos.join(", "));
+  });
+
+  await test("MVSQL_BIND=0.0.0.0 SÍ abre a la red (la doc no miente)", () => {
+    // docs/MODO_SERVIDOR.md le dice al cliente que con esa variable puede
+    // exponerlo. Si la interpolación estuviera mal escrita, el default
+    // ganaría siempre y la instrucción sería falsa — sin ningún error.
+    if (!hayDocker) return;
+    const r = resolver({ MVSQL_BIND: "0.0.0.0" });
+    assert.ok(r.ok, r.error);
+    assert.strictEqual(r.cfg.ports[0].host_ip, "0.0.0.0",
+      "MVSQL_BIND no tiene efecto: la doc promete algo que no pasa");
   });
 
   await test("el .sh también arranca en 127.0.0.1 salvo que le digan lo contrario", () => {
@@ -112,6 +206,13 @@ const sinComentarios = (txt) =>
   });
 
   await test("sistema de archivos de solo lectura y sin privilegios nuevos", () => {
+    if (resuelto.ok) {
+      assert.strictEqual(resuelto.cfg.read_only, true, "falta read_only: true");
+      assert.ok((resuelto.cfg.security_opt || []).includes("no-new-privileges:true"),
+        "falta no-new-privileges");
+      assert.deepStrictEqual(resuelto.cfg.cap_drop, ["ALL"], "falta cap_drop: ALL");
+      return;
+    }
     assert.match(composeCodigo, /read_only:\s*true/, "falta read_only: true");
     assert.match(composeCodigo, /no-new-privileges:true/, "falta no-new-privileges");
     assert.match(composeCodigo, /cap_drop:\s*\n\s*-\s*ALL/, "falta cap_drop: ALL");
