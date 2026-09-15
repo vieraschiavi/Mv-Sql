@@ -26,6 +26,7 @@ Es estático a propósito: no necesita streamlit ni levantar la app, así
 que corre en CI igual que el resto de la suite.
 """
 import ast
+import io
 import os
 import re
 import sys
@@ -149,6 +150,59 @@ def _():
     valor = t.get(f"rol_{clave}",
                   equipo.ROLES.get(clave, {}).get("nombre", clave))
     assert valor == clave, f"esperaba caer al literal, dio {valor!r}"
+
+
+print("\n== La regla trilingüe, sobre TODO el diccionario ==")
+
+
+def _diccionario_T():
+    """Lee el dict T de app.py sin importar app.py.
+
+    app.py importa streamlit en el nivel de módulo, así que no se puede
+    importar desde un test. Con ast se lee el literal igual, y de paso el
+    test no depende de tener streamlit instalado.
+    """
+    import ast
+    ruta = os.path.join(RAIZ, "app.py")
+    arbol = ast.parse(io.open(ruta, encoding="utf-8").read())
+    for n in ast.walk(arbol):
+        if isinstance(n, ast.Assign) and any(
+                getattr(t, "id", None) == "T" for t in n.targets):
+            return ast.literal_eval(n.value)
+    raise AssertionError("no se encontró el diccionario T en app.py")
+
+
+@test("los TRES idiomas tienen exactamente las mismas claves")
+def _():
+    # La convención del repo (CLAUDE.md) es que todo texto de cara al
+    # usuario existe en ES/EN/PT. Antes eso se sostenía a mano: agregar un
+    # string y olvidarse de dos idiomas no rompía nada hasta que un cliente
+    # cambiaba el idioma y la app moría con un KeyError en pantalla.
+    T = _diccionario_T()
+    assert set(T) == {"es", "en", "pt"}, list(T)
+    base = set(T["es"])
+    for idioma in ("en", "pt"):
+        faltan = sorted(base - set(T[idioma]))
+        sobran = sorted(set(T[idioma]) - base)
+        assert not faltan, f"{idioma}: faltan {faltan}"
+        assert not sobran, f"{idioma}: tiene de más {sobran} (¿typo?)"
+
+
+@test("CADA t[\"clave\"] que usa app.py existe de verdad")
+def _():
+    # El otro lado del problema: la clave puede estar en los tres idiomas y
+    # aun así la pantalla explota si en el código se escribió con un typo.
+    # Esto lo agarra sin renderizar nada.
+    import re
+    T = _diccionario_T()
+    codigo = io.open(os.path.join(RAIZ, "app.py"), encoding="utf-8").read()
+    # (?<![A-Za-z0-9_]) es obligatorio: sin eso, `_cat["tablas"]` y
+    # `it["sql"]` matchean por la `t` final de su propio nombre, y el test
+    # acusa de huérfanas a claves que ni siquiera son del diccionario.
+    usadas = set(re.findall(r'(?<![A-Za-z0-9_])t\[\s*"([a-z0-9_]+)"\s*\]', codigo))
+    assert usadas, "no se encontró ningún t[\"...\"]: ¿cambió la forma de usar T?"
+    huerfanas = sorted(usadas - set(T["es"]))
+    assert not huerfanas, f"app.py usa claves que no están en T: {huerfanas}"
 
 
 print(f"\n  {_pasadas} pasadas · {_falladas} falladas\n")
