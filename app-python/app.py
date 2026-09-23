@@ -72,6 +72,7 @@ T = {
         # inglés o portugués — y es de lo más visible de la pantalla.
         "conf_intervalo": "intervalo", "conf_modelo": "modelo",
         "conf_validacion": "validación",
+        "conf_ejecucion": "ejecución",
         # El pie decía "tu esquema nunca sale sin tu permiso, los datos
         # jamás". Lo segundo no es cierto: con el análisis escrito activado
         # viaja una muestra del resultado (ver tests/test_privacidad.py) —
@@ -228,6 +229,7 @@ T = {
         "confianza": "Confidence", "supuestos": "Model assumptions",
         "conf_intervalo": "range", "conf_modelo": "model",
         "conf_validacion": "validation",
+        "conf_ejecucion": "execution",
         "pie": "MV SQL NLP · you decide what travels to the AI: the schema to write "
                "the SQL, and not a single row of data with strict privacy mode on · "
                "SELECT only · optimized CTEs · mvsqlnlp.com",
@@ -373,6 +375,7 @@ T = {
         "confianza": "Confiança", "supuestos": "Suposições do modelo",
         "conf_intervalo": "intervalo", "conf_modelo": "modelo",
         "conf_validacion": "validação",
+        "conf_ejecucion": "execução",
         "pie": "MV SQL NLP · você decide o que viaja para a IA: o esquema para gerar "
                "o SQL, e nenhuma linha de dados com o modo privacidade ativado · "
                "somente SELECT · CTEs otimizados · mvsqlnlp.com",
@@ -1145,7 +1148,7 @@ def barra_confianza(conf, t):
     <div class="conf-interval" style="left:{lo}%; width:{hi - lo}%"></div>
   </div>
   <div style="color:#94a3b8; font-size:.75rem; margin-top:.4rem">
-    {t['conf_modelo']} {comp['modelo']} · RAG {comp['rag']} · {t['conf_validacion']} {comp['validacion']}
+    {t['conf_modelo']} {comp['modelo']} · RAG {comp['rag']} · {t['conf_validacion']} {comp['validacion']} · {t['conf_ejecucion']} {comp.get('ejecucion', '—')}
   </div>
 </div>""", unsafe_allow_html=True)
 
