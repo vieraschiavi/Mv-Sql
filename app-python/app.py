@@ -816,9 +816,29 @@ def _aplicar_tema(fig, p, x=None, y=None, y_es_moneda=False, y_es_pct=False):
     return fig
 
 
+#: Arriba de esto no se dibuja: Plotly manda cada punto al navegador como
+#: JSON y con decenas de miles la pestaña se congela. El número se queda,
+#: lo que cambia es que ahora se DICE — antes `graficar` devolvía `None` y
+#: el gráfico simplemente no aparecía, sin una línea que lo explicara: con
+#: un resultado grande el usuario veía la tabla y un hueco.
+MAX_FILAS_GRAFICO = 3000
+
+
+def motivo_sin_grafico(df) -> str:
+    """Por qué no hay gráfico, en una línea, o vacío si sí lo hay."""
+    if df is None or getattr(df, "empty", True):
+        return ""
+    if len(df) > MAX_FILAS_GRAFICO:
+        return (f"Sin gráfico: el resultado trae {len(df):,} filas y el tope "
+                f"para dibujar son {MAX_FILAS_GRAFICO:,} (arriba de eso el "
+                f"navegador se traba). La tabla y el análisis sí usan todas "
+                f"las filas. Agrupá o filtrá en la consulta para verlo.")
+    return ""
+
+
 def graficar(df, tipo="auto", x=None, y=None):
     """Genera el gráfico. tipo: auto/barras/barras_h/linea/area/torta/dispersion/histo."""
-    if df.empty or len(df) > 3000:
+    if df.empty or len(df) > MAX_FILAS_GRAFICO:
         return None
     p = _prefs()
     nums, cats, fechas = _cols_de(df)
@@ -1819,8 +1839,23 @@ if r:
                     pass
 
         st.markdown(f"##### {t['resultado']}")
+        # El tope de filas del ROL (equipo.py: admin 100.000, analista
+        # 20.000, lector 2.000) se aplicaba callado, y esta métrica mostraba
+        # las filas DEVUELTAS con la etiqueta «Filas», o sea el recorte
+        # presentado como el total. Un lector veía 2.000 y creía que su
+        # consulta daba 2.000. Se dice «puede haber más» y no «hay más»
+        # porque llegar justo al tope no prueba que sobre: lo que sí es
+        # seguro es que a partir de ahí no se trajo nada.
+        _tope_rol = int(PERM.get("limite_filas", 5000) or 0)
+        _en_el_tope = _tope_rol and len(df) >= _tope_rol
         m1, m2, m3 = st.columns(3)
         m1.metric(t["filas"], fmt_numero(len(df), dec=0))
+        if _en_el_tope:
+            st.warning(
+                f"El resultado llegó al tope de {fmt_numero(_tope_rol, dec=0)} "
+                f"filas de tu rol ({PERM.get('rol', '')}): puede haber más y "
+                f"no se trajeron. Todo lo que aparece abajo —gráfico, "
+                f"análisis y exportes— sale de estas filas.", icon="⚠️")
         m2.metric(t["columnas"], len(df.columns))
         nums = df.select_dtypes(include="number").columns.tolist()
         if nums:
@@ -1857,7 +1892,12 @@ if r:
             if fig:
                 st.plotly_chart(fig, use_container_width=True)
             else:
-                st.info(t["sin_grafico"])
+                # `t["sin_grafico"]` sirve para «estas columnas no se
+                # grafican». No servía para el otro caso, que es el que
+                # aparece con volumen: el resultado es DEMASIADO GRANDE
+                # para dibujar. Decir lo mismo en los dos casos mandaba a
+                # buscar el problema en las columnas.
+                st.info(motivo_sin_grafico(df) or t["sin_grafico"])
         with tab3:
             if r["explicacion"]:
                 st.write(r["explicacion"])
