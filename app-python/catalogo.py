@@ -121,31 +121,58 @@ def extraer_catalogo_mssql(con):
         columnas_por_tabla.setdefault(tabla, []).append(columna)
 
     # Conteo de filas
-    cur.execute("""
-        SELECT t.name, SUM(p.rows)
-        FROM sys.tables t
-        JOIN sys.partitions p ON p.object_id=t.object_id AND p.index_id IN (0,1)
-        GROUP BY t.name
-    """)
-    for tabla, filas in cur.fetchall():
-        if tabla in catalogo["tablas"]:
-            catalogo["tablas"][tabla]["n_filas"] = int(filas) if filas else 0
+    #
+    # sys.partitions es metadata que mantiene el motor, así que esto es
+    # gratis: da el tamaño de TODAS las tablas sin un COUNT(*) por tabla.
+    # En Microsoft Fabric no existe ese número — las tablas de un Lakehouse
+    # son archivos Delta/Parquet y no hay particiones con filas contadas.
+    # Ahí se deja n_filas en None, que es un valor que el resto del sistema
+    # ya sabe manejar (la ficha del RAG omite el tamaño y el panel de
+    # frescura no lo muestra).
+    #
+    # Lo que NO se hace es caer a un COUNT(*) por tabla: contra un lakehouse
+    # eso son N consultas pesadas cada vez que alguien conecta. Es mejor no
+    # saber el tamaño que colgar la app para averiguarlo.
+    try:
+        cur.execute("""
+            SELECT t.name, SUM(p.rows)
+            FROM sys.tables t
+            JOIN sys.partitions p ON p.object_id=t.object_id AND p.index_id IN (0,1)
+            GROUP BY t.name
+        """)
+        for tabla, filas in cur.fetchall():
+            if tabla in catalogo["tablas"]:
+                catalogo["tablas"][tabla]["n_filas"] = int(filas) if filas else 0
+    except Exception as e:
+        print(f"[MV SQL NLP] Sin conteo de filas en el catálogo ({e}). "
+              "Normal en Fabric; el resto del catálogo va completo.")
 
     # FKs
-    cur.execute("""
-        SELECT tp.name, cp.name, tr.name, cr.name
-        FROM sys.foreign_keys fk
-        JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id=fk.object_id
-        JOIN sys.tables tp  ON tp.object_id=fkc.parent_object_id
-        JOIN sys.columns cp ON cp.object_id=fkc.parent_object_id AND cp.column_id=fkc.parent_column_id
-        JOIN sys.tables tr  ON tr.object_id=fkc.referenced_object_id
-        JOIN sys.columns cr ON cr.object_id=fkc.referenced_object_id AND cr.column_id=fkc.referenced_column_id
-    """)
-    for to_, co, td, cd in cur.fetchall():
-        catalogo["fks"].append({
-            "tabla_origen": to_, "columna_origen": co,
-            "tabla_destino": td, "columna_destino": cd
-        })
+    #
+    # También tolerante, y por la misma razón: el SQL endpoint de un
+    # Lakehouse no declara claves foráneas, y un Warehouse solo las admite
+    # como NOT ENFORCED. Sin FKs la lista queda vacía y los joins salen de
+    # `joins_inferidos` (abajo), que los deduce por nombre de columna. Peor
+    # que tener las FKs declaradas, pero suficiente — y es exactamente para
+    # lo que esa inferencia existe.
+    try:
+        cur.execute("""
+            SELECT tp.name, cp.name, tr.name, cr.name
+            FROM sys.foreign_keys fk
+            JOIN sys.foreign_key_columns fkc ON fkc.constraint_object_id=fk.object_id
+            JOIN sys.tables tp  ON tp.object_id=fkc.parent_object_id
+            JOIN sys.columns cp ON cp.object_id=fkc.parent_object_id AND cp.column_id=fkc.parent_column_id
+            JOIN sys.tables tr  ON tr.object_id=fkc.referenced_object_id
+            JOIN sys.columns cr ON cr.object_id=fkc.referenced_object_id AND cr.column_id=fkc.referenced_column_id
+        """)
+        for to_, co, td, cd in cur.fetchall():
+            catalogo["fks"].append({
+                "tabla_origen": to_, "columna_origen": co,
+                "tabla_destino": td, "columna_destino": cd
+            })
+    except Exception as e:
+        print(f"[MV SQL NLP] Sin claves foráneas declaradas ({e}). "
+              "Los joins se infieren por nombre de columna.")
 
     # Joins inferidos
     col_a_tablas = {}

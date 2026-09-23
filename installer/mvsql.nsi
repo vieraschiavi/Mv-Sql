@@ -209,6 +209,10 @@ Section "MV SQL NLP" SEC_MAIN
   File "${APP_SRC}\EULA_EN.txt"
   File "${APP_SRC}\EULA_PT.txt"
   File "${APP_SRC}\guardadas.py"
+  ; rutas.py decide en que carpeta va el estado (equipo, auditoria,
+  ; licencia). Lo importan auditoria, equipo, eula, licencia y guardadas:
+  ; sin este File, la app instalada revienta con ImportError al abrir.
+  File "${APP_SRC}\rutas.py"
 
   ; Modulos protegidos: si tools/build_cython.py corrio antes (lo hace la
   ; CI en windows-latest, ver .github/workflows/build-desktop.yml) y borro

@@ -9,6 +9,7 @@ de las bases relacionales del cliente sin tocar código.
 Motores soportados:
   - SQLite            (archivo local — incluida la demo)
   - SQL Server        (pyodbc, ODBC Driver 17/18)
+  - Microsoft Fabric  (pyodbc + Entra ID — ver docs/FABRIC.md)
   - MySQL / MariaDB   (pymysql)
   - PostgreSQL        (psycopg2)
 
@@ -128,9 +129,100 @@ def asegurar_solo_lectura(sql):
 MOTORES = {
     "sqlite":    {"nombre": "SQLite (archivo)",   "dialecto": "SQLite"},
     "sqlserver": {"nombre": "SQL Server",         "dialecto": "SQL Server (T-SQL)"},
+    "fabric":    {"nombre": "Microsoft Fabric",   "dialecto": "SQL Server (T-SQL)"},
     "mysql":     {"nombre": "MySQL / MariaDB",    "dialecto": "MySQL"},
     "postgres":  {"nombre": "PostgreSQL",         "dialecto": "PostgreSQL"},
 }
+
+# ──────────────────────────────────────────────────────────────
+# Microsoft Fabric
+# ──────────────────────────────────────────────────────────────
+# El SQL analytics endpoint de un Lakehouse y el de un Warehouse hablan
+# TDS, el mismo protocolo que SQL Server, en el 1433. O sea que pyodbc y
+# todo el resto del motor (dialecto T-SQL, TOP, catálogo por sys.*)
+# sirven tal cual. Lo único distinto —y es lo que hace falta agregar— es
+# CÓMO se autentica: Fabric NO acepta usuario y contraseña de SQL. Solo
+# Entra ID (el ex Azure AD).
+#
+# Por eso esto no es un motor nuevo de verdad: es el de SQL Server con
+# otra forma de entrar. Comparte dialecto a propósito, así el prompt de
+# generación, _aplicar_limite y el extractor de catálogo no se enteran.
+
+#: Modos de autenticación, en el orden en que conviene ofrecerlos.
+AUTH_FABRIC = {
+    # Lo que usa una persona desde su laptop: abre el navegador y resuelve
+    # MFA ahí. No hay secreto que guardar en ningún lado.
+    "interactivo": "ActiveDirectoryInteractive",
+    # Lo que usa un agente, un job o cualquier cosa desatendida: el
+    # usuario es el Application (client) ID y la contraseña es el secreto
+    # del app registration. Ese service principal tiene que estar agregado
+    # al workspace de Fabric con permiso de lectura.
+    "spn": "ActiveDirectoryServicePrincipal",
+    # Dentro de un notebook de Fabric, de una VM de Azure o con `az login`
+    # hecho: el driver encuentra la identidad solo. Sin credenciales.
+    "automatico": "ActiveDirectoryDefault",
+}
+
+#: Driver mínimo. El 17 no soporta ActiveDirectoryDefault, así que pedir
+#: el 18 evita un fallo que aparece recién al conectar y culpa a la red.
+DRIVER_FABRIC = "ODBC Driver 18 for SQL Server"
+
+
+def cadena_fabric(servidor, base, auth="interactivo", usuario=None,
+                  password=None, driver=None):
+    """Arma la cadena ODBC para el SQL endpoint de Fabric.
+
+    Función aparte y pura —no abre nada— porque es el punto donde se
+    decide la postura de seguridad de la conexión, y eso se tiene que
+    poder probar sin un tenant de Azure delante.
+
+    Dos invariantes que NO se negocian:
+
+      * `Encrypt=yes`. Fabric va por internet; sin cifrar, las consultas
+        y los datos del cliente viajan en claro.
+      * NUNCA `TrustServerCertificate=yes`. En el SQL Server de acá al
+        lado eso se usa porque los servidores internos tienen
+        certificados autofirmados. Fabric tiene un certificado público de
+        verdad, así que aceptarle cualquiera solo sirve para que un
+        intermediario se haga pasar por Microsoft. Es la diferencia entre
+        "cifrado" y "cifrado con alguien que sabés quién es".
+    """
+    if auth not in AUTH_FABRIC:
+        raise ValueError(
+            f"Modo de autenticación desconocido: {auth!r}. "
+            f"Usá uno de: {', '.join(AUTH_FABRIC)}")
+    if not servidor:
+        raise ValueError(
+            "Falta el servidor. Copialo del portal de Fabric: en el Lakehouse "
+            "o el Warehouse, Settings → SQL analytics endpoint → SQL "
+            "connection string (termina en .datawarehouse.fabric.microsoft.com).")
+    if not base:
+        raise ValueError("Falta el nombre del Lakehouse o Warehouse.")
+
+    partes = [
+        f"DRIVER={{{driver or DRIVER_FABRIC}}}",
+        f"SERVER={servidor}",
+        f"DATABASE={base}",
+        f"Authentication={AUTH_FABRIC[auth]}",
+        "Encrypt=yes",
+        # El navegador de la autenticación interactiva se lleva su tiempo:
+        # con los 30 de siempre, cerrar sesión y volver a loguearse llega
+        # tarde y el error dice "timeout", que manda a mirar la red.
+        f"Connection Timeout={60 if auth == 'interactivo' else 30}",
+    ]
+
+    if auth == "spn":
+        if not usuario or not password:
+            raise ValueError(
+                "El modo service principal necesita el Application (client) ID "
+                "como usuario y el secreto del app registration como password.")
+        partes += [f"UID={usuario}", f"PWD={password}"]
+    elif auth == "interactivo" and usuario:
+        # Opcional: precarga el mail en la pantalla de Microsoft.
+        partes.append(f"UID={usuario}")
+
+    return ";".join(partes) + ";"
+
 
 
 class ConexionBD:
@@ -138,7 +230,7 @@ class ConexionBD:
 
     def __init__(self, motor, ruta=None, servidor=None, puerto=None,
                  base=None, usuario=None, password=None, driver=None,
-                 ssh=None):
+                 ssh=None, auth=None):
         """ssh: dict opcional para conectarse a través de un túnel SSH
         {host, puerto, usuario, password | clave_privada}. Sirve cuando la
         base no está expuesta a internet y solo se llega por el servidor
@@ -147,7 +239,8 @@ class ConexionBD:
         self.dialecto = MOTORES[motor]["dialecto"]
         self.ruta = ruta
         self.params = dict(servidor=servidor, puerto=puerto, base=base,
-                           usuario=usuario, password=password, driver=driver)
+                           usuario=usuario, password=password, driver=driver,
+                           auth=auth)
         self.ssh = ssh or None
         self._tunel = None
         self._con = None
@@ -221,6 +314,14 @@ class ConexionBD:
                       f"UID={p['usuario']};PWD={p['password']};"
                       f"TrustServerCertificate=yes;Connection Timeout=30;")
             self._con = pyodbc.connect(cadena, readonly=True)
+        elif self.motor == "fabric":
+            import pyodbc
+            self._con = pyodbc.connect(
+                cadena_fabric(servidor=p["servidor"], base=p["base"],
+                              auth=p.get("auth") or "interactivo",
+                              usuario=p.get("usuario"), password=p.get("password"),
+                              driver=p.get("driver")),
+                readonly=True)
         elif self.motor == "mysql":
             import pymysql
             self._con = pymysql.connect(
@@ -266,7 +367,9 @@ class ConexionBD:
     def extraer_catalogo(self):
         if self.motor == "sqlite":
             return extraer_catalogo_sqlite(self.ruta)
-        if self.motor == "sqlserver":
+        if self.motor in ("sqlserver", "fabric"):
+            # Mismo extractor: Fabric expone las mismas vistas sys.*. Lo que
+            # cambia es QUÉ tienen adentro, y de eso se ocupa catalogo.py.
             return extraer_catalogo_mssql(self._con)
         if self.motor in ("mysql", "postgres"):
             return _extraer_catalogo_information_schema(self._con, self.motor,

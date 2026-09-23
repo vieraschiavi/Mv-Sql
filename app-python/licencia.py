@@ -28,6 +28,8 @@ import json
 import os
 from datetime import datetime, timezone
 
+import rutas
+
 TRIAL_DIAS = 7
 
 # No es una clave criptográfica secreta (vive en el mismo archivo que se
@@ -36,9 +38,8 @@ TRIAL_DIAS = 7
 # coincide la firma, se descarta el archivo y arranca un trial nuevo.
 _SAL = "mvsql-nlp-trial-v1"
 
-_DIR_APP = os.path.dirname(os.path.abspath(__file__))
-RUTA_MARCA_TRIAL = os.path.join(_DIR_APP, ".mvsql_trial.json")
-RUTA_LICENCIA = os.path.join(_DIR_APP, "licencia_mvsql.json")
+RUTA_MARCA_TRIAL = rutas.en_datos(".mvsql_trial.json")
+RUTA_LICENCIA = rutas.en_datos("licencia_mvsql.json")
 
 
 def _firma(inicio_iso):

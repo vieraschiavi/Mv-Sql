@@ -19,7 +19,9 @@ import os
 import sqlite3
 from datetime import datetime, timedelta
 
-RUTA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "auditoria.db")
+import rutas
+
+RUTA = rutas.en_datos("auditoria.db")
 
 _ESQUEMA = """
 CREATE TABLE IF NOT EXISTS consultas (

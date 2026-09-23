@@ -108,6 +108,16 @@ T = {
         "g_barras_h": "Barras horizontales", "g_linea": "Línea", "g_area": "Área",
         "g_torta": "Torta", "g_dispersion": "Dispersión", "g_histo": "Histograma",
         "archivo": "Archivo (CSV / Excel / Parquet)",
+        "fab_auth": "Cómo entrar",
+        "fab_auth_interactivo": "Con mi cuenta (abre el navegador)",
+        "fab_auth_spn": "Service principal (agente o proceso desatendido)",
+        "fab_auth_automatico": "Automática (notebook de Fabric, az login)",
+        "fab_servidor": "SQL connection string del endpoint",
+        "fab_base": "Lakehouse o Warehouse",
+        "fab_usuario": "Application (client) ID",
+        "fab_password": "Secreto del app registration",
+        "fab_mail": "Tu mail (opcional)",
+        "fab_hint": "Copiá el servidor del portal: en el Lakehouse o Warehouse, Settings → SQL analytics endpoint → SQL connection string. Fabric no acepta usuario y contraseña de SQL: la conexión va siempre por Entra ID y cifrada.",
         "subir_archivo": "Subí tu archivo",
         "archivo_hint": "El archivo se convierte a una base consultable al instante y queda en caché: la próxima carga es inmediata. Excel: cada hoja se vuelve una tabla.",
         "archivo_falta": "Subí un archivo primero.",
@@ -249,6 +259,16 @@ T = {
         "g_barras_h": "Horizontal bars", "g_linea": "Line", "g_area": "Area",
         "g_torta": "Pie", "g_dispersion": "Scatter", "g_histo": "Histogram",
         "archivo": "File (CSV / Excel / Parquet)",
+        "fab_auth": "How to sign in",
+        "fab_auth_interactivo": "With my account (opens the browser)",
+        "fab_auth_spn": "Service principal (agent or unattended process)",
+        "fab_auth_automatico": "Automatic (Fabric notebook, az login)",
+        "fab_servidor": "SQL connection string of the endpoint",
+        "fab_base": "Lakehouse or Warehouse",
+        "fab_usuario": "Application (client) ID",
+        "fab_password": "App registration secret",
+        "fab_mail": "Your email (optional)",
+        "fab_hint": "Copy the server from the portal: in the Lakehouse or Warehouse, Settings → SQL analytics endpoint → SQL connection string. Fabric does not accept SQL username and password: the connection always goes through Entra ID, encrypted.",
         "subir_archivo": "Upload your file",
         "archivo_hint": "The file becomes an instantly queryable base and is cached: the next load is immediate. Excel: each sheet becomes a table.",
         "archivo_falta": "Upload a file first.",
@@ -384,6 +404,16 @@ T = {
         "g_barras_h": "Barras horizontais", "g_linea": "Linha", "g_area": "Área",
         "g_torta": "Pizza", "g_dispersion": "Dispersão", "g_histo": "Histograma",
         "archivo": "Arquivo (CSV / Excel / Parquet)",
+        "fab_auth": "Como entrar",
+        "fab_auth_interactivo": "Com a minha conta (abre o navegador)",
+        "fab_auth_spn": "Service principal (agente ou processo desassistido)",
+        "fab_auth_automatico": "Automática (notebook do Fabric, az login)",
+        "fab_servidor": "SQL connection string do endpoint",
+        "fab_base": "Lakehouse ou Warehouse",
+        "fab_usuario": "Application (client) ID",
+        "fab_password": "Segredo do app registration",
+        "fab_mail": "Seu e-mail (opcional)",
+        "fab_hint": "Copie o servidor do portal: no Lakehouse ou Warehouse, Settings → SQL analytics endpoint → SQL connection string. O Fabric não aceita usuário e senha do SQL: a conexão vai sempre por Entra ID e criptografada.",
         "subir_archivo": "Envie seu arquivo",
         "archivo_hint": "O arquivo vira uma base consultável na hora e fica em cache: a próxima carga é imediata. Excel: cada planilha vira uma tabela.",
         "archivo_falta": "Envie um arquivo primeiro.",
@@ -1320,6 +1350,26 @@ with st.sidebar:
     elif motor_bd == "sqlite":
         ruta = st.text_input("Archivo .db", value="cartera_demo.db")
         params = dict(ruta=ruta)
+    elif motor_bd == "fabric":
+        # Fabric no tiene usuario y contraseña de SQL: el formulario cambia
+        # según CÓMO se entra, y por eso no puede reusar el de abajo.
+        _AUTH = ["interactivo", "spn", "automatico"]
+        auth = st.selectbox(t["fab_auth"], _AUTH,
+                            format_func=lambda k: t[f"fab_auth_{k}"])
+        servidor = st.text_input(t["fab_servidor"],
+                                 placeholder="xxxx.datawarehouse.fabric.microsoft.com")
+        base = st.text_input(t["fab_base"])
+        if auth == "spn":
+            usuario = st.text_input(t["fab_usuario"])
+            password = st.text_input(t["fab_password"], type="password")
+        elif auth == "interactivo":
+            usuario = st.text_input(t["fab_mail"])
+            password = None
+        else:
+            usuario = password = None
+        st.caption(t["fab_hint"])
+        params = dict(servidor=servidor, base=base, auth=auth,
+                      usuario=usuario or None, password=password or None)
     else:
         c1, c2 = st.columns([3, 1])
         servidor = c1.text_input("Servidor / host")
