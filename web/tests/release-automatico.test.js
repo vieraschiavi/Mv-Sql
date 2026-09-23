@@ -33,8 +33,15 @@ const WF = yaml.load(CRUDO);
 const ON = WF.on || WF[true];
 
 // Los jobs que producen y publican artefactos. "decidir" no está: es el
-// que decide, no puede depender de sí mismo.
-const JOBS_QUE_PUBLICAN = Object.keys(WF.jobs).filter((j) => j !== "decidir");
+// que decide, no puede depender de sí mismo. "tests" tampoco: va ANTES de
+// decidir, no publica nada.
+const JOBS_QUE_PUBLICAN = Object.keys(WF.jobs)
+  .filter((j) => j !== "decidir" && j !== "tests");
+
+// Los comandos de un job, sin el ruido de los "uses:" y en orden.
+const comandos = (job) => (job.steps || []).map((s) => s.run).filter(Boolean);
+const WF_TESTS = yaml.load(fs.readFileSync(
+  path.join(RAIZ, ".github", "workflows", "tests.yml"), "utf-8"));
 
 (async () => {
   console.log("\n== Release automático: solo con versión nueva ==");
@@ -117,6 +124,43 @@ const JOBS_QUE_PUBLICAN = Object.keys(WF.jobs).filter((j) => j !== "decidir");
       assert.ok(/needs\.decidir\.outputs\.seguir/.test(WF.jobs[j].if || ""),
         `${j} depende de 'decidir' pero no mira su resultado: corre igual`);
     }
+  });
+
+  await test("no se publica un commit con tests en rojo: decidir espera a la suite", () => {
+    // tests.yml corre en el mismo push pero en paralelo, y nadie lo
+    // espera. Sin este needs, un commit que rompe un test salía
+    // publicado igual: para cuando aparecía la cruz roja, el Release ya
+    // estaba arriba. Todo lo que publica cuelga de decidir, así que
+    // alcanza con frenar a decidir.
+    assert.ok(WF.jobs.tests, "no está el job 'tests' en el workflow de release");
+    assert.ok([WF.jobs.decidir.needs || []].flat().includes("tests"),
+      "'decidir' no espera a 'tests': se publica aunque la suite esté en rojo");
+    for (const s of WF.jobs.tests.steps) {
+      assert.notStrictEqual(String(s["continue-on-error"]), "true",
+        `el paso "${s.name || s.run || s.uses}" tiene continue-on-error: ` +
+        "un test que falla no frenaría el release");
+    }
+    assert.notStrictEqual(String(WF.jobs.tests["continue-on-error"]), "true",
+      "el job 'tests' tiene continue-on-error: no frena nada");
+  });
+
+  await test("el job de tests del release corre LO MISMO que tests.yml", () => {
+    // Son dos copias a propósito (ver el comentario en el workflow). Lo
+    // que no puede pasar es que se separen: si alguien agrega un paso a
+    // tests.yml (como el de NSIS, que sin él omite un test entero) y no
+    // acá, el release vuelve a publicar con una suite más chica sin que
+    // nadie lo note.
+    assert.deepStrictEqual(comandos(WF.jobs.tests), comandos(WF_TESTS.jobs.tests),
+      "los comandos del job 'tests' del release no coinciden con tests.yml");
+  });
+
+  await test("dos pushes seguidos no publican el mismo Release en paralelo", () => {
+    // Sin concurrency, los dos pasan 'decidir' antes de que ninguno cree
+    // el Release. Y en cola, no cancelando: cortar un release a medio
+    // subir deja un Release con la mitad de los assets.
+    assert.ok(WF.concurrency, "el workflow de release no tiene concurrency");
+    assert.strictEqual(WF.concurrency["cancel-in-progress"], false,
+      "cancel-in-progress tiene que ser false: un release no se corta a mitad");
   });
 
   await test("un disparo explícito (tag o a mano) publica igual", () => {
