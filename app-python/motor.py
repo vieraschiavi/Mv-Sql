@@ -139,32 +139,54 @@ def validar_sql(sql, catalogo, ctes=None):
 # ──────────────────────────────────────────────────────────────
 # 4) INTERVALO DE CONFIANZA
 # ──────────────────────────────────────────────────────────────
-def calcular_confianza(conf_llm, sim_rag, es_valido, n_advertencias, usa_cte):
+def calcular_confianza(conf_llm, sim_rag, es_valido, n_advertencias, usa_cte,
+                       cobertura=None, ejecucion=None, medidas_faltantes=0):
     """
     Combina señales independientes en un puntaje 0-100 con intervalo.
 
-      55%  autoevaluación del modelo (qué tan seguro dijo estar)
-      25%  señal del RAG (similitud pregunta<->esquema recuperado)
-      20%  validación estructural (catálogo + advertencias)
+      45%  autoevaluación del modelo (qué tan seguro dijo estar)
+      20%  esquema: ¿las tablas que usa el SQL son las que el RAG trajo?
+      15%  validación estructural (catálogo + advertencias)
+      20%  ejecución: corrió, con filas, y trae cada medida pedida
 
-    El intervalo (±) refleja cuánta información tenemos: sin
-    autoevaluación del modelo el intervalo se ensancha.
+    Antes la señal de esquema era SOLO la similitud TF-IDF pregunta↔ficha,
+    que con preguntas de negocio («ventas en unidades y dólares por
+    médico») contra columnas como `VentasUSD` da ~0.08: el RAG marcaba 25
+    aunque hubiera encontrado exactamente las tablas correctas, y hundía un
+    SQL bueno. Ahora vale lo mejor entre esa similitud y la cobertura real
+    (fracción de tablas del SQL que estaban entre las recuperadas).
+
+    La ejecución no se miraba: un SQL que tiraba error o que devolvía una
+    sola de las dos medidas pedidas (unidades y moneda) salía con la misma
+    confianza que uno perfecto.
+
+    ejecucion: None (no se ejecutó), "ok", "vacio" o "error".
     """
     base_llm = conf_llm if conf_llm is not None else 60
-    senal_rag = min(1.0, (sim_rag or 0) * 3.0) * 100      # sim>0.33 satura en 100
+    lexico = min(1.0, (sim_rag or 0) * 3.0)               # sim>0.33 satura
+    senal_rag = max(lexico, cobertura if cobertura is not None else 0) * 100
     senal_val = (100 if es_valido else 20) - min(30, n_advertencias * 10)
+    senal_ejec = {"ok": 100, "vacio": 55, "error": 0}.get(ejecucion, 60)
+    senal_ejec = max(0, senal_ejec - 35 * medidas_faltantes)
 
-    puntaje = 0.55 * base_llm + 0.25 * senal_rag + 0.20 * max(0, senal_val)
+    puntaje = (0.45 * base_llm + 0.20 * senal_rag
+               + 0.15 * max(0, senal_val) + 0.20 * senal_ejec)
     if usa_cte:
         puntaje = min(100, puntaje + 2)   # estructura explícita: leve bonus
+    if ejecucion == "error":
+        puntaje = min(puntaje, 35)        # si no corrió, no puede ser alta
 
-    margen = 5
+    margen = 4
     if conf_llm is None:
         margen += 7
-    if (sim_rag or 0) < 0.05:
+    if senal_rag < 15:
         margen += 5
     if n_advertencias:
         margen += 3
+    if ejecucion is None:
+        margen += 4                       # sin correrla sabemos menos
+    if medidas_faltantes:
+        margen += 4
 
     puntaje = round(max(5, min(99, puntaje)))
     return {
@@ -175,8 +197,60 @@ def calcular_confianza(conf_llm, sim_rag, es_valido, n_advertencias, usa_cte):
             "modelo": round(base_llm),
             "rag": round(senal_rag),
             "validacion": round(max(0, senal_val)),
+            "ejecucion": round(senal_ejec),
         },
     }
+
+
+# Medidas que una pregunta puede pedir a la vez. «En unidades y en moneda»
+# tiene que salir en DOS columnas: el modelo tendía a elegir una (o sumar
+# unidades con dólares), y la pantalla no avisaba.
+_MEDIDAS = {
+    "unidades": (r"\bunidad(es)?\b|\bunits?\b|\bunidades\b|\bcantidad(es)?\b|"
+                 r"\bquantity\b|\bquantidade\b|\bvolumen\b|\bvolume\b|\bpiezas\b"),
+    "moneda": (r"\bmonto\b|\bimporte\b|\bmoneda\b|\bvalor(es)?\b|\bpesos\b|"
+               r"\bd[oó]lar(es)?\b|\busd\b|\bu\$s\b|\bamount\b|\bcurrency\b|"
+               r"\brevenue\b|\bfacturaci[oó]n\b|\bfaturamento\b|\breais\b|\$"),
+}
+_COL_MEDIDA = {
+    "unidades": r"unid|units?|cant|qty|quant|volum|pieza",
+    "moneda": r"usd|monto|importe|valor|value|amount|pesos|dolar|revenue|"
+              r"factur|venta.*(usd|\$|monto)|\$|precio|price|moneda|reais",
+}
+
+
+def medidas_pedidas(pregunta):
+    """Qué medidas pide la pregunta (sólo cuenta si pide más de una)."""
+    q = (pregunta or "").lower()
+    hay = [m for m, rx in _MEDIDAS.items() if re.search(rx, q)]
+    return hay if len(hay) > 1 else []
+
+
+def medidas_sin_columna(pedidas, columnas):
+    """Medidas pedidas que no aparecen en ninguna columna del resultado."""
+    cols = [str(c).lower() for c in (columnas or [])]
+    return [m for m in pedidas
+            if not any(re.search(_COL_MEDIDA[m], c) for c in cols)]
+
+
+def _simple(nombre):
+    return str(nombre).split(".")[-1].strip("[]\"`").lower()
+
+
+def cobertura_esquema(sql, catalogo, recuperadas):
+    """Fracción de las tablas del SQL que el RAG había recuperado.
+
+    None si el SQL no nombra ninguna tabla del catálogo (no hay nada que
+    medir: no se inventa una cobertura).
+    """
+    nombres = {_simple(t) for t in catalogo.get("tablas", {})}
+    en_sql = {_simple(t) for t in re.findall(
+        r"(?:from|join)\s+([\[\]\"`a-zA-Z_][\[\]\"`a-zA-Z0-9_.]*)", (sql or "").lower())}
+    usadas = en_sql & nombres
+    if not usadas:
+        return None
+    rec = {_simple(t) for t in recuperadas}
+    return len(usadas & rec) / len(usadas)
 
 
 # ──────────────────────────────────────────────────────────────
@@ -245,6 +319,7 @@ REGLAS ESTRICTAS:
 6. Filtrá registros anulados/eliminados si existe la columna (anulada=0, deleted=0, activo=1).
 7. Solo SELECT (o WITH ... SELECT). Nunca INSERT/UPDATE/DELETE/DROP/ALTER/EXEC.
 8. Alias legibles en español para columnas calculadas (total_cobrado, promedio_mensual).
+9. Si la pregunta pide VARIAS medidas (por ejemplo unidades Y monto/moneda), devolvé UNA COLUMNA POR MEDIDA, separadas y con alias que las nombren (total_unidades, total_monto_usd). Nunca elijas una sola ni sumes unidades con dinero. Si el esquema tiene la medida en varias monedas, una columna por moneda.
 
 FORMATO DE RESPUESTA — devolvé EXACTAMENTE esto, sin markdown ni explicación extra:
 SQL:
@@ -279,20 +354,47 @@ ESQUEMA DISPONIBLE (usá solo esto):
                                  problemas=[], advertencias=advertencias,
                                  usa_cte=sql.lower().lstrip().startswith("with"))
 
-        # 4) confianza
-        resultado["confianza"] = calcular_confianza(
-            conf_llm, sim_top, es_valido, len(resultado["advertencias"]),
-            resultado["usa_cte"])
-
-        # 5) ejecución
+        # 4) ejecución
         if es_valido:
-            try:
-                cols, filas, sql_exec = self.cx.ejecutar(sql, limite=limite)
-                resultado["columnas"] = cols
-                resultado["filas"] = filas
-                resultado["sql_ejecutado"] = sql_exec
-            except Exception as e:
-                resultado["error"] = str(e)
+            self._ejecutar_en(resultado, sql, limite)
+
+        # 4b) ¿trae cada medida pedida? «unidades y moneda» son dos columnas.
+        pedidas = medidas_pedidas(pregunta)
+        faltan = (medidas_sin_columna(pedidas, resultado["columnas"])
+                  if resultado["columnas"] is not None else [])
+        if faltan:
+            arreglado = self._reintentar_medidas(system, pregunta_ia, sql, faltan)
+            if arreglado:
+                sql2, conf2, sup2, adv2 = arreglado
+                previo = dict(resultado)
+                self._ejecutar_en(resultado, sql2, limite)
+                faltan2 = medidas_sin_columna(pedidas, resultado["columnas"])
+                if resultado["error"] is None and len(faltan2) < len(faltan):
+                    sql, conf_llm, faltan = sql2, conf2, faltan2
+                    resultado.update(sql=sql2, supuestos=sup2, advertencias=adv2,
+                                     usa_cte=sql2.lower().lstrip().startswith("with"))
+                else:
+                    resultado.update({k: previo[k] for k in
+                                      ("columnas", "filas", "sql_ejecutado", "error")})
+        if faltan:
+            resultado["advertencias"] = list(resultado["advertencias"]) + [
+                "La pregunta pide " + " y ".join(pedidas) + ", pero el resultado "
+                "no trae columna de: " + ", ".join(faltan) + "."]
+        resultado["medidas_faltantes"] = faltan
+
+        # 5) confianza, ya con lo que pasó al ejecutar
+        if resultado["error"]:
+            ejec = "error"
+        elif resultado["filas"] is None:
+            ejec = None
+        else:
+            ejec = "ok" if len(resultado["filas"]) else "vacio"
+        resultado["confianza"] = calcular_confianza(
+            conf_llm, sim_top, resultado["valido"], len(resultado["advertencias"]),
+            resultado["usa_cte"],
+            cobertura=cobertura_esquema(sql, self.catalogo,
+                                        resultado["tablas_recuperadas"]),
+            ejecucion=ejec, medidas_faltantes=len(faltan))
 
         # 6) explicación en lenguaje natural
         if explicar and resultado["filas"] is not None:
@@ -300,6 +402,34 @@ ESQUEMA DISPONIBLE (usá solo esto):
                 pregunta, sql, resultado, contexto)
 
         return resultado
+
+    def _ejecutar_en(self, resultado, sql, limite):
+        """Ejecuta (solo lectura) y deja columnas/filas/error en `resultado`."""
+        resultado.update(columnas=None, filas=None, sql_ejecutado=None, error=None)
+        try:
+            cols, filas, sql_exec = self.cx.ejecutar(sql, limite=limite)
+            resultado.update(columnas=cols, filas=filas, sql_ejecutado=sql_exec)
+        except Exception as e:
+            resultado["error"] = str(e)
+
+    def _reintentar_medidas(self, system, pregunta_ia, sql, faltan):
+        """Segunda vuelta cuando el SQL no trae todas las medidas pedidas.
+
+        Devuelve (sql, confianza, supuestos, advertencias) si valida contra
+        el catálogo, o None. Nunca se saltea la validación anti-alucinación.
+        """
+        pedido = (f"{pregunta_ia}\n\nTu consulta anterior fue:\n{sql}\n\n"
+                  "No trae columna para: " + ", ".join(faltan) + ". La pregunta "
+                  "pide esas medidas POR SEPARADO: devolvé una columna por cada "
+                  "una, con alias que la nombre, usando SOLO el esquema.")
+        try:
+            sql2, conf2, sup2 = _parsear_respuesta_sql(self._completar(system, pedido))
+            ok, _prob, adv = validar_sql(sql2, self.catalogo)
+            if ok:
+                return sql2, conf2, sup2, adv
+        except Exception:
+            pass
+        return None
 
     def _reintentar_sql(self, system, pregunta_ia, sql, problemas):
         """Un intento de auto-corrección cuando el SQL no validó.
