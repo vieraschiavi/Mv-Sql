@@ -50,7 +50,8 @@ del cliente: nunca ejecuta INSERT/UPDATE/DELETE/DDL.
 | Instalar deps de `app-python/` | `pip install -r app-python/requirements.txt` |
 | Correr la app Python (Streamlit) | `cd app-python && streamlit run app.py` (abre en `http://localhost:8791` vía `INICIAR_MVSQL.bat` en Windows) |
 | Tests de `app-python/` | `cd app-python && for f in tests/test_*.py; do python3 "$f" || break; done` (o `npm test` en la raíz, que descubre estos + los de `web/` sin listarlos a mano) |
-| Lint / format | no hay — no introduzcas uno sin que te lo pidan |
+| Lint (JS) | `npm run lint` en la raíz (eslint; CI lo corre en `tests.yml`). Python no tiene linter — no introduzcas uno sin que te lo pidan |
+| Validar workflows de CI | `actionlint .github/workflows/*.yml` (`pip install actionlint-py`) y `python3 .claude/skills/all-in-one-tech-team/scripts/cicd_check.py .github/workflows` |
 
 > No hay `package.json` de test en `desktop/`; no inventes uno. El repo raíz solo reexporta
 > `npm test` hacia `web/` (ver `package.json` de la raíz, usado por Vercel para publicar desde
@@ -129,6 +130,28 @@ del cliente: nunca ejecuta INSERT/UPDATE/DELETE/DDL.
 `explorer` (mapear el repo) · `planificador` (plan antes de cambiar) · `parallel-worker` (fan-out)
 · `especialista` (NL-a-SQL multi-base y multi-proveedor de IA) · `revisor` (review del diff)
 · `verificador` (gate de evidencia).
+
+## Skill `all-in-one-tech-team`
+
+Vive en `.claude/skills/all-in-one-tech-team/` y se activa solo, por sus disparadores ("all in
+one", "tech team", "CI/CD", "deployá", "forecast"…). Es el generalista: orquesta módulos y exige
+evidencia ejecutada. **Cuando choca con este archivo, manda este archivo.** Se corrió contra el
+repo y esto es lo que cambia acá:
+
+| El skill dice | En este repo |
+|---|---|
+| QA con `ruff`/`flake8` sobre Python | **No.** `app-python/` no tiene linter: `ruff` da más de 100 hallazgos contra código que nunca prometió cumplirlo. El lint es `npm run lint`. |
+| QA con `pytest` | **No.** Los tests de `app-python/` son scripts con runner propio: `pytest` los corta con `SystemExit` y dice "no tests ran". La suite es `npm test` en la raíz. |
+| `scripts/pre_commit_hook.sh --install` | **No lo instales.** Por las dos filas de arriba, bloquearía todo commit con un rojo falso. |
+| Módulo 18: `cicd_check.py` + `actionlint` | **Sí**, antes de tocar un workflow (comandos en la tabla de arriba). Ojo: `cicd_check` toma cualquier `needs:` como gate de CI; lo que de verdad frena un release rojo es `decidir → needs: tests`, fijado en `release-automatico.test.js`. |
+| Deferir al skill del dominio | Motor NL-a-SQL (`motor.py`, `conectores.py`, `catalogo.py`) → agente `especialista`. Auditoría de producción o de release → skill `ecc`. |
+
+Mapa de módulos: 9 Docker → `servidor/` (`docker compose config` valida sin daemon) · 12 Vercel
+→ `web/` · 4 Playwright → Chromium preinstalado · 18 CI/CD → `.github/workflows/`.
+
+Es una copia del skill del propietario con **un solo cambio**: en `references/casos-test.md` se
+sacó el nombre de un sistema interno de un empleador (el repo es público). Si lo actualizás
+copiando la carpeta encima, revisá que no vuelva.
 
 ## Contexto / Compact
 

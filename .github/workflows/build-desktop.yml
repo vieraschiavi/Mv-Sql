@@ -38,11 +38,57 @@ on:
 permissions:
   contents: write
 
+# Un release a la vez, y en cola: nunca se cancela uno a medio subir.
+# Sin esto, dos pushes seguidos a main arrancan dos builds que pasan
+# 'decidir' antes de que ninguno haya creado el Release, y los dos
+# publican el mismo tag pisándose los assets. El grupo es fijo (no por
+# ref) porque un push a main y el tag de esa misma versión apuntan al
+# mismo Release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  # La suite entera, ANTES de publicar nada. tests.yml corre en el mismo
+  # push, pero en paralelo y sin que nadie lo espere: un commit que rompe
+  # un test igual salía publicado, porque para cuando la cruz roja
+  # aparecía el Release ya existía. Y en main se publica el árbol
+  # MERGEADO, que no es necesariamente el que se testeó en el PR.
+  #
+  # Son los mismos pasos que tests.yml, a propósito (release-automatico
+  # .test.js exige que los comandos coincidan). No se reusa ese workflow
+  # con workflow_call porque trae su propio concurrency con
+  # cancel-in-progress, y meter eso adentro de un release es arriesgarse a
+  # que otro push lo cancele a mitad de camino.
+  tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: "npm"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Instalar NSIS (para compilar el instalador de escritorio)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq nsis
+      - name: Instalar dependencias
+        run: npm ci
+      - name: Correr la suite completa (web + app-python)
+        run: npm test
+      - name: Linter
+        run: npm run lint
+
   # Decide si hay algo para publicar. Va en un job aparte y no en un "if"
   # de cada job porque necesita leer la versión del repo y preguntarle a
   # la API si ese Release ya existe — eso no entra en una expresión.
   decidir:
+    needs: tests
     runs-on: ubuntu-latest
     outputs:
       seguir: ${{ steps.d.outputs.seguir }}
