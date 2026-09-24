@@ -203,6 +203,7 @@ Section "MV SQL NLP" SEC_MAIN
   File "${APP_SRC}\esquema_visual.py"
   File "${APP_SRC}\exportar.py"
   File "${APP_SRC}\frescura.py"
+  File "${APP_SRC}\fuente.py"
   File "${APP_SRC}\generar_db_demo.py"
   File "${APP_SRC}\eula.py"
   File "${APP_SRC}\EULA_ES.txt"

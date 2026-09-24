@@ -41,6 +41,7 @@ import cuadernos
 import equipo
 import esquema_visual
 import frescura
+import fuente
 import guardadas
 
 # ──────────────────────────────────────────────────────────────
@@ -94,6 +95,13 @@ T = {
         "err_valid": "La validación encontró problemas:", "advertencias": "Advertencias",
         "sin_grafico": "No hay un gráfico automático para esta forma de datos.",
         "demo_hint": "¿Sin base propia? Usá la demo: motor SQLite, ruta cartera_demo.db (se genera con: python generar_db_demo.py).",
+        "fuente_activa": "Fuente activa",
+        "fuente_demo": "Datos de demostración (base sintética). Conectá tu archivo o tu base y toda la app pasa a usarla.",
+        "fuente_usuario": "Tus datos: {nombre}. Todas las secciones usan esta fuente; la demo no se muestra.",
+        "fuente_volver": "Volver a la demo",
+        "fuente_ninguna": "Sin fuente de datos",
+        "ej_contar": "¿Cuántos registros tiene {tabla}?",
+        "ej_primeras": "Mostrame las primeras 10 filas de {tabla}",
         "creditos_activos": "Créditos activos — {n} incluidos ({plan})",
         "creditos_licencia": "Licencia de {email} · vence {vence}",
         "creditos_falta": "No se encontró licencia_mvsql.json en esta carpeta. Este proveedor solo funciona en el zip comprado con créditos embebidos.",
@@ -246,6 +254,13 @@ T = {
         "err_valid": "Validation found problems:", "advertencias": "Warnings",
         "sin_grafico": "No automatic chart for this data shape.",
         "demo_hint": "No database yet? Use the demo: SQLite engine, path cartera_demo.db (generate it with: python generar_db_demo.py).",
+        "fuente_activa": "Active source",
+        "fuente_demo": "Demo data (synthetic database). Connect your file or database and the whole app switches to it.",
+        "fuente_usuario": "Your data: {nombre}. Every section uses this source; the demo is hidden.",
+        "fuente_volver": "Back to the demo",
+        "fuente_ninguna": "No data source",
+        "ej_contar": "How many records does {tabla} have?",
+        "ej_primeras": "Show me the first 10 rows of {tabla}",
         "creditos_activos": "Active credits — {n} included ({plan})",
         "creditos_licencia": "License for {email} · expires {vence}",
         "creditos_falta": "licencia_mvsql.json not found in this folder. This provider only works in the zip purchased with embedded credits.",
@@ -392,6 +407,13 @@ T = {
         "err_valid": "A validação encontrou problemas:", "advertencias": "Avisos",
         "sin_grafico": "Sem gráfico automático para este formato de dados.",
         "demo_hint": "Sem banco próprio? Use a demo: motor SQLite, caminho cartera_demo.db (gere com: python generar_db_demo.py).",
+        "fuente_activa": "Fonte ativa",
+        "fuente_demo": "Dados de demonstração (banco sintético). Conecte seu arquivo ou banco e todo o app passa a usá-lo.",
+        "fuente_usuario": "Seus dados: {nombre}. Todas as seções usam esta fonte; a demo não aparece.",
+        "fuente_volver": "Voltar para a demo",
+        "fuente_ninguna": "Sem fonte de dados",
+        "ej_contar": "Quantos registros tem {tabla}?",
+        "ej_primeras": "Mostre as primeiras 10 linhas de {tabla}",
         "creditos_activos": "Créditos ativos — {n} incluídos ({plan})",
         "creditos_licencia": "Licença de {email} · vence {vence}",
         "creditos_falta": "licencia_mvsql.json não encontrado nesta pasta. Este provedor só funciona no zip comprado com créditos embutidos.",
@@ -681,7 +703,7 @@ elif _acceso["dias_restantes"] is not None and _acceso["dias_restantes"] <= 2:
     }
     st.warning(_TXT_AVISO[ss.lang])
 
-ss.setdefault("motor", None)          # MotorMVSQL
+ss.setdefault("motor", None)          # MotorMVSQL de la fuente activa: lo escribe SOLO fuente.py
 ss.setdefault("historial", [])
 ss.setdefault("pregunta_precargada", "")
 ss.setdefault("resultado", None)
@@ -1223,8 +1245,9 @@ with st.sidebar:
         c_u1.markdown(f"**{ss.usuario['nombre']}** · {nombre_rol(ss.usuario['rol'], t)}")
         if c_u2.button(t["login_salir"], key="btn_salir"):
             ss.usuario = None
-            ss.motor = None
-            ss.resultado = None
+            # La fuente se suelta entera (y con ella lo derivado): el que
+            # entra después arranca en la demo, recortada a SU rol.
+            fuente.olvidar(ss)
             st.rerun()
 
     with st.expander(f"{t['fmt_titulo']}"):
@@ -1341,6 +1364,37 @@ with st.sidebar:
 
     st.divider()
     st.subheader(f"{t['bd']}")
+
+    def _armar_motor(cx):
+        """Motor para una conexión ya abierta, con el recorte de tablas del rol.
+
+        Lo usan la demo y la fuente del cliente por igual: el usuario solo
+        ve —y la IA solo conoce— las tablas de su rol, sea cual sea la base.
+        """
+        m = MotorMVSQL(cx, ia_cfg)
+        if PERM.get("tablas") != "*":
+            m.catalogo = equipo.tablas_visibles(m.catalogo, PERM)
+            from catalogo import catalogo_a_fichas
+            from motor import RecuperadorEsquema
+            m.fichas = catalogo_a_fichas(m.catalogo)
+            m.recuperador = RecuperadorEsquema(m.fichas)
+        return m
+
+    def _motor_sqlite(ruta_db):
+        return _armar_motor(ConexionBD("sqlite", ruta=ruta_db).conectar())
+
+    # Sin fuente elegida, la app arranca sobre la demo. En cuanto el cliente
+    # conecta la suya, fuente.py la reemplaza en TODAS las secciones.
+    fuente.asegurar(ss, _motor_sqlite)
+    _f_activa = fuente.activa(ss)
+    if _f_activa and _f_activa["tipo"] == fuente.USUARIO:
+        st.success(t["fuente_usuario"].format(nombre=_f_activa["etiqueta"]))
+        if st.button(t["fuente_volver"], use_container_width=True, key="btn_volver_demo"):
+            fuente.usar_demo(ss, _motor_sqlite)
+            st.rerun()
+    elif _f_activa:
+        st.info(t["fuente_demo"])
+
     motor_bd = st.selectbox(t["motor_bd"], ["archivo"] + list(MOTORES.keys()),
                             format_func=lambda k: t["archivo"] if k == "archivo"
                             else MOTORES[k]["nombre"])
@@ -1351,7 +1405,9 @@ with st.sidebar:
         st.caption(t["archivo_hint"])
         params = None
     elif motor_bd == "sqlite":
-        ruta = st.text_input("Archivo .db", value="cartera_demo.db")
+        # Sin valor precargado: con "cartera_demo.db" de default, apretar
+        # Conectar sin mirar volvía a abrir la demo creyendo abrir la propia.
+        ruta = st.text_input("Archivo .db", value="", placeholder="mi_base.db")
         params = dict(ruta=ruta)
     elif motor_bd == "fabric":
         # Fabric no tiene usuario y contraseña de SQL: el formulario cambia
@@ -1383,44 +1439,52 @@ with st.sidebar:
         params = dict(servidor=servidor, puerto=puerto or None, base=base,
                       usuario=usuario, password=password)
 
-    if st.button(f"{t['conectar']}", use_container_width=True, type="primary"):
+    # Subir un archivo ya es elegirlo: se aplica solo, sin tener que buscar
+    # el botón (que es lo que dejaba al cliente mirando la demo con su
+    # archivo cargado). Se recuerda el último aplicado para que "Volver a
+    # la demo" no lo reaplique mientras siga en el selector.
+    _id_archivo = (f"archivo:{archivo_subido.name}:{archivo_subido.size}"
+                   if motor_bd == "archivo" and archivo_subido is not None else None)
+    _auto = bool(_id_archivo) and _id_archivo != ss.get("_ultimo_archivo")
+    _clic = st.button(f"{t['conectar']}", use_container_width=True, type="primary")
+    if _clic or _auto:
+        _ok_cambio = False
         try:
             with st.spinner("…"):
                 if motor_bd == "archivo":
                     if archivo_subido is None:
                         st.error(t["archivo_falta"])
                         st.stop()
+                    ss["_ultimo_archivo"] = _id_archivo
                     ruta_db = archivo_a_sqlite(archivo_subido.name,
                                                archivo_subido.getvalue())
                     cx = ConexionBD("sqlite", ruta=ruta_db).conectar()
+                    _etiqueta = archivo_subido.name
+                    _ident = _id_archivo
                 else:
                     cx = ConexionBD(motor_bd, **params).conectar()
-                # Cerrar la conexión anterior antes de reemplazarla: sin esto,
-                # cada clic en "Conectar" dejaba una sesión ODBC/SSH abierta
-                # contra la base del cliente (cerrar() no lo llamaba nadie), y
-                # el túnel SSH deja un puerto escuchando en la máquina.
-                if ss.motor is not None and hasattr(ss.motor.cx, "cerrar"):
-                    try:
-                        ss.motor.cx.cerrar()
-                    except Exception:
-                        pass
-                ss.motor = MotorMVSQL(cx, ia_cfg)
-                # El usuario solo ve —y la IA solo conoce— las tablas de su rol.
-                if PERM.get("tablas") != "*":
-                    ss.motor.catalogo = equipo.tablas_visibles(ss.motor.catalogo, PERM)
-                    from catalogo import catalogo_a_fichas
-                    from motor import RecuperadorEsquema
-                    ss.motor.fichas = catalogo_a_fichas(ss.motor.catalogo)
-                    ss.motor.recuperador = RecuperadorEsquema(ss.motor.fichas)
-            st.success(f"{len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
+                    # Sin credenciales en la etiqueta: se muestra en pantalla.
+                    _etiqueta = (os.path.basename(params["ruta"]) if motor_bd == "sqlite"
+                                 else f"{MOTORES[motor_bd]['nombre']} · "
+                                      f"{params.get('servidor') or ''}/{params.get('base') or ''}")
+                    _ident = f"{motor_bd}:{_etiqueta}"
+                # usar_usuario cierra la conexión anterior (ODBC/túnel SSH)
+                # y borra todo lo derivado de ella: resultado, frescura,
+                # historial, tablas elegidas en el diagrama y en Explorar.
+                fuente.usar_usuario(ss, _armar_motor(cx), _etiqueta, _ident)
+                _ok_cambio = True
         except Exception as e:
             st.error(str(e))
+        if _ok_cambio:
+            # Rerun para que TODO se redibuje con la fuente nueva, incluido
+            # el indicador de arriba, que en esta pasada ya se dibujó.
+            st.rerun()
 
-    if ss.motor:
-        ss.motor.ia = ia_cfg  # refrescar credenciales sin reconectar
-        st.success(f"{len(ss.motor.catalogo['tablas'])} {t['tablas_ok']}")
+    if fuente.motor(ss):
+        fuente.motor(ss).ia = ia_cfg  # refrescar credenciales sin reconectar
+        st.success(f"{len(fuente.motor(ss).catalogo['tablas'])} {t['tablas_ok']}")
         with st.expander(f"{t['diagrama']}"):
-            _cat = ss.motor.catalogo
+            _cat = fuente.motor(ss).catalogo
             _rels = esquema_visual.resumen_relaciones(_cat)
             _sueltas = esquema_visual.tablas_sin_relacion(_cat)
             _sel = st.multiselect(t["diagrama_tablas"], sorted(_cat["tablas"]),
@@ -1441,7 +1505,7 @@ with st.sidebar:
                 st.caption(t["diagrama_sueltas"].format(tablas=", ".join(_sueltas)))
 
         with st.expander(f"{t['ver_esquema']}"):
-            for tb, info in ss.motor.catalogo["tablas"].items():
+            for tb, info in fuente.motor(ss).catalogo["tablas"].items():
                 n = info.get("n_filas")
                 st.markdown(f"**{tb}**" + (f" · {n:,} filas" if n else ""))
                 st.caption(", ".join(c["columna"] for c in info["columnas"]))
@@ -1532,7 +1596,7 @@ with st.sidebar:
             _todas = st.checkbox(t["eq_todas_check"], value=True, key="eq_todas_check")
             _tablas_sel = None
             if not _todas:
-                _disp = sorted(ss.motor.catalogo["tablas"]) if ss.motor else []
+                _disp = sorted(fuente.motor(ss).catalogo["tablas"]) if fuente.motor(ss) else []
                 if _disp:
                     _tablas_sel = st.multiselect(t["eq_tablas_sel"], _disp, key="eq_tablas")
                 else:
@@ -1578,6 +1642,12 @@ st.markdown('<span class="mv-badge">SELECT-only</span>'
             '<span class="mv-badge">CTE optimizado</span>'
             '<span class="mv-badge">Multi-IA</span>'
             '<span class="mv-badge">ES · EN · PT</span>', unsafe_allow_html=True)
+# Contra qué datos corre todo lo de abajo, a la vista y no solo en la lateral.
+_f_main = fuente.activa(ss)
+st.caption(f"**{t['fuente_activa']}:** " + (
+    t["fuente_ninguna"] if not _f_main else
+    f"{_f_main['etiqueta']} (demo)" if _f_main["tipo"] == fuente.DEMO else
+    _f_main["etiqueta"]))
 st.write("")
 
 # ── Frescura de los datos ───────────────────────────────────────
@@ -1591,7 +1661,7 @@ st.write("")
 # en un barrido del esquema entero.
 with st.expander(f"{t['fr_titulo']}"):
     st.caption(t["fr_ayuda"])
-    if not ss.motor:
+    if not fuente.motor(ss):
         st.info(t["fr_sin_conexion"])
     else:
         _FREQ = {"diaria": t["fr_diaria"], "semanal": t["fr_semanal"],
@@ -1605,7 +1675,7 @@ with st.expander(f"{t['fr_titulo']}"):
                 # El catálogo ya viene recortado por rol más arriba, así que
                 # el panel no puede revelar una tabla que el usuario no
                 # tendría por qué saber que existe.
-                ss.frescura = frescura.analizar(ss.motor.cx, ss.motor.catalogo,
+                ss.frescura = frescura.analizar(fuente.motor(ss).cx, fuente.motor(ss).catalogo,
                                                 frecuencia=_frec)
 
         _filas = ss.get("frescura")
@@ -1650,7 +1720,10 @@ with st.expander(f"{t['fr_titulo']}"):
 
 st.markdown(f"**{t['ejemplos']}:**")
 cols_ej = st.columns(4)
-for i, ej in enumerate(EJEMPLOS[ss.lang]):
+# Los ejemplos de cobranzas son de la demo: con la fuente del cliente se
+# arman con SUS tablas, así ninguno pregunta por una tabla que no tiene.
+for i, ej in enumerate(fuente.ejemplos(ss, EJEMPLOS[ss.lang],
+                                       [t["ej_contar"], t["ej_primeras"]])):
     if cols_ej[i % 4].button(ej, key=f"ej{i}", use_container_width=True):
         ss.pregunta_precargada = ej
 
@@ -1678,10 +1751,10 @@ if ss.cuaderno_activo:
                 continue
             # celda SQL: las variables van SIEMPRE como parámetros
             _sqlp, _params = cuadernos.preparar_sql(
-                _cont, _vals, marcador=ss.motor.cx.marcador_param
-                if ss.motor and hasattr(ss.motor.cx, "marcador_param") else "?")
+                _cont, _vals, marcador=fuente.motor(ss).cx.marcador_param
+                if fuente.motor(ss) and hasattr(fuente.motor(ss).cx, "marcador_param") else "?")
             st.code(cuadernos.sustituir_texto(_cont, _vals), language="sql")
-            if not ss.motor:
+            if not fuente.motor(ss):
                 st.caption(t["falta_bd"])
                 continue
             # Control de rol sobre el SQL que el usuario escribió a mano: sin
@@ -1699,7 +1772,7 @@ if ss.cuaderno_activo:
                     detalle="sin permiso sobre: " + ", ".join(_prohib_c))
                 continue
             try:
-                _cols_c, _filas_c, _ = ss.motor.cx.ejecutar(
+                _cols_c, _filas_c, _ = fuente.motor(ss).cx.ejecutar(
                     _sqlp, limite=PERM.get("limite_filas", 5000), params=_params)
                 _dfc = pd.DataFrame(_filas_c, columns=_cols_c)
                 _resultados[_i] = _dfc
@@ -1731,7 +1804,7 @@ pregunta = st.text_input(t["tu_pregunta"], value=ss.pregunta_precargada,
 ejecutar = st.button(f"{t['consultar']}", type="primary")
 
 if ejecutar and pregunta:
-    if ss.motor is None:
+    if fuente.motor(ss) is None:
         st.error(t["falta_bd"])
         st.stop()
     if PROVEEDORES[ia_cfg["proveedor"]]["necesita_key"] and not ia_cfg["api_key"]:
@@ -1739,7 +1812,7 @@ if ejecutar and pregunta:
         st.stop()
     with st.spinner(t["generando"]):
         try:
-            ss.resultado = ss.motor.responder(
+            ss.resultado = fuente.motor(ss).responder(
                 pregunta, contexto=contexto_formato(),
                 limite=PERM.get("limite_filas", 5000),
                 privado=ss.get("modo_privado", False))
@@ -1808,8 +1881,8 @@ if r:
     with st.expander(f"{t['plan_titulo']}"):
         _sql_plan = r.get("sql_ejecutado") or r.get("sql") or ""
         _filas_plan, _hallazgos = (
-            esquema_visual.plan_de_ejecucion(ss.motor.cx, _sql_plan)
-            if ss.motor else ([], []))
+            esquema_visual.plan_de_ejecucion(fuente.motor(ss).cx, _sql_plan)
+            if fuente.motor(ss) else ([], []))
         if not _filas_plan:
             st.caption(t["plan_no_disponible"])
         else:
@@ -1913,14 +1986,14 @@ if r:
         with tab5:
             # EDA: sobre el resultado actual o sobre una tabla completa
             fuentes = [t["eda_resultado"]]
-            if ss.motor:
-                fuentes += list(ss.motor.catalogo["tablas"].keys())
+            if fuente.motor(ss):
+                fuentes += list(fuente.motor(ss).catalogo["tablas"].keys())
             fuente = st.selectbox(t["eda_fuente"], fuentes, key="eda_fuente")
             if fuente == t["eda_resultado"]:
                 df_eda = df
             else:
                 try:
-                    cols_e, filas_e, _ = ss.motor.cx.ejecutar(
+                    cols_e, filas_e, _ = fuente.motor(ss).cx.ejecutar(
                         f"SELECT * FROM {fuente}", limite=5000)
                     df_eda = pd.DataFrame(filas_e, columns=cols_e)
                 except Exception as e:
@@ -2013,7 +2086,7 @@ if r:
                                        key="nombre_guardar")
                 if st.button("OK", key="btn_guardar") and nombre:
                     guardadas.guardar(nombre, r["pregunta"], r["sql"],
-                                      dialecto=ss.motor.cx.dialecto)
+                                      dialecto=fuente.motor(ss).cx.dialecto)
                     st.success(t["guardada"])
         with a2:
           if not PERM.get("puede_sp", True):
@@ -2026,7 +2099,7 @@ if r:
                                           key="sp_nombre")
                 if st.button("OK", key="btn_sp"):
                     with st.spinner("…"):
-                        codigo = ss.motor.generar_stored_procedure(r["sql"], sp_nombre)
+                        codigo = fuente.motor(ss).generar_stored_procedure(r["sql"], sp_nombre)
                     st.code(codigo, language="sql")
         with a3:
           if not PLAN_OK:
@@ -2034,7 +2107,7 @@ if r:
           else:
             if st.button(f"{t['optimizar']}"):
                 with st.spinner("…"):
-                    st.code(ss.motor.optimizar_sql(r["sql"]), language="sql")
+                    st.code(fuente.motor(ss).optimizar_sql(r["sql"]), language="sql")
 
 # historial
 if ss.historial:
