@@ -171,6 +171,11 @@ T = {
         "eq_tablas_sel": "Tablas que puede consultar",
         "eq_conecta_primero": "Conectá una base primero para elegir tablas.",
         "eq_ayuda": "Los PIN se guardan cifrados. La IA solo recibe el esquema de las tablas permitidas para cada usuario.",
+        "eq_topes_titulo": "Tope de filas por rol",
+        "eq_topes_ayuda": "0 = sin tope (trae todas las filas). Si un tope recorta un resultado, se avisa con el total real.",
+        "eq_topes_guardar": "Guardar topes", "eq_topes_ok": "Topes de filas guardados.",
+        "tope_recorte": "El resultado se recortó a {n} de {total} filas por el tope de filas de tu rol. Todo lo que aparece abajo —gráfico, análisis y exportes— sale de estas {n} filas.",
+        "tope_recorte_sin_total": "El resultado se recortó a {n} filas por el tope de filas de tu rol y la consulta devuelve más. Todo lo que aparece abajo —gráfico, análisis y exportes— sale de estas {n} filas.",
         "json_hint": "JSON listo para consumir desde otro sistema o API.",
         "plan_titulo": "Plan de ejecución (por qué tarda lo que tarda)",
         "plan_costo": "Costo estimado", "plan_liviano": "liviano",
@@ -325,6 +330,11 @@ T = {
         "eq_tablas_sel": "Tables this user can query",
         "eq_conecta_primero": "Connect a database first to pick tables.",
         "eq_ayuda": "PINs are stored hashed. The AI only receives the schema of the tables each user is allowed to see.",
+        "eq_topes_titulo": "Row cap per role",
+        "eq_topes_ayuda": "0 = no cap (fetches every row). If a cap cuts a result, you are told the real total.",
+        "eq_topes_guardar": "Save caps", "eq_topes_ok": "Row caps saved.",
+        "tope_recorte": "The result was cut to {n} of {total} rows by your role's row cap. Everything below —chart, analysis and exports— comes from these {n} rows.",
+        "tope_recorte_sin_total": "The result was cut to {n} rows by your role's row cap and the query returns more. Everything below —chart, analysis and exports— comes from these {n} rows.",
         "json_hint": "JSON ready to consume from another system or API.",
         "plan_titulo": "Execution plan (why it takes what it takes)",
         "plan_costo": "Estimated cost", "plan_liviano": "light",
@@ -478,6 +488,11 @@ T = {
         "eq_tablas_sel": "Tabelas que pode consultar",
         "eq_conecta_primero": "Conecte um banco primeiro para escolher tabelas.",
         "eq_ayuda": "Os PINs são guardados com hash. A IA só recebe o esquema das tabelas permitidas para cada usuário.",
+        "eq_topes_titulo": "Limite de linhas por perfil",
+        "eq_topes_ayuda": "0 = sem limite (traz todas as linhas). Se um limite cortar um resultado, o total real é informado.",
+        "eq_topes_guardar": "Salvar limites", "eq_topes_ok": "Limites de linhas salvos.",
+        "tope_recorte": "O resultado foi cortado para {n} de {total} linhas pelo limite de linhas do seu perfil. Tudo o que aparece abaixo —gráfico, análise e exportações— vem dessas {n} linhas.",
+        "tope_recorte_sin_total": "O resultado foi cortado para {n} linhas pelo limite de linhas do seu perfil e a consulta retorna mais. Tudo o que aparece abaixo —gráfico, análise e exportações— vem dessas {n} linhas.",
         "json_hint": "JSON pronto para consumir de outro sistema ou API.",
         "plan_titulo": "Plano de execução (por que demora o que demora)",
         "plan_costo": "Custo estimado", "plan_liviano": "leve",
@@ -1175,6 +1190,22 @@ def barra_confianza(conf, t):
 </div>""", unsafe_allow_html=True)
 
 
+def aviso_recorte(recorte, t):
+    """Aviso de recorte por tope de rol, o "" si se trajo todo.
+
+    `recorte` es lo que deja `ConexionBD.ejecutar` en `ultimo_recorte`. Sin
+    tope (dueño/admin) nunca hay recorte. Con tope, si cortó, se dice con el
+    total real — un número parcial con cara de total es peor que ninguno.
+    """
+    if not recorte or not recorte.get("recortado"):
+        return ""
+    n = fmt_numero(recorte.get("filas") or recorte.get("tope") or 0, dec=0)
+    total = recorte.get("total")
+    if total:
+        return t["tope_recorte"].format(n=n, total=fmt_numero(total, dec=0))
+    return t["tope_recorte_sin_total"].format(n=n)
+
+
 def nombre_rol(clave, t):
     """Nombre del rol en el idioma de la pantalla.
 
@@ -1610,6 +1641,24 @@ with st.sidebar:
                 except ValueError as e:
                     st.error(str(e))
             st.caption(t["eq_ayuda"])
+            # Tope de filas por rol: decisión de permisos, editable. 0 = sin
+            # tope. El administrador arranca sin tope.
+            st.markdown(f"**{t['eq_topes_titulo']}**")
+            st.caption(t["eq_topes_ayuda"])
+            _topes = equipo.limites_filas()
+            _nuevos = {}
+            for _rol in equipo.ROLES:
+                _nuevos[_rol] = st.number_input(
+                    nombre_rol(_rol, t), min_value=0, step=1000,
+                    value=int(_topes.get(_rol, 0)), key=f"eq_tope_{_rol}")
+            if st.button(t["eq_topes_guardar"], use_container_width=True,
+                         key="btn_eq_topes"):
+                try:
+                    for _rol, _n in _nuevos.items():
+                        equipo.fijar_limite_filas(_rol, _n)
+                    st.success(t["eq_topes_ok"])
+                except ValueError as e:
+                    st.error(str(e))
 
     st.divider()
     # ── Biblioteca de consultas guardadas ──
@@ -1773,8 +1822,12 @@ if ss.cuaderno_activo:
                 continue
             try:
                 _cols_c, _filas_c, _ = fuente.motor(ss).cx.ejecutar(
-                    _sqlp, limite=PERM.get("limite_filas", 5000), params=_params)
+                    _sqlp, limite=PERM.get("limite_filas", 0) or None, params=_params)
                 _dfc = pd.DataFrame(_filas_c, columns=_cols_c)
+                _aviso_c = aviso_recorte(
+                    getattr(fuente.motor(ss).cx, "ultimo_recorte", None), t)
+                if _aviso_c:
+                    st.warning(_aviso_c, icon="⚠️")
                 _resultados[_i] = _dfc
                 st.dataframe(estilizar_df(_dfc), use_container_width=True, height=260)
                 _figc = graficar(_dfc, "auto")
@@ -1814,7 +1867,7 @@ if ejecutar and pregunta:
         try:
             ss.resultado = fuente.motor(ss).responder(
                 pregunta, contexto=contexto_formato(),
-                limite=PERM.get("limite_filas", 5000),
+                limite=PERM.get("limite_filas", 0) or None,
                 privado=ss.get("modo_privado", False))
             r_ = ss.resultado
             # Segunda barrera: se chequea el SQL que REALMENTE se generó, no
@@ -1915,23 +1968,17 @@ if r:
                     pass
 
         st.markdown(f"##### {t['resultado']}")
-        # El tope de filas del ROL (equipo.py: admin 100.000, analista
-        # 20.000, lector 2.000) se aplicaba callado, y esta métrica mostraba
-        # las filas DEVUELTAS con la etiqueta «Filas», o sea el recorte
-        # presentado como el total. Un lector veía 2.000 y creía que su
-        # consulta daba 2.000. Se dice «puede haber más» y no «hay más»
-        # porque llegar justo al tope no prueba que sobre: lo que sí es
-        # seguro es que a partir de ahí no se trajo nada.
-        _tope_rol = int(PERM.get("limite_filas", 5000) or 0)
-        _en_el_tope = _tope_rol and len(df) >= _tope_rol
+        # El tope de filas del ROL (equipo.py: el admin y el modo abierto no
+        # tienen; analista y lector sí, editables desde el panel del equipo)
+        # se aplicaba callado, y esta métrica mostraba las filas DEVUELTAS
+        # con la etiqueta «Filas», o sea el recorte presentado como el total.
+        # Ahora el conector pide una fila de más para SABER si recortó y
+        # cuenta el total real, así el aviso dice «2.000 de 48.312».
         m1, m2, m3 = st.columns(3)
         m1.metric(t["filas"], fmt_numero(len(df), dec=0))
-        if _en_el_tope:
-            st.warning(
-                f"El resultado llegó al tope de {fmt_numero(_tope_rol, dec=0)} "
-                f"filas de tu rol ({PERM.get('rol', '')}): puede haber más y "
-                f"no se trajeron. Todo lo que aparece abajo —gráfico, "
-                f"análisis y exportes— sale de estas filas.", icon="⚠️")
+        _aviso_r = aviso_recorte(r.get("recorte"), t)
+        if _aviso_r:
+            st.warning(_aviso_r, icon="⚠️")
         m2.metric(t["columnas"], len(df.columns))
         nums = df.select_dtypes(include="number").columns.tolist()
         if nums:
@@ -1993,9 +2040,17 @@ if r:
                 df_eda = df
             else:
                 try:
+                    # Tabla completa: el tope es el del rol (0 = sin tope,
+                    # admin/dueño). Antes era un 5000 fijo, o sea que la
+                    # correlación y la influencia salían de un recorte mudo.
                     cols_e, filas_e, _ = fuente.motor(ss).cx.ejecutar(
-                        f"SELECT * FROM {fuente}", limite=5000)
+                        f"SELECT * FROM {fuente}",
+                        limite=PERM.get("limite_filas", 0) or None)
                     df_eda = pd.DataFrame(filas_e, columns=cols_e)
+                    _aviso_e = aviso_recorte(
+                        getattr(fuente.motor(ss).cx, "ultimo_recorte", None), t)
+                    if _aviso_e:
+                        st.warning(_aviso_e, icon="⚠️")
                 except Exception as e:
                     st.error(str(e))
                     df_eda = df

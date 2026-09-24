@@ -54,11 +54,16 @@ def limite_puestos():
     return LIMITE_PUESTOS_DEFECTO
 
 # Permisos de cada rol. `tablas` con "*" significa todas.
+# `limite_filas`: tope de filas por consulta. 0 = SIN tope. El administrador
+# (y el modo abierto, que es el dueño) no tiene tope: pedido del dueño, «sin
+# límite de tamaño». Los topes de analista y lector son una decisión de
+# PERMISOS, no técnica: se pueden cambiar desde el panel del equipo
+# (`fijar_limite_filas`) y, cuando recortan, la app avisa con el total real.
 ROLES = {
     "admin": {
         "nombre": "Administrador",
         "descripcion": "Acceso total. Gestiona el equipo y ve la auditoría.",
-        "tablas": "*", "limite_filas": 100000,
+        "tablas": "*", "limite_filas": 0,
         "puede_exportar": True, "puede_sp": True, "ve_auditoria": True,
         "gestiona_equipo": True,
     },
@@ -173,11 +178,47 @@ def autenticar(nombre: str, pin: str):
     return None
 
 
+def limites_filas() -> dict:
+    """Tope de filas vigente por rol ({rol: n}, 0 = sin tope).
+
+    Parte de los valores de ROLES y aplica lo que el administrador haya
+    cambiado desde el panel (guardado en equipo.json, `limites_filas`).
+    """
+    guardados = cargar().get("limites_filas") or {}
+    efectivos = {}
+    for rol, datos in ROLES.items():
+        n = guardados.get(rol, datos["limite_filas"])
+        try:
+            n = int(n)
+        except (TypeError, ValueError):
+            n = datos["limite_filas"]
+        efectivos[rol] = max(0, n)
+    return efectivos
+
+
+def fijar_limite_filas(rol: str, limite) -> None:
+    """Cambia el tope de filas de un rol. 0 (o vacío) = sin tope."""
+    if rol not in ROLES:
+        raise ValueError(f"Rol desconocido: {rol}")
+    try:
+        n = int(limite or 0)
+    except (TypeError, ValueError):
+        raise ValueError("El tope de filas tiene que ser un número entero (0 = sin tope).")
+    if n < 0:
+        raise ValueError("El tope de filas no puede ser negativo (0 = sin tope).")
+    cfg = cargar()
+    cfg.setdefault("limites_filas", {})[rol] = n
+    guardar(cfg)
+
+
 def permisos(usuario) -> dict:
-    """Permisos efectivos. Sin usuario (modo abierto) = acceso total."""
+    """Permisos efectivos. Sin usuario (modo abierto) = acceso total, sin
+    tope de filas: es el dueño de la instalación."""
     if not usuario:
-        return dict(ROLES["admin"], tablas="*", rol="admin", nombre_usuario="")
+        return dict(ROLES["admin"], tablas="*", rol="admin", nombre_usuario="",
+                    limite_filas=0)
     base = dict(ROLES.get(usuario["rol"], ROLES["lector"]))
+    base["limite_filas"] = limites_filas().get(usuario["rol"], base["limite_filas"])
     base["tablas"] = usuario.get("tablas", base["tablas"])
     base["rol"] = usuario["rol"]
     base["nombre_usuario"] = usuario["nombre"]
