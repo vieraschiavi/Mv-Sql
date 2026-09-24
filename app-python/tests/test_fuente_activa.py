@@ -31,6 +31,36 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 RAIZ = os.path.dirname(AQUI)
 sys.path.insert(0, RAIZ)
 
+# La suite corre con la biblioteca estándar sola (CI no instala
+# requirements.txt). motor.py importa sklearn para el RAG, que este test no
+# ejercita: si no está, se stubea igual que en test_privacidad.py.
+try:
+    import sklearn  # noqa: F401
+except ImportError:
+    import types
+
+    class _VecFalso:
+        def __init__(self, *a, **k):
+            pass
+
+        def fit_transform(self, textos):
+            return textos
+
+        def transform(self, textos):
+            return textos
+
+    for _n in ("sklearn", "sklearn.feature_extraction",
+               "sklearn.feature_extraction.text", "sklearn.metrics",
+               "sklearn.metrics.pairwise"):
+        sys.modules.setdefault(_n, types.ModuleType(_n))
+    sys.modules["sklearn.feature_extraction.text"].TfidfVectorizer = _VecFalso
+    sys.modules["sklearn.metrics.pairwise"].cosine_similarity = lambda *a, **k: None
+try:
+    import requests  # noqa: F401
+except ImportError:
+    import types
+    sys.modules.setdefault("requests", types.ModuleType("requests"))
+
 import equipo            # noqa: E402
 import esquema_visual    # noqa: E402
 import frescura          # noqa: E402
