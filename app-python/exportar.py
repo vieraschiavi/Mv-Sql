@@ -16,37 +16,52 @@ def a_csv(df):
     return df.to_csv(index=False).encode("utf-8-sig")  # BOM: Excel abre acentos bien
 
 
+#: Filas de datos que entran en una hoja de Excel: el formato admite
+#: 1.048.576 filas y acá se usan dos para el título y el encabezado.
+FILAS_POR_HOJA_EXCEL = 1_048_576 - 2
+
+
 def a_excel(df, titulo="Consulta MV SQL NLP", sql=""):
-    """Excel con formato: encabezado con estilo, autofiltro y hoja de metadatos."""
+    """Excel con formato: encabezado con estilo, autofiltro y hoja de metadatos.
+
+    Lleva TODAS las filas del resultado. Excel no admite más de 1.048.576
+    filas por hoja; si el resultado pasa de eso (sin tope de filas puede
+    pasar) se reparte en «Resultado», «Resultado_2», ... en vez de romper la
+    exportación o cortar callado. La hoja «Info» dice cuántas filas y hojas.
+    """
     buf = io.BytesIO()
     import pandas as pd
+    from openpyxl.styles import Font, PatternFill
+    tramos = [df.iloc[i:i + FILAS_POR_HOJA_EXCEL]
+              for i in range(0, len(df), FILAS_POR_HOJA_EXCEL)] or [df]
     with pd.ExcelWriter(buf, engine="openpyxl") as writer:
-        df.to_excel(writer, sheet_name="Resultado", index=False, startrow=1)
-        ws = writer.sheets["Resultado"]
-        ws["A1"] = titulo
-
-        from openpyxl.styles import Font, PatternFill
-        ws["A1"].font = Font(bold=True, size=13, color="1E3A8A")
-        header_fill = PatternFill("solid", fgColor="1E3A8A")
-        for col_idx in range(1, len(df.columns) + 1):
-            c = ws.cell(row=2, column=col_idx)
-            c.font = Font(bold=True, color="FFFFFF")
-            c.fill = header_fill
-        # ancho de columnas. El max() incluye el largo del encabezado como
-        # semilla: sin eso, con un DataFrame de 0 filas el generador queda
-        # vacío y `max()` sin argumentos tira TypeError — cualquier consulta
-        # válida que devuelva 0 filas ("ventas de un mes futuro") tumbaba la
-        # exportación entera con un traceback.
-        for i, col in enumerate(df.columns, start=1):
-            ancho = max([len(str(col))] + [len(str(v)) for v in df[col].head(200)]) + 2
-            ws.column_dimensions[ws.cell(row=2, column=i).column_letter].width = min(40, ancho)
-        if len(df):
-            ws.auto_filter.ref = f"A2:{ws.cell(row=2, column=len(df.columns)).column_letter}{len(df) + 2}"
+        for n, parte in enumerate(tramos, start=1):
+            hoja = "Resultado" if n == 1 else f"Resultado_{n}"
+            parte.to_excel(writer, sheet_name=hoja, index=False, startrow=1)
+            ws = writer.sheets[hoja]
+            ws["A1"] = titulo if len(tramos) == 1 else f"{titulo} ({n}/{len(tramos)})"
+            ws["A1"].font = Font(bold=True, size=13, color="1E3A8A")
+            header_fill = PatternFill("solid", fgColor="1E3A8A")
+            for col_idx in range(1, len(parte.columns) + 1):
+                c = ws.cell(row=2, column=col_idx)
+                c.font = Font(bold=True, color="FFFFFF")
+                c.fill = header_fill
+            # ancho de columnas. El max() incluye el largo del encabezado
+            # como semilla: sin eso, con un DataFrame de 0 filas el generador
+            # queda vacío y `max()` sin argumentos tira TypeError — cualquier
+            # consulta válida que devuelva 0 filas ("ventas de un mes
+            # futuro") tumbaba la exportación entera con un traceback.
+            for i, col in enumerate(parte.columns, start=1):
+                ancho = max([len(str(col))] + [len(str(v)) for v in parte[col].head(200)]) + 2
+                ws.column_dimensions[ws.cell(row=2, column=i).column_letter].width = min(40, ancho)
+            if len(parte):
+                ws.auto_filter.ref = (f"A2:{ws.cell(row=2, column=len(parte.columns)).column_letter}"
+                                      f"{len(parte) + 2}")
 
         meta = pd.DataFrame({
-            "Campo": ["Generado por", "Fecha", "Filas", "SQL"],
+            "Campo": ["Generado por", "Fecha", "Filas", "Hojas de resultado", "SQL"],
             "Valor": ["MV SQL NLP", datetime.now().strftime("%Y-%m-%d %H:%M"),
-                      len(df), sql[:1000]],
+                      len(df), len(tramos), sql[:1000]],
         })
         meta.to_excel(writer, sheet_name="Info", index=False)
     return buf.getvalue()

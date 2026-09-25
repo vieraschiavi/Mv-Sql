@@ -244,6 +244,8 @@ class ConexionBD:
         self.ssh = ssh or None
         self._tunel = None
         self._con = None
+        # Qué pasó con el tope en la última ejecución (ver ejecutar()).
+        self.ultimo_recorte = None
 
     # ── túnel SSH (opcional) ──────────────────────────────────
     def _abrir_tunel(self):
@@ -385,29 +387,119 @@ class ConexionBD:
     def ejecutar(self, sql, limite=5000, params=None):
         """Ejecuta un SELECT y devuelve (columnas, filas, sql_ejecutado).
 
+        `limite` None o 0 = SIN tope: no se agrega TOP/LIMIT y se traen
+        todas las filas (de a bloques, sin cortar). Es lo que usa el dueño /
+        administrador y el modo abierto. Un número > 0 es un tope explícito
+        (los roles restringidos): si recorta, queda anotado en
+        `self.ultimo_recorte` con el total real para poder AVISARLO — nunca
+        un recorte mudo.
+
         `params` permite consultas parametrizadas (las variables de los
         cuadernos): el valor viaja aparte del SQL, así que su contenido
         nunca se interpreta como código.
 
         Lanza SQLNoPermitido si el SQL no es de solo lectura: la barrera
-        está acá, en el punto de ejecución, y no solo en motor.py.
+        está acá, en el punto de ejecución, y no solo en motor.py. Vale
+        igual con o sin tope.
         """
         asegurar_solo_lectura(sql)
-        sql = _aplicar_limite(sql, self.dialecto, limite)
+        tope = tope_filas(limite)
+        original = sql
+        # Con tope se pide UNA fila de más: que vuelva es la prueba de que
+        # el resultado tiene más y hay que avisar.
+        if tope:
+            sql = _aplicar_limite(sql, self.dialecto, tope + 1)
         cur = self._con.cursor()
         if params:
             cur.execute(sql, tuple(params))
         else:
             cur.execute(sql)
         cols = [d[0] for d in cur.description]
-        # fetchmany(limite+1) en vez de fetchall: red de seguridad si el tope
-        # no se pudo inyectar en el SQL. _aplicar_limite no puede meter TOP en
-        # una consulta que empieza con WITH (SQL Server) y el prompt pide CTEs,
-        # así que sin esto una consulta con CTE traía la tabla entera a memoria.
-        filas = [tuple(r) for r in cur.fetchmany(limite)]
+        if tope:
+            # fetchmany en vez de fetchall: red de seguridad si el tope no
+            # se pudo inyectar en el SQL. _aplicar_limite no puede meter TOP
+            # en una consulta que empieza con WITH (SQL Server) y el prompt
+            # pide CTEs, así que sin esto una consulta con CTE traía la tabla
+            # entera a memoria.
+            filas = [tuple(r) for r in cur.fetchmany(tope + 1)]
+        else:
+            filas = []
+            while True:
+                bloque = cur.fetchmany(_BLOQUE_FILAS)
+                if not bloque:
+                    break
+                filas.extend(tuple(r) for r in bloque)
         if self.motor == "postgres":
             self._con.rollback()  # cerrar la transacción read-only
+        recortado = bool(tope) and len(filas) > tope
+        total = len(filas)
+        if recortado:
+            filas = filas[:tope]
+            total = self.contar(original, params)
+        self.ultimo_recorte = {"recortado": recortado, "tope": tope,
+                               "total": total, "filas": len(filas)}
         return cols, filas, sql
+
+    def contar(self, sql, params=None):
+        """Total real de filas de un SELECT, o None si no se pudo contar.
+
+        Primero `SELECT COUNT(*) FROM (<sql>) t`. SQL Server no acepta un
+        WITH adentro de una subconsulta: ahí (o si el COUNT falla por otra
+        razón) se recorre el cursor contando de a bloques, sin guardar las
+        filas. Todo pasa por la misma barrera de solo lectura.
+        """
+        asegurar_solo_lectura(sql)
+        # Sin tocar comentarios ni literales (sacarlos podría cambiar un
+        # '--' dentro de un texto). Los saltos de línea alrededor alcanzan
+        # para que un comentario de línea final no se coma el paréntesis.
+        base = sql.strip().rstrip(";").strip()
+        intentos = []
+        if not re.match(r"(?i)^\s*with\b", base) or "sql server" not in self.dialecto.lower():
+            intentos.append(f"SELECT COUNT(*) FROM (\n{base}\n) t")
+        intentos.append(None)                    # recorrer el cursor
+        for q in intentos:
+            try:
+                cur = self._con.cursor()
+                a_correr = q if q else base
+                asegurar_solo_lectura(a_correr)
+                if params:
+                    cur.execute(a_correr, tuple(params))
+                else:
+                    cur.execute(a_correr)
+                if q:
+                    total = int(cur.fetchone()[0])
+                else:
+                    total = 0
+                    while True:
+                        bloque = cur.fetchmany(_BLOQUE_FILAS)
+                        if not bloque:
+                            break
+                        total += len(bloque)
+                if self.motor == "postgres":
+                    self._con.rollback()
+                return total
+            except Exception:
+                if self.motor == "postgres":
+                    try:
+                        self._con.rollback()
+                    except Exception:
+                        pass
+                continue
+        return None
+
+
+#: Filas por bloque al traer un resultado sin tope (memoria acotada por
+#: vuelta del driver, no por el tamaño total).
+_BLOQUE_FILAS = 50_000
+
+
+def tope_filas(limite):
+    """Normaliza un tope: None/0/negativo/no numérico = sin tope (None)."""
+    try:
+        n = int(limite) if limite is not None else 0
+    except (TypeError, ValueError):
+        n = 0
+    return n if n > 0 else None
 
 
 def _aplicar_limite(sql, dialecto, limite):

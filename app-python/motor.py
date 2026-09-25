@@ -405,10 +405,14 @@ ESQUEMA DISPONIBLE (usá solo esto):
 
     def _ejecutar_en(self, resultado, sql, limite):
         """Ejecuta (solo lectura) y deja columnas/filas/error en `resultado`."""
-        resultado.update(columnas=None, filas=None, sql_ejecutado=None, error=None)
+        resultado.update(columnas=None, filas=None, sql_ejecutado=None, error=None,
+                         recorte=None)
         try:
             cols, filas, sql_exec = self.cx.ejecutar(sql, limite=limite)
-            resultado.update(columnas=cols, filas=filas, sql_ejecutado=sql_exec)
+            # Si un tope de rol recortó, el conector deja el total real:
+            # viaja con el resultado para que la pantalla lo diga.
+            resultado.update(columnas=cols, filas=filas, sql_ejecutado=sql_exec,
+                             recorte=getattr(self.cx, "ultimo_recorte", None))
         except Exception as e:
             resultado["error"] = str(e)
 
