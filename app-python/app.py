@@ -718,6 +718,16 @@ st.markdown("""
     background:linear-gradient(90deg,#2563eb,#7c3aed); color:#fff; border:none;
     border-radius:10px; padding:.55rem 1.4rem; font-weight:600; }
   .stButton>button:hover { filter:brightness(1.15); }
+  /* Descargas y desplegables: Streamlit los pinta con fondo blanco y el
+     texto heredaba el #e2e8f0 de .stApp — gris claro sobre blanco, casi
+     invisible (Excel, CSV, PDF, HTML, JSON, Guardar consulta, SP). */
+  [data-testid="stDownloadButton"] button, .stDownloadButton>button,
+  [data-testid="stPopover"] button, [data-testid="stPopoverButton"] {
+    background:#1e293b !important; color:#e2e8f0 !important;
+    border:1px solid #475569 !important; border-radius:10px; font-weight:600; }
+  [data-testid="stDownloadButton"] button:hover, .stDownloadButton>button:hover,
+  [data-testid="stPopover"] button:hover, [data-testid="stPopoverButton"]:hover {
+    border-color:#38bdf8 !important; color:#fff !important; }
   div[data-testid="stMetricValue"] { color:#38bdf8; }
   .stTextInput input, .stSelectbox div, .stNumberInput input {
     background:#0b1220 !important; color:#e2e8f0 !important;
@@ -1311,15 +1321,16 @@ def barra_confianza(conf, t):
 # ──────────────────────────────────────────────────────────────
 # Pestaña Control (motor en control_resultado.py)
 # ──────────────────────────────────────────────────────────────
-def _control_texto(v):
+def _control_texto(v, dec=None):
     """Una celda del perfil como texto: la columna Mínimo mezcla números,
-    fechas y textos, y una columna con tipos mezclados no se dibuja."""
+    fechas y textos, y una columna con tipos mezclados no se dibuja.
+    `dec=0` para los conteos: «18.410», no «18.410,00»."""
     if v is None or (isinstance(v, float) and pd.isna(v)):
         return "—"
     if isinstance(v, bool):
         return str(v)
     if isinstance(v, (int, float)):
-        return fmt_numero(v)
+        return fmt_numero(v, dec=dec)
     return str(v)
 
 
@@ -1352,9 +1363,9 @@ def _control_joins_df(joins, t):
         filas.append({
             t["ctl_j_join"]: f"{j['tipo']} JOIN {j['unida']} ON {on}",
             t["ctl_j_relacion"]: j["relacion"] or "—",
-            t["ctl_j_rep_base"]: _control_texto(j["repetidas_base"]),
-            t["ctl_j_rep_unida"]: _control_texto(j["repetidas_unida"]),
-            t["ctl_j_huerfanas"]: _control_texto(j["huerfanas"]),
+            t["ctl_j_rep_base"]: _control_texto(j["repetidas_base"], dec=0),
+            t["ctl_j_rep_unida"]: _control_texto(j["repetidas_unida"], dec=0),
+            t["ctl_j_huerfanas"]: _control_texto(j["huerfanas"], dec=0),
             t["ctl_j_estado"]: t["ctl_est_" + j["estado"]],
             t["ctl_j_diagnostico"]: texto,
         })
@@ -1389,9 +1400,11 @@ def pestana_control(df, r, t, motor, perm):
     tabla = control_resultado.a_dataframe(perfil, etiquetas, textos_alerta)
     exportable = tabla.copy()
     tabla[etiquetas["tipo"]] = tabla[etiquetas["tipo"]].map(lambda x: t["ctl_tipo_" + x])
+    decimales = {"filas": 0, "nulos": 0, "distintos": 0, "negativos": 0, "pct_nulos": 1}
     for k in ("filas", "nulos", "pct_nulos", "distintos", "minimo", "maximo", "suma",
               "negativos", "frecuente"):
-        tabla[etiquetas[k]] = tabla[etiquetas[k]].map(_control_texto)
+        tabla[etiquetas[k]] = tabla[etiquetas[k]].map(
+            lambda v, d=decimales.get(k): _control_texto(v, dec=d))
     st.dataframe(tabla, use_container_width=True, hide_index=True)
 
     st.markdown(f"###### {t['ctl_joins']}")

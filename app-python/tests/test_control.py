@@ -317,6 +317,13 @@ def _():
     assert "t['ctl_titulo']" in src or 't["ctl_titulo"]' in src
 
 
+@test("botones de descarga y desplegables con texto legible (no gris sobre blanco)")
+def _():
+    src = open(os.path.join(RAIZ, "app.py"), encoding="utf-8").read()
+    for selector in ('[data-testid="stDownloadButton"] button', '[data-testid="stPopoverButton"]'):
+        assert selector in src, f"falta el estilo de {selector}: hereda #e2e8f0 sobre fondo blanco"
+
+
 @test("el instalador y el zip llevan control_resultado.py")
 def _():
     nsi = open(os.path.join(RAIZ, "..", "installer", "mvsql.nsi"), encoding="utf-8").read()
