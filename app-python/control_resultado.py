@@ -40,7 +40,10 @@ solo.
 import re
 from datetime import date, datetime
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:         # la lectura de joins no lo necesita; el perfil sí
+    pd = None
 
 from conectores import _sin_comentarios, _sin_literales
 
