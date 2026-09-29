@@ -410,10 +410,21 @@ class ConexionBD:
         if tope:
             sql = _aplicar_limite(sql, self.dialecto, tope + 1)
         cur = self._con.cursor()
-        if params:
-            cur.execute(sql, tuple(params))
-        else:
-            cur.execute(sql)
+        try:
+            if params:
+                cur.execute(sql, tuple(params))
+            else:
+                cur.execute(sql)
+        except Exception:
+            # En PostgreSQL un error deja la transacción abortada y TODA
+            # consulta siguiente falla con InFailedSqlTransaction hasta
+            # reconectar: una consulta mal escrita dejaba la sesión inservible.
+            if self.motor == "postgres":
+                try:
+                    self._con.rollback()
+                except Exception:           # noqa: BLE001 — el error que importa es el de arriba
+                    pass
+            raise
         cols = [d[0] for d in cur.description]
         if tope:
             # fetchmany en vez de fetchall: red de seguridad si el tope no

@@ -81,7 +81,7 @@ def _como_numero(serie):
     y pandas deja esa columna como `object`: sin esto, el importe no
     tendría suma ni mínimo en el control.
     """
-    if pd.api.types.is_bool_dtype(serie):
+    if pd.api.types.is_bool_dtype(serie) or _es_booleana(serie):
         return None
     if pd.api.types.is_numeric_dtype(serie):
         return serie
@@ -98,6 +98,15 @@ def _como_numero(serie):
     return None
 
 
+def _es_booleana(serie):
+    """Un `bit` de SQL Server con NULL llega como True/False/None en una
+    columna object; como `isinstance(True, int)` es verdadero, sin esto
+    salía «número» con suma."""
+    no_nulos = serie.dropna()
+    return (not no_nulos.empty and serie.dtype == object
+            and all(isinstance(v, bool) for v in no_nulos.head(200)))
+
+
 _ISO = re.compile(r"^\s*(\d{4})-(\d{1,2})-(\d{1,2})")
 _DMY = re.compile(r"^\s*\d{1,2}/\d{1,2}/(\d{4})")
 
@@ -112,7 +121,11 @@ def _anio(v):
     if isinstance(v, (datetime, date)):
         return v.year
     if isinstance(v, str):
-        m = _ISO.match(v) or _DMY.match(v)
+        m = _ISO.match(v)
+        if m:
+            _a, mes, dia = (int(x) for x in m.groups())
+            return int(m.group(1)) if 1 <= mes <= 12 and 1 <= dia <= 31 else None
+        m = _DMY.match(v)
         return int(m.group(1)) if m else None
     return None
 
@@ -139,25 +152,29 @@ def _fechas(serie, nombre):
     if sum(a is not None for a in anios) < 0.9 * len(no_nulos):
         return None
     fechas = [v for v, a in zip(no_nulos, anios) if a is not None]
-    if all(isinstance(v, str) and _ISO.match(v) for v in fechas):
-        clave = str                     # ISO: el orden de texto es el cronológico
-    elif all(isinstance(v, (datetime, date)) for v in fechas):
-        clave = None
-    else:
-        clave = _clave_dmy
-    mn = min(fechas, key=clave) if clave else min(fechas)
-    mx = max(fechas, key=clave) if clave else max(fechas)
+    # Una sola clave de orden para todo: `min()` directo sobre date y
+    # datetime mezclados tira TypeError (no se comparan entre sí).
+    mn = min(fechas, key=_clave_dmy)
+    mx = max(fechas, key=_clave_dmy)
     return [a for a in anios if a is not None], _valor_legible(mn), _valor_legible(mx)
 
 
 def _clave_dmy(v):
-    if isinstance(v, (datetime, date)):
-        return (v.year, v.month, v.day)
+    """(año, mes, día, hora, minuto, segundo) de una fecha objeto o texto.
+
+    Texto con barras: día/mes/año (el formato de la región), salvo que el
+    segundo número pase de 12 — entonces es mes/día/año (12/31/2024).
+    """
+    if isinstance(v, datetime):
+        return (v.year, v.month, v.day, v.hour, v.minute, v.second)
+    if isinstance(v, date):
+        return (v.year, v.month, v.day, 0, 0, 0)
     m = _ISO.match(v)
     if m:
-        return tuple(int(x) for x in m.groups())
-    d, mth, y = (int(x) for x in re.findall(r"\d+", v)[:3])
-    return (y, mth, d)
+        return tuple(int(x) for x in m.groups()) + (0, 0, 0)
+    a, b, y = (int(x) for x in re.findall(r"\d+", v)[:3])
+    dia, mes = (b, a) if b > 12 else (a, b)
+    return (y, mes, dia, 0, 0, 0)
 
 
 def _texto_numerico(serie):
@@ -189,10 +206,10 @@ def perfil_columnas(df):
     """
     perfil = []
     filas = len(df)
-    for nombre in df.columns:
-        serie = df[nombre]
-        if isinstance(serie, pd.DataFrame):      # nombre de columna repetido
-            serie = serie.iloc[:, 0]
+    for i, nombre in enumerate(df.columns):
+        # Por POSICIÓN: con «SELECT v.id, c.id» hay dos columnas «id», y
+        # df["id"] devolvía siempre la primera.
+        serie = df.iloc[:, i]
         nulos = int(serie.isna().sum())
         try:
             distintos = int(serie.nunique(dropna=True))
@@ -208,7 +225,7 @@ def perfil_columnas(df):
 
         numero = _como_numero(serie)
         fecha = None if numero is not None else _fechas(serie, nombre)
-        if pd.api.types.is_bool_dtype(serie):
+        if pd.api.types.is_bool_dtype(serie) or _es_booleana(serie):
             fila["tipo"] = "booleano"
         elif numero is not None:
             fila["tipo"] = "numero"
@@ -261,6 +278,12 @@ def filas_duplicadas(df):
 # ──────────────────────────────────────────────────────────────
 # 2) Lectura de los JOIN del SQL
 # ──────────────────────────────────────────────────────────────
+#
+# Regla de oro: un join que no se entiende del todo NO se verifica. Un ON
+# con una condición de vigencia (BETWEEN, = 1), un OR, una función sobre
+# la clave o una subconsulta cambian qué filas se cruzan; verificar solo
+# la igualdad de claves daría un «duplica filas» falso sobre una consulta
+# correcta. Esos joins se devuelven con `verificable=False` y el motivo.
 
 _ID = r'(?:\[[^\]]+\]|"[^"]+"|`[^`]+`|[A-Za-z_][\w$]*)'
 _QUAL = rf"{_ID}(?:\s*\.\s*{_ID}){{0,2}}"
@@ -269,9 +292,9 @@ _QUAL = rf"{_ID}(?:\s*\.\s*{_ID}){{0,2}}"
 _NO_ALIAS = {
     "where", "join", "inner", "left", "right", "full", "cross", "outer", "on",
     "group", "order", "having", "limit", "offset", "union", "except", "intersect",
-    "with", "natural", "using", "fetch", "window", "qualify", "as",
+    "with", "natural", "using", "fetch", "window", "qualify", "as", "hash", "loop",
+    "merge", "remote", "apply", "pivot", "unpivot", "tablesample",
 }
-
 _NO_ALIAS_RX = "|".join(sorted(_NO_ALIAS))
 # El alias no puede ser una palabra clave: sin el lookahead, en «FROM ventas
 # JOIN precios» el regex se comía el JOIN como alias y ese join no existía.
@@ -279,97 +302,206 @@ _REF_TABLA = re.compile(
     rf"\b(?P<kw>from|join)\s+(?P<tabla>{_QUAL})"
     rf"(?:\s+(?:as\s+)?(?!(?:{_NO_ALIAS_RX})\b)(?P<alias>{_ID}))?",
     re.IGNORECASE)
-_ON = re.compile(
-    r"\bon\b(?P<cond>.*?)(?=\b(?:join|inner|left|right|full|cross|where|group|order|"
-    r"having|union|limit|except|intersect)\b|$)",
-    re.IGNORECASE | re.DOTALL)
-_IGUALDAD = re.compile(rf"(?P<a>{_QUAL})\s*=\s*(?P<b>{_QUAL})")
-_TIPO_JOIN = re.compile(r"\b(left|right|full|cross|inner)?\s*(?:outer\s+)?join\s*$",
-                        re.IGNORECASE)
+_JOIN = re.compile(r"\bjoin\b", re.IGNORECASE)
+# Tipo del join, con los hints de SQL Server (LEFT HASH JOIN, INNER LOOP JOIN).
+_TIPO_JOIN = re.compile(
+    r"\b(left|right|full|cross|inner|natural)?\s*(?:outer\s+)?"
+    r"(?:(?:hash|loop|merge|remote)\s+)?join\s*$", re.IGNORECASE)
+# Dónde termina una condición ON. «LEFT(» es una función, no un join: por
+# eso LEFT/RIGHT solo cortan si les sigue JOIN.
+_FIN_ON = re.compile(
+    r"\b(?:(?:inner|left|right|full|cross|natural)(?:\s+outer)?"
+    r"(?:\s+(?:hash|loop|merge|remote))?\s+join|join|where|group\s+by|order\s+by|"
+    r"having|union|limit|except|intersect|window|qualify|fetch|offset)\b", re.IGNORECASE)
+_IGUAL_COLS = re.compile(rf"^\s*(?P<a>{_QUAL})\s*=\s*(?P<b>{_QUAL})\s*$")
 _CTE = re.compile(rf"(?:\bwith\b|,)\s*(?P<n>{_ID})\s*(?:\([^)]*\))?\s+as\s*\(", re.IGNORECASE)
+_COMA = re.compile(
+    rf"\bfrom\s+{_QUAL}(?:\s+(?:as\s+)?(?!(?:{_NO_ALIAS_RX})\b){_ID})?"
+    rf"(?:\s+with\s*\([^)]*\))?\s*,", re.IGNORECASE)
 
 
 def _limpio(identificador):
     return identificador.strip().strip('[]"`')
 
 
+def _crudas(calificado):
+    """Las partes de un nombre calificado TAL COMO se escribieron (con comillas)."""
+    return re.findall(_ID, calificado)
+
+
 def _partes(calificado):
-    return [_limpio(p) for p in re.split(r"\s*\.\s*", calificado.strip())]
+    return [_limpio(p) for p in _crudas(calificado)]
 
 
-def _alias_valido(alias):
-    return bool(alias) and alias.lower() not in _NO_ALIAS
+def _grupos(texto):
+    """grupo[i]: posición del paréntesis abierto más interno que contiene i (-1 = afuera).
+
+    Los alias valen dentro de su SELECT: `v` en una subconsulta no es la `v`
+    de afuera. Sin esto, «... WHERE v.x IN (SELECT v.x FROM devoluciones v)»
+    resolvía el join de afuera contra `devoluciones`.
+    """
+    grupo, pila = [], []
+    for i, ch in enumerate(texto):
+        if ch == ")" and pila:
+            pila.pop()
+        grupo.append(pila[-1] if pila else -1)
+        if ch == "(":
+            pila.append(i)
+    return grupo
+
+
+def _sin_parentesis_externos(cond):
+    cond = cond.strip()
+    while cond.startswith("(") and cond.endswith(")"):
+        nivel = 0
+        for i, ch in enumerate(cond):
+            nivel += ch == "("
+            nivel -= ch == ")"
+            if nivel == 0 and i < len(cond) - 1:
+                return cond            # «(a) AND (b)»: los de afuera no envuelven todo
+        cond = cond[1:-1].strip()
+    return cond
+
+
+def _terminos_and(cond):
+    """Los términos de un AND de primer nivel, o None si hay un OR."""
+    cond = _sin_parentesis_externos(cond)
+    terminos, nivel, ini = [], 0, 0
+    for m in re.finditer(r"\(|\)|\band\b|\bor\b", cond, re.IGNORECASE):
+        tok = m.group(0).lower()
+        if tok == "(":
+            nivel += 1
+        elif tok == ")":
+            nivel -= 1
+        elif nivel == 0 and tok == "or":
+            return None
+        elif nivel == 0 and tok == "and":
+            terminos.append(cond[ini:m.start()])
+            ini = m.end()
+    terminos.append(cond[ini:])
+    return [_sin_parentesis_externos(t) for t in terminos]
+
+
+def _no_leido(tipo, unida="", motivo="no_leido"):
+    return {"tipo": tipo, "base": "", "col_base": [], "unida": unida, "col_unida": [],
+            "verificable": False, "motivo": motivo}
+
+
+def _condicion_on(texto, desde, hasta):
+    """El texto del ON entre `desde` y `hasta`, o None si no hay ON."""
+    tramo = texto[desde:hasta]
+    on = re.search(r"\bon\b", tramo, re.IGNORECASE)
+    if not on or re.match(r"\s*using\b", tramo, re.IGNORECASE):
+        return None
+    # Se corta con el texto que SIGUE (no con `tramo`): el próximo join
+    # empieza en su «JOIN», así que el «INNER »/«LEFT » que lo precede
+    # quedaría pegado al final de esta condición.
+    cond = texto[desde + on.end():]
+    fin = _FIN_ON.search(cond)
+    if fin:
+        cond = cond[:fin.start()]
+    nivel = 0                     # un «)» de más cierra la subconsulta que contiene al join
+    for i, ch in enumerate(cond):
+        nivel += ch == "("
+        nivel -= ch == ")"
+        if nivel < 0:
+            return cond[:i]
+    return cond
 
 
 def joins_del_sql(sql):
-    """Los JOIN ... ON col = col del SQL.
+    """Los JOIN del SQL.
 
     Devuelve una lista de dicts: tipo (INNER/LEFT/RIGHT/FULL), la tabla
     ya existente (`base`, `col_base`) y la que se une (`unida`,
-    `col_unida`), como aparecen escritas en el SQL (con esquema, si lo
-    llevan). Las claves compuestas (ON a.x = b.x AND a.y = b.y) quedan
-    en un solo join con varias columnas.
+    `col_unida`), escritas TAL CUAL en el SQL (con esquema y comillas, si
+    las llevan: `"ClienteId"` en PostgreSQL no es `ClienteId`). Las claves
+    compuestas (ON a.x = b.x AND a.y = b.y) quedan en un solo join.
 
-    Un join cuyo lado es un CTE o una subconsulta se devuelve con
-    `verificable=False`: su «tabla» no existe en la base para preguntarle.
+    Los joins que no se pueden verificar se devuelven igual, con
+    `verificable=False` y `motivo`: «cte» (une un CTE o una subconsulta),
+    «on_complejo» (el ON no es solo igualdades entre columnas) o
+    «no_leido» (USING, NATURAL, JOIN a una subconsulta, FROM a, b).
     """
     texto = _sin_literales(_sin_comentarios(sql or ""))
-    ctes = {m.group("n").strip('[]"`').lower() for m in _CTE.finditer(texto)}
+    ctes = {_limpio(m.group("n")).lower() for m in _CTE.finditer(texto)}
+    grupo = _grupos(texto)
 
-    refs = []           # (posición, palabra, tabla escrita, alias)
-    alias_a_tabla = {}
+    refs = []                            # (pos, fin, palabra, tabla, alias, grupo)
+    alias_por_grupo = {}
     for m in _REF_TABLA.finditer(texto):
         tabla = re.sub(r"\s*\.\s*", ".", m.group("tabla").strip())
         alias = m.group("alias")
-        if not _alias_valido(alias):
-            alias = None
-        nombre_simple = _partes(tabla)[-1].lower()
-        refs.append((m.start(), m.group("kw").lower(), tabla, alias))
-        alias_a_tabla[nombre_simple] = tabla
+        g = grupo[m.start()]
+        refs.append((m.start(), m.end(), m.group("kw").lower(), tabla, alias, g))
+        nombres = alias_por_grupo.setdefault(g, {})
+        nombres.setdefault(_partes(tabla)[-1].lower(), tabla)
         if alias:
-            alias_a_tabla[_limpio(alias).lower()] = tabla
+            nombres[_limpio(alias).lower()] = tabla
 
     joins = []
-    for pos, kw, tabla, alias in refs:
+    en_ref = {pos for pos, _f, kw, *_ in refs if kw == "join"}
+    for m in _JOIN.finditer(texto):
+        if m.start() in en_ref:
+            continue
+        tm = _TIPO_JOIN.search(texto[max(0, m.start() - 40):m.end()])
+        if tm and (tm.group(1) or "").lower() == "cross":
+            continue
+        joins.append(_no_leido("JOIN"))          # JOIN (SELECT ...) x, JOIN LATERAL, ...
+
+    for m in _COMA.finditer(texto):
+        joins.append(_no_leido(",", unida=""))
+
+    for pos, fin_ref, kw, tabla, alias, g in refs:
         if kw != "join":
             continue
-        previo = texto[max(0, pos - 30):pos + 4]
-        tm = _TIPO_JOIN.search(previo)
+        tm = _TIPO_JOIN.search(texto[max(0, pos - 40):pos + 4])
         tipo = ((tm.group(1) or "inner") if tm else "inner").upper()
         if tipo == "CROSS":
             continue
-        # La condición ON que sigue a ESTE join (hasta el próximo join).
+        if tipo == "NATURAL":
+            joins.append(_no_leido(tipo, tabla))
+            continue
         siguiente = min([p for p, *_ in refs if p > pos] or [len(texto)])
-        tramo = texto[pos:siguiente]
-        on = _ON.search(tramo)
-        if not on:
+        cond = _condicion_on(texto, fin_ref, siguiente)
+        if cond is None:
+            joins.append(_no_leido(tipo, tabla))
             continue
-        propio = {_partes(tabla)[-1].lower()}
-        if alias:
-            propio.add(_limpio(alias).lower())
-        pares = []
-        for ig in _IGUALDAD.finditer(on.group("cond")):
-            a, b = _partes(ig.group("a")), _partes(ig.group("b"))
+        # Con alias, la tabla se nombra SOLO por el alias (y así un self-join
+        # «FROM emp JOIN emp m ON m.id = emp.jefe» distingue los dos lados).
+        propio = _limpio(alias).lower() if alias else _partes(tabla)[-1].lower()
+        terminos = _terminos_and(cond)
+        pares, otros = [], set()
+        for termino in terminos or [""]:
+            ig = _IGUAL_COLS.match(termino)
+            if not ig:
+                pares = None
+                break
+            a, b = _crudas(ig.group("a")), _crudas(ig.group("b"))
             if len(a) < 2 or len(b) < 2:
-                continue            # comparación contra una constante o sin calificar
-            lado_a, lado_b = a[-2].lower(), b[-2].lower()
-            if lado_b in propio and lado_a not in propio:
-                pares.append((lado_a, a[-1], b[-1]))
-            elif lado_a in propio and lado_b not in propio:
-                pares.append((lado_b, b[-1], a[-1]))
-        if not pares:
+                pares = None
+                break
+            lado_a, lado_b = _limpio(a[-2]).lower(), _limpio(b[-2]).lower()
+            if lado_b == propio and lado_a != propio:
+                otros.add(lado_a)
+                pares.append((a[-1], b[-1]))
+            elif lado_a == propio and lado_b != propio:
+                otros.add(lado_b)
+                pares.append((b[-1], a[-1]))
+            else:
+                pares = None
+                break
+        if not pares or len(otros) != 1:
+            joins.append(_no_leido(tipo, tabla, "on_complejo"))
             continue
-        # Un join puede cruzar contra UNA sola tabla ya existente por vez;
-        # si la condición mezcla dos, se toma la primera (la más común).
-        otro = pares[0][0]
-        pares = [p for p in pares if p[0] == otro]
-        base = alias_a_tabla.get(otro, otro)
-        verificable = (_partes(base)[-1].lower() not in ctes
-                       and _partes(tabla)[-1].lower() not in ctes)
+        otro = otros.pop()
+        base = alias_por_grupo.get(g, {}).get(otro)
+        es_cte = (base is None or _partes(base)[-1].lower() in ctes
+                  or _partes(tabla)[-1].lower() in ctes)
         joins.append({
-            "tipo": tipo, "base": base, "col_base": [p[1] for p in pares],
-            "unida": tabla, "col_unida": [p[2] for p in pares],
-            "verificable": verificable,
+            "tipo": tipo, "base": base or otro, "col_base": [p[0] for p in pares],
+            "unida": tabla, "col_unida": [p[1] for p in pares],
+            "verificable": not es_cte, "motivo": "cte" if es_cte else None,
         })
     return joins
 
@@ -379,6 +511,7 @@ def joins_del_sql(sql):
 # ──────────────────────────────────────────────────────────────
 
 _SEGURO = re.compile(rf"^{_QUAL}$")
+_SEGURO_COL = re.compile(rf"^{_ID}$")
 
 
 def _columnas_catalogo(catalogo, tabla):
@@ -395,13 +528,20 @@ def _columnas_catalogo(catalogo, tabla):
 
 
 def _cita(col, dialecto):
-    if re.fullmatch(r"[A-Za-z_][\w]*", col):
+    """La columna lista para el SQL.
+
+    Si ya viene citada (`"ClienteId"`, `[Cliente ID]`) se usa TAL CUAL: es
+    como la escribió la consulta que ya corrió bien. Sacarle las comillas en
+    PostgreSQL la pasaba a minúsculas y la verificación fallaba.
+    """
+    if col[:1] in '["`' or re.fullmatch(r"[A-Za-z_][\w]*", col):
         return col
-    if "sql server" in (dialecto or "").lower():
-        return f"[{col}]"
-    if "mysql" in (dialecto or "").lower():
-        return f"`{col}`"
-    return f'"{col}"'
+    d = (dialecto or "").lower()
+    if "sql server" in d:
+        return "[" + col.replace("]", "]]") + "]"
+    if "mysql" in d:
+        return "`" + col.replace("`", "``") + "`"
+    return '"' + col.replace('"', '""') + '"'
 
 
 def sql_claves_repetidas(tabla, columnas, dialecto=""):
@@ -422,10 +562,17 @@ def sql_huerfanas(base, col_base, unida, col_unida, dialecto=""):
             f"AND NOT EXISTS (SELECT 1 FROM {unida} u_ WHERE {cond})")
 
 
-def _es_pk(cols_catalogo, columnas):
-    """La clave es la PK completa de la tabla (entonces es única sin preguntar)."""
+def _es_pk(tabla, cols_catalogo, columnas):
+    """La clave es la PK completa de la tabla (entonces es única sin preguntar).
+
+    Solo para un nombre sin esquema: el catálogo se indexa por nombre
+    simple, y `otro_esquema.clientes` no tiene por qué compartir la PK de
+    `clientes`. Con esquema, se pregunta a la base.
+    """
+    if "." in tabla:
+        return False
     pks = {n for n, c in cols_catalogo.items() if c.get("pk")}
-    return bool(pks) and pks == {c.lower() for c in columnas}
+    return bool(pks) and pks == {_limpio(c).lower() for c in columnas}
 
 
 def clasificar(base_unica, unida_unica):
@@ -457,23 +604,28 @@ def verificar_joins(cx, sql, catalogo, ejecutar=None):
     salida = []
     for j in joins_del_sql(sql):
         fila = dict(j, repetidas_base=None, repetidas_unida=None, huerfanas=None,
-                    relacion=None, estado="no_verificable", motivo="cte", error=None)
+                    relacion=None, estado="no_verificable",
+                    motivo=j.get("motivo") or "cte", error=None)
         salida.append(fila)
         if not j["verificable"]:
             continue
         cat_b = _columnas_catalogo(catalogo, j["base"])
         cat_u = _columnas_catalogo(catalogo, j["unida"])
+        cols = j["col_base"] + j["col_unida"]
         if (cat_b is None or cat_u is None
                 or not _SEGURO.match(j["base"]) or not _SEGURO.match(j["unida"])
-                or any(c.lower() not in cat_b for c in j["col_base"])
-                or any(c.lower() not in cat_u for c in j["col_unida"])):
+                or not all(_SEGURO_COL.match(c) for c in cols)
+                or any(_limpio(c).lower() not in cat_b for c in j["col_base"])
+                or any(_limpio(c).lower() not in cat_u for c in j["col_unida"])):
             fila["motivo"] = "fuera_catalogo"
             continue
         try:
-            fila["repetidas_unida"] = (0 if _es_pk(cat_u, j["col_unida"]) else
-                                       uno(sql_claves_repetidas(j["unida"], j["col_unida"], dialecto)))
-            fila["repetidas_base"] = (0 if _es_pk(cat_b, j["col_base"]) else
-                                      uno(sql_claves_repetidas(j["base"], j["col_base"], dialecto)))
+            fila["repetidas_unida"] = (
+                0 if _es_pk(j["unida"], cat_u, j["col_unida"]) else
+                uno(sql_claves_repetidas(j["unida"], j["col_unida"], dialecto)))
+            fila["repetidas_base"] = (
+                0 if _es_pk(j["base"], cat_b, j["col_base"]) else
+                uno(sql_claves_repetidas(j["base"], j["col_base"], dialecto)))
             fila["huerfanas"] = uno(sql_huerfanas(j["base"], j["col_base"], j["unida"],
                                                   j["col_unida"], dialecto))
         except Exception as e:                   # noqa: BLE001 — se muestra, no se oculta

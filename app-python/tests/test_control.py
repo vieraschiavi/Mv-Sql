@@ -118,6 +118,62 @@ def _():
     assert C.joins_del_sql("") == []
 
 
+@test("PostgreSQL: las columnas citadas se usan TAL CUAL (no se pasan a minúsculas)")
+def _():
+    sql = 'SELECT 1 FROM "Ventas" v JOIN "Clientes" c ON c."Id" = v."ClienteId"'
+    j = C.joins_del_sql(sql)[0]
+    assert j["col_base"] == ['"ClienteId"'] and j["col_unida"] == ['"Id"'], j
+    q = C.sql_claves_repetidas(j["base"], j["col_base"], "PostgreSQL")
+    assert 'SELECT "ClienteId" FROM "Ventas"' in q, q
+
+
+@test("ON con vigencia, constante, OR o función: no se verifica (evita el N:N falso)")
+def _():
+    base = "SELECT 1 FROM ventas v JOIN precios p ON "
+    for cond in ("p.producto_id = v.producto_id AND v.fecha BETWEEN p.desde AND p.hasta",
+                 "p.producto_id = v.producto_id AND p.vigente = 1",
+                 "p.id = v.pid OR p.id = v.pid2",
+                 "UPPER(p.cod) = UPPER(v.cod)",
+                 "p.cod = LEFT(v.cod, 3)"):
+        j = C.joins_del_sql(base + cond)
+        assert len(j) == 1 and not j[0]["verificable"], (cond, j)
+        assert j[0]["motivo"] == "on_complejo", (cond, j)
+
+
+@test("ON que cruza contra DOS tablas distintas no se verifica a medias")
+def _():
+    j = C.joins_del_sql("SELECT 1 FROM a JOIN b ON b.k = a.k JOIN c ON c.x = a.x AND c.y = b.y")
+    assert j[0]["verificable"] and j[1]["motivo"] == "on_complejo", j
+
+
+@test("alias reusado en una subconsulta y tabla derivada no confunden la base")
+def _():
+    j = C.joins_del_sql("SELECT 1 FROM ventas v JOIN clientes c ON c.id = v.cid "
+                        "WHERE v.x IN (SELECT v.x FROM devoluciones v)")
+    assert j[0]["base"] == "ventas", j
+    j = C.joins_del_sql("SELECT 1 FROM (SELECT id FROM t) sueldos "
+                        "JOIN clientes c ON c.id = sueldos.id")
+    assert not j[0]["verificable"] and j[0]["motivo"] == "cte", j
+
+
+@test("USING, NATURAL, JOIN a subconsulta y FROM a, b se listan como no leídos")
+def _():
+    for sql in ("SELECT 1 FROM ventas JOIN clientes USING (id)",
+                "SELECT 1 FROM ventas NATURAL JOIN clientes",
+                "SELECT 1 FROM ventas v JOIN (SELECT id FROM clientes) x ON x.id = v.cid",
+                "SELECT 1 FROM ventas v, clientes c WHERE c.id = v.cid"):
+        j = C.joins_del_sql(sql)
+        assert j and j[0]["motivo"] == "no_leido" and not j[0]["verificable"], (sql, j)
+
+
+@test("self-join y hints de SQL Server (LEFT HASH JOIN)")
+def _():
+    j = C.joins_del_sql("SELECT 1 FROM emp JOIN emp m ON m.id = emp.jefe")
+    assert j[0]["verificable"] and j[0]["col_base"] == ["jefe"] and j[0]["col_unida"] == ["id"], j
+    j = C.joins_del_sql("SELECT 1 FROM ventas v LEFT HASH JOIN clientes c ON c.id = v.cid")
+    assert j[0]["tipo"] == "LEFT", j
+
+
 # ──────────────────────────────────────────────────────────────
 print("\n== Verificación de los joins contra la base ==")
 
@@ -261,6 +317,48 @@ def _():
     assert f["nulos"] == 1 and f["pct_nulos"] == 33.3
 
 
+@test("date y datetime mezclados, bit con NULL, columnas repetidas y fechas M/D/Y")
+def _():
+    from datetime import date, datetime
+    df = pd.DataFrame({"alta": [date(2026, 1, 1), datetime(2026, 3, 1, 10, 0), None]},
+                      dtype=object)
+    f = C.perfil_columnas(df)[0]
+    assert f["tipo"] == "fecha" and f["maximo"] == "2026-03-01 10:00:00", f
+    b = C.perfil_columnas(pd.DataFrame({"activo": [True, None, False]}, dtype=object))[0]
+    assert b["tipo"] == "booleano" and b["suma"] is None, b
+    d = C.perfil_columnas(pd.DataFrame([[1, "a"], [2, "b"]], columns=["x", "x"]))
+    assert d[0]["tipo"] == "numero" and d[1]["tipo"] == "texto", d
+    m = C.perfil_columnas(pd.DataFrame({"fecha": ["12/31/2024", "01/15/2025"]}))[0]
+    assert m["minimo"] == "12/31/2024" and m["maximo"] == "01/15/2025", m
+    x = C.perfil_columnas(pd.DataFrame({"fecha": ["2024-13-45", "2024-14-01"]}))[0]
+    assert x["tipo"] == "texto", "un mes 13 no es una fecha"
+
+
+@test("PostgreSQL: una consulta que falla hace rollback (la sesión sigue usable)")
+def _():
+    class Cur:
+        def execute(self, *_a):
+            raise RuntimeError("column does not exist")
+
+    class Con:
+        rollbacks = 0
+
+        def cursor(self):
+            return Cur()
+
+        def rollback(self):
+            Con.rollbacks += 1
+
+    cx = ConexionBD("postgres")
+    cx._con = Con()
+    try:
+        cx.ejecutar("SELECT x FROM t", limite=None)
+        raise AssertionError("tenía que propagar el error")
+    except RuntimeError:
+        pass
+    assert Con.rollbacks == 1
+
+
 @test("filas duplicadas exactas se cuentan y cambian el semáforo")
 def _():
     df = pd.DataFrame({"a": [1, 1, 2], "b": ["x", "x", "y"]})
@@ -304,7 +402,8 @@ def _():
     claves += [f"ctl_al_{a}" for a in C.SEVERIDAD]
     claves += [f"ctl_mot_{m}" for m in ("ok", "1n", "nn", "huerfanas_inner",
                                          "huerfanas_left", "cte", "fuera_catalogo",
-                                         "error_motor")]
+                                         "error_motor", "on_complejo", "no_leido")]
+    claves += ["ctl_no_verificables", "ctl_fallo"]
     for lang in ("es", "en", "pt"):
         faltan = [k for k in claves if k not in T[lang]]
         assert not faltan, f"{lang}: faltan {faltan}"

@@ -23,6 +23,7 @@ import base64
 import html
 import io
 import os
+import uuid
 
 import pandas as pd
 import plotly.express as px
@@ -215,6 +216,10 @@ T = {
         "ctl_mot_cte": "Une un CTE o una subconsulta: no es una tabla de la base para preguntarle.",
         "ctl_mot_fuera_catalogo": "La tabla o la columna no está en el catálogo visible: no se consultó.",
         "ctl_mot_error_motor": "La base devolvió un error al verificar: {error}",
+        "ctl_mot_on_complejo": "El ON tiene condiciones que no son solo claves (vigencias, OR, funciones): no se verifica para no dar un diagnóstico falso.",
+        "ctl_mot_no_leido": "No se pudo leer este join (USING, NATURAL, subconsulta o FROM a, b): revisalo a mano.",
+        "ctl_no_verificables": "{n} join(s) no se pueden verificar automáticamente: revisalos a mano.",
+        "ctl_fallo": "El control no pudo analizar este resultado: {error}",
         "ctl_descargar": "Descargar el control (CSV)",
         "json_hint": "JSON listo para consumir desde otro sistema o API.",
         "plan_titulo": "Plan de ejecución (por qué tarda lo que tarda)",
@@ -413,6 +418,10 @@ T = {
         "ctl_mot_cte": "It joins a CTE or a subquery: it is not a database table that can be asked.",
         "ctl_mot_fuera_catalogo": "The table or column is not in the visible catalog: it was not queried.",
         "ctl_mot_error_motor": "The database returned an error while checking: {error}",
+        "ctl_mot_on_complejo": "The ON has conditions that are not just keys (validity ranges, OR, functions): it is not checked, to avoid a false diagnosis.",
+        "ctl_mot_no_leido": "This join could not be read (USING, NATURAL, subquery or FROM a, b): review it by hand.",
+        "ctl_no_verificables": "{n} join(s) cannot be checked automatically: review them by hand.",
+        "ctl_fallo": "The control could not analyze this result: {error}",
         "ctl_descargar": "Download the control (CSV)",
         "json_hint": "JSON ready to consume from another system or API.",
         "plan_titulo": "Execution plan (why it takes what it takes)",
@@ -610,6 +619,10 @@ T = {
         "ctl_mot_cte": "Une um CTE ou uma subconsulta: não é uma tabela da base para consultar.",
         "ctl_mot_fuera_catalogo": "A tabela ou a coluna não está no catálogo visível: não foi consultada.",
         "ctl_mot_error_motor": "A base devolveu um erro ao verificar: {error}",
+        "ctl_mot_on_complejo": "O ON tem condições que não são só chaves (vigências, OR, funções): não é verificado para não dar um diagnóstico falso.",
+        "ctl_mot_no_leido": "Não foi possível ler este join (USING, NATURAL, subconsulta ou FROM a, b): revise manualmente.",
+        "ctl_no_verificables": "{n} join(s) não podem ser verificados automaticamente: revise manualmente.",
+        "ctl_fallo": "O controle não conseguiu analisar este resultado: {error}",
         "ctl_descargar": "Baixar o controle (CSV)",
         "json_hint": "JSON pronto para consumir de outro sistema ou API.",
         "plan_titulo": "Plano de execução (por que demora o que demora)",
@@ -1341,8 +1354,11 @@ def _control_perfil(df, r):
     un resultado de un millón de filas recalculaba nulos y distintos de
     cada columna cada vez que se tocaba cualquier cosa de la pantalla.
     """
-    clave = (id(r), r.get("sql_ejecutado") or r.get("sql"), len(df),
-             tuple(str(c) for c in df.columns))
+    # Identidad propia del resultado: id(r) se reusa cuando Python libera el
+    # dict anterior, y re-ejecutar la misma consulta mostraba el perfil viejo.
+    if "_control_id" not in r:
+        r["_control_id"] = uuid.uuid4().hex
+    clave = r["_control_id"]
     guardado = st.session_state.get("control_perfil")
     if guardado and guardado[0] == clave:
         return guardado[1], guardado[2]
@@ -1356,7 +1372,7 @@ def _control_joins_df(joins, t):
     filas = []
     for j in joins:
         on = " AND ".join(f"{j['base']}.{a} = {j['unida']}.{b}"
-                          for a, b in zip(j["col_base"], j["col_unida"]))
+                          for a, b in zip(j["col_base"], j["col_unida"])) or "…"
         texto = t["ctl_mot_" + j["motivo"]].format(
             base=j["base"], unida=j["unida"], n=fmt_numero(j["huerfanas"] or 0, dec=0),
             error=j.get("error") or "")
@@ -1373,13 +1389,24 @@ def _control_joins_df(joins, t):
 
 
 def pestana_control(df, r, t, motor, perm):
+    """La pestaña Control, blindada: corre ANTES que Explorar, Exportar y
+    Auditoría, así que una excepción acá se llevaba puestas esas pestañas."""
+    try:
+        _pestana_control(df, r, t, motor, perm)
+    except Exception as e:                   # noqa: BLE001 — se muestra, no se oculta
+        st.error(t["ctl_fallo"].format(error=f"{type(e).__name__}: {e}"))
+
+
+def _pestana_control(df, r, t, motor, perm):
     """¿El número es confiable? Perfil de columnas + joins contra la base."""
     st.caption(t["ctl_intro"])
     perfil, dup = _control_perfil(df, r)
     sql_r = r.get("sql_ejecutado") or r.get("sql") or ""
     joins_sql = control_resultado.joins_del_sql(sql_r)
+    if "_control_id" not in r:
+        r["_control_id"] = uuid.uuid4().hex
     guardado = st.session_state.get("control_joins")
-    joins = guardado[1] if guardado and guardado[0] == sql_r else None
+    joins = guardado[1] if guardado and guardado[0] == r["_control_id"] else None
 
     estado = control_resultado.semaforo(perfil, dup, joins)
     {"ok": st.success, "revisar": st.warning, "error": st.error}[estado](t["ctl_" + estado])
@@ -1416,21 +1443,32 @@ def pestana_control(df, r, t, motor, perm):
         st.caption(t["ctl_joins_ayuda"])
         if st.button(t["ctl_verificar"], key="btn_control_joins"):
             ok, prohibidas = equipo.puede_consultar_sql(sql_r, perm)
+            quien = dict(usuario=perm.get("nombre_usuario") or "(sin usuario)",
+                         rol=perm.get("rol", ""), pregunta="[control] joins", sql=sql_r)
             if not ok:
+                # El texto dice «el intento quedó registrado»: que sea verdad.
+                auditoria.registrar(**quien, tablas=prohibidas, resultado="rechazado",
+                                    detalle="sin permiso sobre: " + ", ".join(prohibidas))
                 st.error(t["sin_permiso"].format(tablas=", ".join(prohibidas)))
             else:
                 with st.spinner("…"):
                     joins = control_resultado.verificar_joins(motor.cx, sql_r, motor.catalogo)
-                st.session_state["control_joins"] = (sql_r, joins)
+                st.session_state["control_joins"] = (r["_control_id"], joins)
+                fallidos = [j for j in joins if j["motivo"] == "error_motor"]
                 auditoria.registrar(
-                    usuario=perm.get("nombre_usuario") or "(sin usuario)",
-                    rol=perm.get("rol", ""), pregunta="[control] joins", sql=sql_r,
-                    tablas=sorted({j["base"] for j in joins} | {j["unida"] for j in joins}),
-                    resultado="ok", detalle=control_resultado.semaforo([], 0, joins))
+                    **quien,
+                    tablas=sorted({j["base"] for j in joins if j["base"]}
+                                  | {j["unida"] for j in joins if j["unida"]}),
+                    resultado="error" if fallidos else "ok",
+                    detalle=(fallidos[0]["error"] if fallidos
+                             else control_resultado.semaforo([], 0, joins)))
                 st.rerun()
         if joins is not None:
             st.dataframe(_control_joins_df(joins, t), use_container_width=True,
                          hide_index=True)
+            n_nv = sum(1 for j in joins if j["estado"] == "no_verificable")
+            if n_nv:
+                st.info(t["ctl_no_verificables"].format(n=n_nv))
             exportable = pd.concat(
                 [exportable, _control_joins_df(joins, t)], ignore_index=True)
     st.download_button(t["ctl_descargar"], exportable.to_csv(index=False).encode("utf-8-sig"),
