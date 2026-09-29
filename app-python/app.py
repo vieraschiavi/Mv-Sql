@@ -37,6 +37,7 @@ from licencia import (TRIAL_DIAS, renovar_si_corresponde, verificar_acceso,
 from motor import MotorMVSQL
 from proveedores_ia import ErrorProveedor, PROVEEDORES, cargar_licencia_creditos, listar_modelos, probar_conexion
 import auditoria
+import control_resultado
 import cuadernos
 import equipo
 import esquema_visual
@@ -176,6 +177,45 @@ T = {
         "eq_topes_guardar": "Guardar topes", "eq_topes_ok": "Topes de filas guardados.",
         "tope_recorte": "El resultado se recortó a {n} de {total} filas por el tope de filas de tu rol. Todo lo que aparece abajo —gráfico, análisis y exportes— sale de estas {n} filas.",
         "tope_recorte_sin_total": "El resultado se recortó a {n} filas por el tope de filas de tu rol y la consulta devuelve más. Todo lo que aparece abajo —gráfico, análisis y exportes— sale de estas {n} filas.",
+        # Pestaña Control: ¿el resultado es confiable? (control_resultado.py)
+        "ctl_titulo": "Control",
+        "ctl_intro": "La validación garantiza que la consulta es de solo lectura y que las tablas existen. Esto revisa si el NÚMERO es confiable: columnas con defectos y joins que duplican o descartan filas.",
+        "ctl_ok": "Sin señales de problemas en el resultado.",
+        "ctl_revisar": "Hay cosas para revisar antes de usar este número.",
+        "ctl_error": "El resultado tiene un error: un join está duplicando filas y los totales salen inflados.",
+        "ctl_duplicadas": "Filas duplicadas", "ctl_con_alertas": "Columnas con alertas",
+        "ctl_perfil": "Perfil de cada columna",
+        "ctl_col_columna": "Columna", "ctl_col_tipo": "Tipo", "ctl_col_filas": "Filas",
+        "ctl_col_nulos": "Nulos", "ctl_col_pct_nulos": "% nulos", "ctl_col_distintos": "Distintos",
+        "ctl_col_minimo": "Mínimo", "ctl_col_maximo": "Máximo", "ctl_col_suma": "Suma",
+        "ctl_col_negativos": "Negativos", "ctl_col_frecuente": "Más frecuente", "ctl_col_alertas": "Alertas",
+        "ctl_tipo_numero": "número", "ctl_tipo_fecha": "fecha", "ctl_tipo_texto": "texto", "ctl_tipo_booleano": "sí/no",
+        "ctl_al_vacia": "vacía: todas las filas en nulo",
+        "ctl_al_nulos_altos": "muchos nulos",
+        "ctl_al_fecha_centinela": "fechas centinela (1900 / 9999): 'sin fecha' cargado como fecha",
+        "ctl_al_constante": "valor único en todas las filas",
+        "ctl_al_negativos": "tiene negativos (¿devoluciones o notas de crédito?)",
+        "ctl_al_texto_numerico": "números guardados como texto: no se pueden sumar",
+        "ctl_al_espacios": "espacios al principio o al final: rompen cruces por texto",
+        "ctl_dup_aviso": "{n} filas son copia exacta de otra. Si no las esperabas, un join o la falta de un GROUP BY las está duplicando.",
+        "ctl_joins": "Joins de la consulta",
+        "ctl_joins_ayuda": "Para cada JOIN se pregunta a la base (solo lectura, sobre las tablas completas) si la clave de cada lado es única y cuántas filas quedan sin pareja. En tablas grandes puede tardar.",
+        "ctl_verificar": "Verificar joins contra la base",
+        "ctl_sin_joins": "La consulta no une tablas: no hay joins para verificar.",
+        "ctl_sin_base": "Conectate a una base para verificar los joins.",
+        "ctl_j_join": "Join", "ctl_j_relacion": "Relación", "ctl_j_rep_base": "Claves repetidas (tabla base)",
+        "ctl_j_rep_unida": "Claves repetidas (tabla unida)", "ctl_j_huerfanas": "Filas sin pareja",
+        "ctl_j_estado": "Estado", "ctl_j_diagnostico": "Diagnóstico",
+        "ctl_est_ok": "ok", "ctl_est_revisar": "revisar", "ctl_est_error": "error", "ctl_est_no_verificable": "no verificable",
+        "ctl_mot_ok": "Bien: cada fila encuentra una sola pareja.",
+        "ctl_mot_1n": "Relación 1 a N: las columnas de {base} se repiten por cada fila de {unida}. Sumarlas infla el total.",
+        "ctl_mot_nn": "La clave está repetida en las dos tablas: el join multiplica filas y los totales salen inflados.",
+        "ctl_mot_huerfanas_inner": "{n} filas de {base} no tienen pareja en {unida} y el INNER JOIN las descarta: el total sale corto. ¿Correspondía LEFT JOIN?",
+        "ctl_mot_huerfanas_left": "{n} filas de {base} no tienen pareja en {unida}: aparecen con las columnas de {unida} en nulo.",
+        "ctl_mot_cte": "Une un CTE o una subconsulta: no es una tabla de la base para preguntarle.",
+        "ctl_mot_fuera_catalogo": "La tabla o la columna no está en el catálogo visible: no se consultó.",
+        "ctl_mot_error_motor": "La base devolvió un error al verificar: {error}",
+        "ctl_descargar": "Descargar el control (CSV)",
         "json_hint": "JSON listo para consumir desde otro sistema o API.",
         "plan_titulo": "Plan de ejecución (por qué tarda lo que tarda)",
         "plan_costo": "Costo estimado", "plan_liviano": "liviano",
@@ -335,6 +375,45 @@ T = {
         "eq_topes_guardar": "Save caps", "eq_topes_ok": "Row caps saved.",
         "tope_recorte": "The result was cut to {n} of {total} rows by your role's row cap. Everything below —chart, analysis and exports— comes from these {n} rows.",
         "tope_recorte_sin_total": "The result was cut to {n} rows by your role's row cap and the query returns more. Everything below —chart, analysis and exports— comes from these {n} rows.",
+        # Control tab: is the result trustworthy? (control_resultado.py)
+        "ctl_titulo": "Control",
+        "ctl_intro": "Validation guarantees the query is read-only and that the tables exist. This checks whether the NUMBER can be trusted: defective columns and joins that duplicate or drop rows.",
+        "ctl_ok": "No signs of problems in the result.",
+        "ctl_revisar": "There are things to review before using this number.",
+        "ctl_error": "The result has an error: a join is duplicating rows and the totals are inflated.",
+        "ctl_duplicadas": "Duplicate rows", "ctl_con_alertas": "Columns with alerts",
+        "ctl_perfil": "Profile of each column",
+        "ctl_col_columna": "Column", "ctl_col_tipo": "Type", "ctl_col_filas": "Rows",
+        "ctl_col_nulos": "Nulls", "ctl_col_pct_nulos": "% nulls", "ctl_col_distintos": "Distinct",
+        "ctl_col_minimo": "Minimum", "ctl_col_maximo": "Maximum", "ctl_col_suma": "Sum",
+        "ctl_col_negativos": "Negatives", "ctl_col_frecuente": "Most frequent", "ctl_col_alertas": "Alerts",
+        "ctl_tipo_numero": "number", "ctl_tipo_fecha": "date", "ctl_tipo_texto": "text", "ctl_tipo_booleano": "yes/no",
+        "ctl_al_vacia": "empty: every row is null",
+        "ctl_al_nulos_altos": "many nulls",
+        "ctl_al_fecha_centinela": "sentinel dates (1900 / 9999): 'no date' stored as a date",
+        "ctl_al_constante": "same value in every row",
+        "ctl_al_negativos": "has negatives (returns or credit notes?)",
+        "ctl_al_texto_numerico": "numbers stored as text: they cannot be summed",
+        "ctl_al_espacios": "leading or trailing spaces: they break text matches",
+        "ctl_dup_aviso": "{n} rows are an exact copy of another one. If you did not expect them, a join or a missing GROUP BY is duplicating them.",
+        "ctl_joins": "Joins in the query",
+        "ctl_joins_ayuda": "For each JOIN the database is asked (read-only, over the full tables) whether each side's key is unique and how many rows have no match. It may take a while on large tables.",
+        "ctl_verificar": "Check joins against the database",
+        "ctl_sin_joins": "The query does not join tables: there are no joins to check.",
+        "ctl_sin_base": "Connect to a database to check the joins.",
+        "ctl_j_join": "Join", "ctl_j_relacion": "Relationship", "ctl_j_rep_base": "Repeated keys (base table)",
+        "ctl_j_rep_unida": "Repeated keys (joined table)", "ctl_j_huerfanas": "Rows without a match",
+        "ctl_j_estado": "Status", "ctl_j_diagnostico": "Diagnosis",
+        "ctl_est_ok": "ok", "ctl_est_revisar": "review", "ctl_est_error": "error", "ctl_est_no_verificable": "not checkable",
+        "ctl_mot_ok": "Fine: each row finds exactly one match.",
+        "ctl_mot_1n": "One-to-many: the columns of {base} repeat for every row of {unida}. Summing them inflates the total.",
+        "ctl_mot_nn": "The key is repeated in both tables: the join multiplies rows and the totals are inflated.",
+        "ctl_mot_huerfanas_inner": "{n} rows of {base} have no match in {unida} and the INNER JOIN drops them: the total comes out short. Should it be a LEFT JOIN?",
+        "ctl_mot_huerfanas_left": "{n} rows of {base} have no match in {unida}: they show up with the columns of {unida} as null.",
+        "ctl_mot_cte": "It joins a CTE or a subquery: it is not a database table that can be asked.",
+        "ctl_mot_fuera_catalogo": "The table or column is not in the visible catalog: it was not queried.",
+        "ctl_mot_error_motor": "The database returned an error while checking: {error}",
+        "ctl_descargar": "Download the control (CSV)",
         "json_hint": "JSON ready to consume from another system or API.",
         "plan_titulo": "Execution plan (why it takes what it takes)",
         "plan_costo": "Estimated cost", "plan_liviano": "light",
@@ -493,6 +572,45 @@ T = {
         "eq_topes_guardar": "Salvar limites", "eq_topes_ok": "Limites de linhas salvos.",
         "tope_recorte": "O resultado foi cortado para {n} de {total} linhas pelo limite de linhas do seu perfil. Tudo o que aparece abaixo —gráfico, análise e exportações— vem dessas {n} linhas.",
         "tope_recorte_sin_total": "O resultado foi cortado para {n} linhas pelo limite de linhas do seu perfil e a consulta retorna mais. Tudo o que aparece abaixo —gráfico, análise e exportações— vem dessas {n} linhas.",
+        # Aba Controle: o resultado é confiável? (control_resultado.py)
+        "ctl_titulo": "Controle",
+        "ctl_intro": "A validação garante que a consulta é somente leitura e que as tabelas existem. Isto verifica se o NÚMERO é confiável: colunas com defeitos e joins que duplicam ou descartam linhas.",
+        "ctl_ok": "Sem sinais de problemas no resultado.",
+        "ctl_revisar": "Há pontos a revisar antes de usar este número.",
+        "ctl_error": "O resultado tem um erro: um join está duplicando linhas e os totais saem inflados.",
+        "ctl_duplicadas": "Linhas duplicadas", "ctl_con_alertas": "Colunas com alertas",
+        "ctl_perfil": "Perfil de cada coluna",
+        "ctl_col_columna": "Coluna", "ctl_col_tipo": "Tipo", "ctl_col_filas": "Linhas",
+        "ctl_col_nulos": "Nulos", "ctl_col_pct_nulos": "% nulos", "ctl_col_distintos": "Distintos",
+        "ctl_col_minimo": "Mínimo", "ctl_col_maximo": "Máximo", "ctl_col_suma": "Soma",
+        "ctl_col_negativos": "Negativos", "ctl_col_frecuente": "Mais frequente", "ctl_col_alertas": "Alertas",
+        "ctl_tipo_numero": "número", "ctl_tipo_fecha": "data", "ctl_tipo_texto": "texto", "ctl_tipo_booleano": "sim/não",
+        "ctl_al_vacia": "vazia: todas as linhas nulas",
+        "ctl_al_nulos_altos": "muitos nulos",
+        "ctl_al_fecha_centinela": "datas sentinela (1900 / 9999): 'sem data' gravado como data",
+        "ctl_al_constante": "valor único em todas as linhas",
+        "ctl_al_negativos": "tem negativos (devoluções ou notas de crédito?)",
+        "ctl_al_texto_numerico": "números gravados como texto: não podem ser somados",
+        "ctl_al_espacios": "espaços no início ou no fim: quebram cruzamentos por texto",
+        "ctl_dup_aviso": "{n} linhas são cópia exata de outra. Se você não as esperava, um join ou a falta de um GROUP BY está duplicando.",
+        "ctl_joins": "Joins da consulta",
+        "ctl_joins_ayuda": "Para cada JOIN a base é consultada (somente leitura, sobre as tabelas completas) para saber se a chave de cada lado é única e quantas linhas ficam sem par. Em tabelas grandes pode demorar.",
+        "ctl_verificar": "Verificar joins na base",
+        "ctl_sin_joins": "A consulta não une tabelas: não há joins para verificar.",
+        "ctl_sin_base": "Conecte-se a uma base para verificar os joins.",
+        "ctl_j_join": "Join", "ctl_j_relacion": "Relação", "ctl_j_rep_base": "Chaves repetidas (tabela base)",
+        "ctl_j_rep_unida": "Chaves repetidas (tabela unida)", "ctl_j_huerfanas": "Linhas sem par",
+        "ctl_j_estado": "Estado", "ctl_j_diagnostico": "Diagnóstico",
+        "ctl_est_ok": "ok", "ctl_est_revisar": "revisar", "ctl_est_error": "erro", "ctl_est_no_verificable": "não verificável",
+        "ctl_mot_ok": "Certo: cada linha encontra um único par.",
+        "ctl_mot_1n": "Relação 1 para N: as colunas de {base} se repetem para cada linha de {unida}. Somá-las infla o total.",
+        "ctl_mot_nn": "A chave está repetida nas duas tabelas: o join multiplica linhas e os totais saem inflados.",
+        "ctl_mot_huerfanas_inner": "{n} linhas de {base} não têm par em {unida} e o INNER JOIN as descarta: o total sai menor. Deveria ser LEFT JOIN?",
+        "ctl_mot_huerfanas_left": "{n} linhas de {base} não têm par em {unida}: aparecem com as colunas de {unida} nulas.",
+        "ctl_mot_cte": "Une um CTE ou uma subconsulta: não é uma tabela da base para consultar.",
+        "ctl_mot_fuera_catalogo": "A tabela ou a coluna não está no catálogo visível: não foi consultada.",
+        "ctl_mot_error_motor": "A base devolveu um erro ao verificar: {error}",
+        "ctl_descargar": "Baixar o controle (CSV)",
         "json_hint": "JSON pronto para consumir de outro sistema ou API.",
         "plan_titulo": "Plano de execução (por que demora o que demora)",
         "plan_costo": "Custo estimado", "plan_liviano": "leve",
@@ -1188,6 +1306,122 @@ def barra_confianza(conf, t):
     {t['conf_modelo']} {comp['modelo']} · RAG {comp['rag']} · {t['conf_validacion']} {comp['validacion']} · {t['conf_ejecucion']} {comp.get('ejecucion', '—')}
   </div>
 </div>""", unsafe_allow_html=True)
+
+
+# ──────────────────────────────────────────────────────────────
+# Pestaña Control (motor en control_resultado.py)
+# ──────────────────────────────────────────────────────────────
+def _control_texto(v):
+    """Una celda del perfil como texto: la columna Mínimo mezcla números,
+    fechas y textos, y una columna con tipos mezclados no se dibuja."""
+    if v is None or (isinstance(v, float) and pd.isna(v)):
+        return "—"
+    if isinstance(v, bool):
+        return str(v)
+    if isinstance(v, (int, float)):
+        return fmt_numero(v)
+    return str(v)
+
+
+def _control_perfil(df, r):
+    """Perfil del resultado, calculado UNA vez por resultado.
+
+    Streamlit ejecuta todas las pestañas en cada interacción: sin esto,
+    un resultado de un millón de filas recalculaba nulos y distintos de
+    cada columna cada vez que se tocaba cualquier cosa de la pantalla.
+    """
+    clave = (id(r), r.get("sql_ejecutado") or r.get("sql"), len(df),
+             tuple(str(c) for c in df.columns))
+    guardado = st.session_state.get("control_perfil")
+    if guardado and guardado[0] == clave:
+        return guardado[1], guardado[2]
+    perfil = control_resultado.perfil_columnas(df)
+    dup = control_resultado.filas_duplicadas(df)
+    st.session_state["control_perfil"] = (clave, perfil, dup)
+    return perfil, dup
+
+
+def _control_joins_df(joins, t):
+    filas = []
+    for j in joins:
+        on = " AND ".join(f"{j['base']}.{a} = {j['unida']}.{b}"
+                          for a, b in zip(j["col_base"], j["col_unida"]))
+        texto = t["ctl_mot_" + j["motivo"]].format(
+            base=j["base"], unida=j["unida"], n=fmt_numero(j["huerfanas"] or 0, dec=0),
+            error=j.get("error") or "")
+        filas.append({
+            t["ctl_j_join"]: f"{j['tipo']} JOIN {j['unida']} ON {on}",
+            t["ctl_j_relacion"]: j["relacion"] or "—",
+            t["ctl_j_rep_base"]: _control_texto(j["repetidas_base"]),
+            t["ctl_j_rep_unida"]: _control_texto(j["repetidas_unida"]),
+            t["ctl_j_huerfanas"]: _control_texto(j["huerfanas"]),
+            t["ctl_j_estado"]: t["ctl_est_" + j["estado"]],
+            t["ctl_j_diagnostico"]: texto,
+        })
+    return pd.DataFrame(filas)
+
+
+def pestana_control(df, r, t, motor, perm):
+    """¿El número es confiable? Perfil de columnas + joins contra la base."""
+    st.caption(t["ctl_intro"])
+    perfil, dup = _control_perfil(df, r)
+    sql_r = r.get("sql_ejecutado") or r.get("sql") or ""
+    joins_sql = control_resultado.joins_del_sql(sql_r)
+    guardado = st.session_state.get("control_joins")
+    joins = guardado[1] if guardado and guardado[0] == sql_r else None
+
+    estado = control_resultado.semaforo(perfil, dup, joins)
+    {"ok": st.success, "revisar": st.warning, "error": st.error}[estado](t["ctl_" + estado])
+
+    con_alertas = sum(1 for f in perfil if f["alertas"])
+    c1, c2, c3 = st.columns(3)
+    c1.metric(t["columnas"], len(perfil))
+    c2.metric(t["ctl_con_alertas"], con_alertas)
+    c3.metric(t["ctl_duplicadas"], fmt_numero(dup, dec=0))
+    if dup:
+        st.warning(t["ctl_dup_aviso"].format(n=fmt_numero(dup, dec=0)))
+
+    st.markdown(f"###### {t['ctl_perfil']}")
+    etiquetas = {k: t["ctl_col_" + k] for k in (
+        "columna", "tipo", "filas", "nulos", "pct_nulos", "distintos", "minimo",
+        "maximo", "suma", "negativos", "frecuente", "alertas")}
+    textos_alerta = {a: t["ctl_al_" + a] for a in control_resultado.SEVERIDAD}
+    tabla = control_resultado.a_dataframe(perfil, etiquetas, textos_alerta)
+    exportable = tabla.copy()
+    tabla[etiquetas["tipo"]] = tabla[etiquetas["tipo"]].map(lambda x: t["ctl_tipo_" + x])
+    for k in ("filas", "nulos", "pct_nulos", "distintos", "minimo", "maximo", "suma",
+              "negativos", "frecuente"):
+        tabla[etiquetas[k]] = tabla[etiquetas[k]].map(_control_texto)
+    st.dataframe(tabla, use_container_width=True, hide_index=True)
+
+    st.markdown(f"###### {t['ctl_joins']}")
+    if not joins_sql:
+        st.info(t["ctl_sin_joins"])
+    elif motor is None:
+        st.info(t["ctl_sin_base"])
+    else:
+        st.caption(t["ctl_joins_ayuda"])
+        if st.button(t["ctl_verificar"], key="btn_control_joins"):
+            ok, prohibidas = equipo.puede_consultar_sql(sql_r, perm)
+            if not ok:
+                st.error(t["sin_permiso"].format(tablas=", ".join(prohibidas)))
+            else:
+                with st.spinner("…"):
+                    joins = control_resultado.verificar_joins(motor.cx, sql_r, motor.catalogo)
+                st.session_state["control_joins"] = (sql_r, joins)
+                auditoria.registrar(
+                    usuario=perm.get("nombre_usuario") or "(sin usuario)",
+                    rol=perm.get("rol", ""), pregunta="[control] joins", sql=sql_r,
+                    tablas=sorted({j["base"] for j in joins} | {j["unida"] for j in joins}),
+                    resultado="ok", detalle=control_resultado.semaforo([], 0, joins))
+                st.rerun()
+        if joins is not None:
+            st.dataframe(_control_joins_df(joins, t), use_container_width=True,
+                         hide_index=True)
+            exportable = pd.concat(
+                [exportable, _control_joins_df(joins, t)], ignore_index=True)
+    st.download_button(t["ctl_descargar"], exportable.to_csv(index=False).encode("utf-8-sig"),
+                       "mvsql_control.csv", "text/csv", key="dl_control")
 
 
 def aviso_recorte(recorte, t):
@@ -1988,12 +2222,12 @@ if r:
                                  moneda=(tipo_c == "moneda")))
 
         _titulos = [f"{t['tabla']}", f"{t['grafico']}", f"{t['analisis']}",
-                    f"{t['explorar']}", f"{t['exportar']}"]
+                    f"{t['ctl_titulo']}", f"{t['explorar']}", f"{t['exportar']}"]
         if PERM.get("ve_auditoria"):
             _titulos.append(f"{t['aud_titulo']}")
-            tab1, tab2, tab3, tab5, tab4, tab6 = st.tabs(_titulos)
+            tab1, tab2, tab3, tab_ctl, tab5, tab4, tab6 = st.tabs(_titulos)
         else:
-            tab1, tab2, tab3, tab5, tab4 = st.tabs(_titulos)
+            tab1, tab2, tab3, tab_ctl, tab5, tab4 = st.tabs(_titulos)
             tab6 = None
         with tab1:
             st.dataframe(estilizar_df(df), use_container_width=True, height=420)
@@ -2030,13 +2264,19 @@ if r:
                 st.info(t["privacidad_nota"])
             else:
                 st.write("—")
+        with tab_ctl:
+            pestana_control(df, r, t, fuente.motor(ss), PERM)
         with tab5:
             # EDA: sobre el resultado actual o sobre una tabla completa
             fuentes = [t["eda_resultado"]]
             if fuente.motor(ss):
                 fuentes += list(fuente.motor(ss).catalogo["tablas"].keys())
-            fuente = st.selectbox(t["eda_fuente"], fuentes, key="eda_fuente")
-            if fuente == t["eda_resultado"]:
+            # «eda_tabla», NO «fuente»: con ese nombre se pisaba el MÓDULO
+            # fuente para el resto de la corrida, y tanto la tabla completa
+            # de acá como Guardar / Stored procedure / Optimizar (más abajo)
+            # fallaban con «'str' object has no attribute 'motor'».
+            eda_tabla = st.selectbox(t["eda_fuente"], fuentes, key="eda_fuente")
+            if eda_tabla == t["eda_resultado"]:
                 df_eda = df
             else:
                 try:
@@ -2044,7 +2284,7 @@ if r:
                     # admin/dueño). Antes era un 5000 fijo, o sea que la
                     # correlación y la influencia salían de un recorte mudo.
                     cols_e, filas_e, _ = fuente.motor(ss).cx.ejecutar(
-                        f"SELECT * FROM {fuente}",
+                        f"SELECT * FROM {eda_tabla}",
                         limite=PERM.get("limite_filas", 0) or None)
                     df_eda = pd.DataFrame(filas_e, columns=cols_e)
                     _aviso_e = aviso_recorte(

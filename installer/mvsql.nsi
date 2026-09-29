@@ -198,6 +198,7 @@ Section "MV SQL NLP" SEC_MAIN
   File "${APP_SRC}\auditoria.py"
   File "${APP_SRC}\catalogo.py"
   File "${APP_SRC}\conectores.py"
+  File "${APP_SRC}\control_resultado.py"
   File "${APP_SRC}\cuadernos.py"
   File "${APP_SRC}\equipo.py"
   File "${APP_SRC}\esquema_visual.py"

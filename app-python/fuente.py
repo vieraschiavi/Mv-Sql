@@ -52,6 +52,7 @@ DERIVADOS = (
     "resultado", "frescura", "historial", "pregunta_precargada",
     "sql_directo", "diag_tablas", "eda_fuente", "eda_objetivo",
     "eq_tablas", "graf_x", "graf_y", "tipo_grafico",
+    "control_perfil", "control_joins",
 )
 
 # Valor "vacío" de los derivados que la app lee sin .get()
