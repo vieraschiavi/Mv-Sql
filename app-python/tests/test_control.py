@@ -21,7 +21,14 @@ from decimal import Decimal
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RAIZ)
 
-import pandas as pd  # noqa: E402
+try:
+    import pandas as pd  # noqa: E402
+except ImportError:
+    # El CI corre `npm ci` y nada más: sin pandas. Lo que no lo necesita
+    # (leer joins, verificarlos contra la base, textos, instalador) corre
+    # igual; el perfil de columnas y la app se saltean, como en el resto
+    # de app-python/tests.
+    pd = None
 
 import control_resultado as C  # noqa: E402
 from conectores import ConexionBD  # noqa: E402
@@ -40,6 +47,15 @@ def test(nombre):
             print(f"  ✗ {nombre}\n      {type(e).__name__}: {e}")
             falladas += 1
     return deco
+
+
+def _con_pandas(fn):
+    def envuelto():
+        if pd is None:
+            print("      (pandas no instalado: se saltea)")
+            return
+        fn()
+    return envuelto
 
 
 _DIR = tempfile.mkdtemp(prefix="mvsql_control_")
@@ -261,6 +277,7 @@ def _alertas(perfil, col):
 
 
 @test("resultado sano: sin alertas que cambien el semáforo → ok")
+@_con_pandas
 def _():
     df = pd.DataFrame({"cliente": ["Ana", "Beto", "Caro"], "importe": [100.0, 200.0, 300.0],
                        "fecha": pd.to_datetime(["2026-09-01", "2026-09-02", "2026-09-03"])})
@@ -273,6 +290,7 @@ def _():
 
 
 @test("fechas de SQL Server como objetos datetime/date y 9999-12-31 fuera del rango de pandas")
+@_con_pandas
 def _():
     from datetime import date, datetime
     df = pd.DataFrame({"alta": [datetime(2026, 1, 5), datetime(9999, 12, 31), None],
@@ -288,6 +306,7 @@ def _():
 
 
 @test("defectos plantados: vacía, nulos altos, fecha centinela, texto numérico, espacios")
+@_con_pandas
 def _():
     df = pd.DataFrame({
         "vacia": [None, None, None, None],
@@ -310,6 +329,7 @@ def _():
 
 
 @test("Decimal de SQL Server/PostgreSQL cuenta como número (tiene suma)")
+@_con_pandas
 def _():
     df = pd.DataFrame({"importe": [Decimal("10.50"), Decimal("4.50"), None]})
     f = C.perfil_columnas(df)[0]
@@ -318,6 +338,7 @@ def _():
 
 
 @test("date y datetime mezclados, bit con NULL, columnas repetidas y fechas M/D/Y")
+@_con_pandas
 def _():
     from datetime import date, datetime
     df = pd.DataFrame({"alta": [date(2026, 1, 1), datetime(2026, 3, 1, 10, 0), None]},
@@ -360,6 +381,7 @@ def _():
 
 
 @test("filas duplicadas exactas se cuentan y cambian el semáforo")
+@_con_pandas
 def _():
     df = pd.DataFrame({"a": [1, 1, 2], "b": ["x", "x", "y"]})
     assert C.filas_duplicadas(df) == 1
@@ -367,6 +389,7 @@ def _():
 
 
 @test("resultado vacío o con columnas repetidas no revienta")
+@_con_pandas
 def _():
     assert C.perfil_columnas(pd.DataFrame(columns=["a", "b"]))[0]["pct_nulos"] is None
     assert C.filas_duplicadas(pd.DataFrame()) == 0
@@ -381,6 +404,7 @@ def _():
 
 
 @test("a_dataframe traduce columnas y alertas")
+@_con_pandas
 def _():
     p = C.perfil_columnas(pd.DataFrame({"x": [None, None]}))
     d = C.a_dataframe(p, {"columna": "Column", "alertas": "Alerts"}, {"vacia": "Empty"})
