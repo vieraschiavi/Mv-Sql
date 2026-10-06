@@ -31,6 +31,7 @@ import streamlit as st
 from PIL import Image
 
 from conectores import ConexionBD, MOTORES
+import conector_aas
 import tablas_externas
 from eula import eula_aceptado, registrar_aceptacion, texto_eula
 from exportar import a_csv, a_excel, a_pdf, a_html, a_json
@@ -134,9 +135,23 @@ T = {
         "archivo_hint": "El archivo se convierte a una base consultable al instante y queda en caché: la próxima carga es inmediata. Excel: cada hoja se vuelve una tabla.",
         "archivo_falta": "Subí un archivo primero.",
         "aas": "Azure Analysis Services / MDW",
-        "aas_hint": "Analysis Services habla DAX, no SQL: MV SQL NLP lo lee a través de Adium All in One. Arriba, «🔌 Conectar una fuente de la suite» → Analysis Services (MDW): las tablas que traigas llegan acá solas y se consultan en SQL, en solo lectura.",
+        "aas_hint": "Analysis Services habla DAX, no SQL: conectate abajo y sus tablas quedan como una base consultable en SQL, en solo lectura.",
         "aas_usar": "Usar las {n} tabla(s) que trajo la suite",
         "aas_listo": "Fuente: {etiqueta} ({n} tablas, convertidas a una base consultable de solo lectura).",
+        "aas_servidor": "Servidor",
+        "aas_modelo": "Modelo (base del MDW)",
+        "aas_auth": "Cómo entrar",
+        "aas_auth_usuario": "Usuario y contraseña de la empresa",
+        "aas_auth_ventana": "Ventana de Microsoft (con MFA)",
+        "aas_auth_token": "Token",
+        "aas_usuario": "Usuario (mail de la empresa)",
+        "aas_clave": "Contraseña",
+        "aas_token": "Token de acceso",
+        "aas_tope": "Tope de filas por tabla (0 = sin tope)",
+        "aas_ver_tablas": "Ver las tablas del modelo",
+        "aas_tablas": "Tablas a traer (vacío = todas)",
+        "aas_conectar": "Conectar a Analysis Services",
+        "aas_hint_directo": "Se lee en solo lectura (sólo EVALUATE) y queda como una base consultable en SQL. La contraseña no se guarda.",
         "explorar": "Explorar", "eda_fuente": "Analizar",
         "eda_resultado": "El resultado actual",
         "eda_corr": "Correlación entre variables",
@@ -345,9 +360,23 @@ T = {
         "archivo_hint": "The file becomes an instantly queryable base and is cached: the next load is immediate. Excel: each sheet becomes a table.",
         "archivo_falta": "Upload a file first.",
         "aas": "Azure Analysis Services / MDW",
-        "aas_hint": "Analysis Services speaks DAX, not SQL: MV SQL NLP reads it through Adium All in One. Above, «🔌 Connect a suite source» → Analysis Services (MDW): the tables you bring arrive here on their own and are queried in SQL, read-only.",
+        "aas_hint": "Analysis Services speaks DAX, not SQL: connect below and its tables become a SQL-queryable base, read-only.",
         "aas_usar": "Use the {n} table(s) the suite brought",
         "aas_listo": "Source: {etiqueta} ({n} tables, turned into a read-only queryable base).",
+        "aas_servidor": "Server",
+        "aas_modelo": "Model (MDW database)",
+        "aas_auth": "How to sign in",
+        "aas_auth_usuario": "Company user and password",
+        "aas_auth_ventana": "Microsoft window (with MFA)",
+        "aas_auth_token": "Token",
+        "aas_usuario": "User (company email)",
+        "aas_clave": "Password",
+        "aas_token": "Access token",
+        "aas_tope": "Row cap per table (0 = no cap)",
+        "aas_ver_tablas": "List the model's tables",
+        "aas_tablas": "Tables to bring (empty = all)",
+        "aas_conectar": "Connect to Analysis Services",
+        "aas_hint_directo": "Read-only (EVALUATE only) and kept as a SQL-queryable base. The password is not stored.",
         "explorar": "Explore", "eda_fuente": "Analyze",
         "eda_resultado": "Current result",
         "eda_corr": "Correlation between variables",
@@ -550,9 +579,23 @@ T = {
         "archivo_hint": "O arquivo vira uma base consultável na hora e fica em cache: a próxima carga é imediata. Excel: cada planilha vira uma tabela.",
         "archivo_falta": "Envie um arquivo primeiro.",
         "aas": "Azure Analysis Services / MDW",
-        "aas_hint": "O Analysis Services fala DAX, não SQL: o MV SQL NLP o lê através do Adium All in One. Acima, «🔌 Conectar uma fonte da suíte» → Analysis Services (MDW): as tabelas que você trouxer chegam aqui sozinhas e são consultadas em SQL, só leitura.",
+        "aas_hint": "O Analysis Services fala DAX, não SQL: conecte abaixo e as tabelas viram uma base consultável em SQL, só leitura.",
         "aas_usar": "Usar as {n} tabela(s) que a suíte trouxe",
         "aas_listo": "Fonte: {etiqueta} ({n} tabelas, convertidas em uma base consultável só leitura).",
+        "aas_servidor": "Servidor",
+        "aas_modelo": "Modelo (base do MDW)",
+        "aas_auth": "Como entrar",
+        "aas_auth_usuario": "Usuário e senha da empresa",
+        "aas_auth_ventana": "Janela da Microsoft (com MFA)",
+        "aas_auth_token": "Token",
+        "aas_usuario": "Usuário (e-mail da empresa)",
+        "aas_clave": "Senha",
+        "aas_token": "Token de acesso",
+        "aas_tope": "Limite de linhas por tabela (0 = sem limite)",
+        "aas_ver_tablas": "Ver as tabelas do modelo",
+        "aas_tablas": "Tabelas a trazer (vazio = todas)",
+        "aas_conectar": "Conectar ao Analysis Services",
+        "aas_hint_directo": "Leitura somente (só EVALUATE) e fica como uma base consultável em SQL. A senha não é guardada.",
         "explorar": "Explorar", "eda_fuente": "Analisar",
         "eda_resultado": "O resultado atual",
         "eda_corr": "Correlação entre variáveis",
@@ -1754,8 +1797,50 @@ with st.sidebar:
             if st.button(t["aas_usar"].format(n=len(_paq["tablas"])), use_container_width=True, key="btn_aas_usar"):
                 ss.pop("_mvsql_ultima_externa", None)
                 st.rerun()
-        else:
-            st.info(t["aas_hint"])
+        # Conexión directa: servidor, modelo y cómo entrar. Lee en solo lectura (EVALUATE) con tope por tabla.
+        st.caption(t["aas_hint"])
+        aas_srv = st.text_input(t["aas_servidor"], key="aas_srv",
+                                placeholder="asazure://region.asazure.windows.net/servidor")
+        aas_mod = st.text_input(t["aas_modelo"], key="aas_mod")
+        aas_auth = st.selectbox(t["aas_auth"], list(conector_aas.AUTENTICACIONES), key="aas_auth",
+                                format_func=lambda k: t[f"aas_auth_{k}"])
+        aas_usr = aas_clave = aas_tok = ""
+        if aas_auth == "usuario":
+            aas_usr = st.text_input(t["aas_usuario"], key="aas_usr", placeholder="nombre@empresa.com")
+            aas_clave = st.text_input(t["aas_clave"], type="password", key="aas_clave")
+        elif aas_auth == "token":
+            aas_tok = st.text_input(t["aas_token"], type="password", key="aas_tok")
+        aas_tope = int(st.number_input(t["aas_tope"], min_value=0, value=conector_aas.TOPE_DEFAULT,
+                                       step=10_000, key="aas_tope"))
+        _aas_args = dict(auth=aas_auth, usuario=aas_usr, clave=aas_clave, token=aas_tok)
+        if st.button(t["aas_ver_tablas"], use_container_width=True, key="btn_aas_tablas"):
+            try:
+                with st.spinner("…"):
+                    ss["_aas_tablas"] = conector_aas.listar_tablas(aas_srv, aas_mod, **_aas_args)
+            except conector_aas.ErrorAAS as e:
+                st.error(str(e))
+        aas_sel = (st.multiselect(t["aas_tablas"], ss["_aas_tablas"], key="aas_sel")
+                   if ss.get("_aas_tablas") else [])
+        st.caption(t["aas_hint_directo"])
+        if st.button(t["aas_conectar"], use_container_width=True, type="primary", key="btn_aas_conectar"):
+            _ok_aas = False
+            try:
+                with st.spinner("…"):
+                    _et, _tablas, _avisos = conector_aas.leer(aas_srv, aas_mod, tablas=aas_sel,
+                                                             limite=aas_tope or None, **_aas_args)
+                    _ruta_aas = tablas_externas.a_sqlite(_tablas)
+                    fuente.usar_usuario(ss, _armar_motor(ConexionBD("sqlite", ruta=_ruta_aas).conectar()),
+                                        f"{_et} ({len(_tablas)})", f"aas:{aas_srv}/{aas_mod}:{_ruta_aas}")
+                    ss["_aas_avisos"] = _avisos
+                    _ok_aas = True
+            except conector_aas.ErrorAAS as e:
+                st.error(str(e))
+            except Exception as e:
+                st.error(str(e))
+            if _ok_aas:
+                st.rerun()
+        for _av in ss.get("_aas_avisos") or []:
+            st.caption(f"⚠ {_av}")
     elif motor_bd == "sqlite":
         # Sin valor precargado: con "cartera_demo.db" de default, apretar
         # Conectar sin mirar volvía a abrir la demo creyendo abrir la propia.
