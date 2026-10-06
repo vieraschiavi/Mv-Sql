@@ -31,6 +31,7 @@ import streamlit as st
 from PIL import Image
 
 from conectores import ConexionBD, MOTORES
+import tablas_externas
 from eula import eula_aceptado, registrar_aceptacion, texto_eula
 from exportar import a_csv, a_excel, a_pdf, a_html, a_json
 from licencia import (TRIAL_DIAS, renovar_si_corresponde, verificar_acceso,
@@ -132,6 +133,10 @@ T = {
         "subir_archivo": "Subí tu archivo",
         "archivo_hint": "El archivo se convierte a una base consultable al instante y queda en caché: la próxima carga es inmediata. Excel: cada hoja se vuelve una tabla.",
         "archivo_falta": "Subí un archivo primero.",
+        "aas": "Azure Analysis Services / MDW",
+        "aas_hint": "Analysis Services habla DAX, no SQL: MV SQL NLP lo lee a través de Adium All in One. Arriba, «🔌 Conectar una fuente de la suite» → Analysis Services (MDW): las tablas que traigas llegan acá solas y se consultan en SQL, en solo lectura.",
+        "aas_usar": "Usar las {n} tabla(s) que trajo la suite",
+        "aas_listo": "Fuente: {etiqueta} ({n} tablas, convertidas a una base consultable de solo lectura).",
         "explorar": "Explorar", "eda_fuente": "Analizar",
         "eda_resultado": "El resultado actual",
         "eda_corr": "Correlación entre variables",
@@ -339,6 +344,10 @@ T = {
         "subir_archivo": "Upload your file",
         "archivo_hint": "The file becomes an instantly queryable base and is cached: the next load is immediate. Excel: each sheet becomes a table.",
         "archivo_falta": "Upload a file first.",
+        "aas": "Azure Analysis Services / MDW",
+        "aas_hint": "Analysis Services speaks DAX, not SQL: MV SQL NLP reads it through Adium All in One. Above, «🔌 Connect a suite source» → Analysis Services (MDW): the tables you bring arrive here on their own and are queried in SQL, read-only.",
+        "aas_usar": "Use the {n} table(s) the suite brought",
+        "aas_listo": "Source: {etiqueta} ({n} tables, turned into a read-only queryable base).",
         "explorar": "Explore", "eda_fuente": "Analyze",
         "eda_resultado": "Current result",
         "eda_corr": "Correlation between variables",
@@ -540,6 +549,10 @@ T = {
         "subir_archivo": "Envie seu arquivo",
         "archivo_hint": "O arquivo vira uma base consultável na hora e fica em cache: a próxima carga é imediata. Excel: cada planilha vira uma tabela.",
         "archivo_falta": "Envie um arquivo primeiro.",
+        "aas": "Azure Analysis Services / MDW",
+        "aas_hint": "O Analysis Services fala DAX, não SQL: o MV SQL NLP o lê através do Adium All in One. Acima, «🔌 Conectar uma fonte da suíte» → Analysis Services (MDW): as tabelas que você trouxer chegam aqui sozinhas e são consultadas em SQL, só leitura.",
+        "aas_usar": "Usar as {n} tabela(s) que a suíte trouxe",
+        "aas_listo": "Fonte: {etiqueta} ({n} tabelas, convertidas em uma base consultável só leitura).",
         "explorar": "Explorar", "eda_fuente": "Analisar",
         "eda_resultado": "O resultado atual",
         "eda_corr": "Correlação entre variáveis",
@@ -1711,15 +1724,38 @@ with st.sidebar:
     elif _f_activa:
         st.info(t["fuente_demo"])
 
-    motor_bd = st.selectbox(t["motor_bd"], ["archivo"] + list(MOTORES.keys()),
+    # Tablas que trajo otro programa (la suite, desde Analysis Services / el MDW): se aplican solas, una vez.
+    _ext = tablas_externas.pendiente(ss)
+    if _ext is not None:
+        try:
+            _ruta_ext = tablas_externas.a_sqlite(_ext["tablas"])
+            fuente.usar_usuario(ss, _armar_motor(ConexionBD("sqlite", ruta=_ruta_ext).conectar()),
+                                _ext.get("etiqueta") or t["aas"], f"externa:{_ext.get('ident')}")
+            tablas_externas.marcar_aplicada(ss, _ext)
+            st.rerun()
+        except Exception as e:
+            tablas_externas.marcar_aplicada(ss, _ext)
+            st.error(str(e))
+
+    motor_bd = st.selectbox(t["motor_bd"], ["archivo", "aas"] + list(MOTORES.keys()),
                             format_func=lambda k: t["archivo"] if k == "archivo"
-                            else MOTORES[k]["nombre"])
+                            else t["aas"] if k == "aas" else MOTORES[k]["nombre"])
 
     if motor_bd == "archivo":
         archivo_subido = st.file_uploader(
             t["subir_archivo"], type=["csv", "xlsx", "xls", "parquet", "json"])
         st.caption(t["archivo_hint"])
         params = None
+    elif motor_bd == "aas":
+        params = None
+        if tablas_externas.hay(ss):
+            _paq = ss[tablas_externas.CLAVE]
+            st.success(t["aas_listo"].format(etiqueta=_paq.get("etiqueta", ""), n=len(_paq["tablas"])))
+            if st.button(t["aas_usar"].format(n=len(_paq["tablas"])), use_container_width=True, key="btn_aas_usar"):
+                ss.pop("_mvsql_ultima_externa", None)
+                st.rerun()
+        else:
+            st.info(t["aas_hint"])
     elif motor_bd == "sqlite":
         # Sin valor precargado: con "cartera_demo.db" de default, apretar
         # Conectar sin mirar volvía a abrir la demo creyendo abrir la propia.
@@ -1762,7 +1798,8 @@ with st.sidebar:
     _id_archivo = (f"archivo:{archivo_subido.name}:{archivo_subido.size}"
                    if motor_bd == "archivo" and archivo_subido is not None else None)
     _auto = bool(_id_archivo) and _id_archivo != ss.get("_ultimo_archivo")
-    _clic = st.button(f"{t['conectar']}", use_container_width=True, type="primary")
+    _clic = (st.button(f"{t['conectar']}", use_container_width=True, type="primary")
+             if motor_bd != "aas" else False)
     if _clic or _auto:
         _ok_cambio = False
         try:

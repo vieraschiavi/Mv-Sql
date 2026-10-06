@@ -215,6 +215,8 @@ Section "MV SQL NLP" SEC_MAIN
   ; licencia). Lo importan auditoria, equipo, eula, licencia y guardadas:
   ; sin este File, la app instalada revienta con ImportError al abrir.
   File "${APP_SRC}\rutas.py"
+  ; tablas_externas.py: las tablas que trae la suite (Analysis Services / MDW) como base de solo lectura.
+  File "${APP_SRC}\tablas_externas.py"
 
   ; Modulos protegidos: si tools/build_cython.py corrio antes (lo hace la
   ; CI en windows-latest, ver .github/workflows/build-desktop.yml) y borro
