@@ -63,6 +63,12 @@ class _ASFalso:
     def usar_ventana(self, s, si=True):
         self.llamadas.append(("ventana", s, si))
 
+    def listar_modelos(self, s, token=""):
+        self.llamadas.append(("modelos", s, token))
+        return list(self.modelos)
+
+    modelos = ("Venta Interna", "IQVIA")
+
     def tablas_del_modelo(self, s, m, token=""):
         return ["Venta", "Producto"]
 
@@ -137,11 +143,25 @@ if pd is not None:
                 cx.cerrar()
 
 
+@test("los modelos del servidor se listan sin saberse el nombre (y con los datos de entrada que faltan, avisa)")
+def _():
+    AS = _ASFalso()
+    assert C.listar_modelos(SRV, "usuario", "persona@empresa.com", "clave", AS=AS) == ["Venta Interna", "IQVIA"]
+    assert ("modelos", SRV, "") in AS.llamadas and ("usuario", SRV, "persona@empresa.com", True) in AS.llamadas
+    assert "contraseña" in _error(lambda: C.listar_modelos(SRV, "usuario", "persona@empresa.com", "", AS=AS))
+    assert "asazure://" in _error(lambda: C.listar_modelos("x", "ventana", AS=AS))
+    vacio = _ASFalso()
+    vacio.modelos = ()
+    assert "no devolvió modelos" in _error(lambda: C.listar_modelos(SRV, "ventana", AS=vacio))
+    assert "Ver los modelos del servidor" in _error(lambda: C.listar_tablas(SRV, "", "ventana", AS=AS))
+
+
 @test("la barra lateral tiene el formulario, en los tres idiomas")
 def _():
     app = open(os.path.join(RAIZ, "app.py"), encoding="utf-8").read()
     assert "conector_aas.leer(" in app and "conector_aas.listar_tablas(" in app
-    for clave in ("aas_servidor", "aas_modelo", "aas_auth", "aas_usuario", "aas_clave", "aas_conectar",
+    assert "conector_aas.listar_modelos(" in app
+    for clave in ("aas_servidor", "aas_modelo", "aas_ver_modelos", "aas_modelo_lista", "aas_modelo_mano", "aas_auth", "aas_usuario", "aas_clave", "aas_conectar",
                   "aas_ver_tablas", "aas_tope", "aas_auth_usuario", "aas_auth_ventana", "aas_auth_token"):
         assert len(re.findall(rf'^\s+"{clave}": "', app, re.M)) == 3, clave
 

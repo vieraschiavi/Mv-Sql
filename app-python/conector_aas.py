@@ -33,19 +33,24 @@ def motor_suite():
     return analysis_services
 
 
-def _validar(servidor, modelo, auth, usuario, clave, token):
+def _validar_conexion(servidor, auth, usuario, clave, token):
+    """Lo que hace falta para entrar al servidor (sin modelo: los modelos se listan después)."""
     servidor = (servidor or "").strip()
     if not _ASAZURE.match(servidor):
         raise ErrorAAS("El servidor empieza con asazure:// (o powerbi:// para un modelo de Power BI Premium).")
-    if not (modelo or "").strip():
-        raise ErrorAAS("Falta el modelo (el mismo nombre que ves en Excel o en Power BI Desktop).")
     if auth not in AUTENTICACIONES:
         raise ErrorAAS(f"Forma de entrar desconocida: {auth}.")
     if auth == "usuario" and not ((usuario or "").strip() and clave):
         raise ErrorAAS("Falta el usuario (tu mail de la empresa) o la contraseña.")
     if auth == "token" and not (token or "").strip():
         raise ErrorAAS("Falta el token.")
-    return servidor, modelo.strip()
+    return servidor
+
+
+def _validar(servidor, modelo, auth, usuario, clave, token):
+    if _ASAZURE.match((servidor or "").strip()) and not (modelo or "").strip():
+        raise ErrorAAS("Falta el modelo: tocá «Ver los modelos del servidor» y elegilo de la lista.")
+    return _validar_conexion(servidor, auth, usuario, clave, token), modelo.strip()
 
 
 def _preparar(AS, servidor, auth, usuario, clave):
@@ -67,6 +72,21 @@ def _suite_o_error(AS):
         raise ErrorAAS("Analysis Services se lee con el conector de Microsoft (ADOMD.NET) que trae Adium All in "
                        "One. Abrí MV SQL NLP desde la suite y conectate acá mismo.")
     return AS
+
+
+def listar_modelos(servidor, auth="usuario", usuario="", clave="", token="", AS=None):
+    """Los modelos (bases del MDW) del servidor que la cuenta puede ver: así no hay que saberse el nombre."""
+    servidor = _validar_conexion(servidor, auth, usuario, clave, token)
+    AS = _suite_o_error(AS)
+    _preparar(AS, servidor, auth, usuario, clave)
+    try:
+        modelos = list(AS.listar_modelos(servidor, token if auth == "token" else ""))
+    except Exception as e:     # permiso, red, MFA: el conector ya explica la causa
+        raise ErrorAAS(str(e)) from e
+    if not modelos:
+        raise ErrorAAS("El servidor no devolvió modelos para esta cuenta (revisá el permiso de lectura sobre el "
+                       "modelo, o escribí su nombre a mano).")
+    return modelos
 
 
 def listar_tablas(servidor, modelo, auth="usuario", usuario="", clave="", token="", AS=None):

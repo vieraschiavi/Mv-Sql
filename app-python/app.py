@@ -140,6 +140,9 @@ T = {
         "aas_listo": "Fuente: {etiqueta} ({n} tablas, convertidas a una base consultable de solo lectura).",
         "aas_servidor": "Servidor",
         "aas_modelo": "Modelo (base del MDW)",
+        "aas_ver_modelos": "🔎 Ver los modelos del servidor",
+        "aas_modelo_lista": "Modelo (base del MDW): elegilo de la lista",
+        "aas_modelo_mano": "…o escribilo a mano",
         "aas_auth": "Cómo entrar",
         "aas_auth_usuario": "Usuario y contraseña de la empresa",
         "aas_auth_ventana": "Ventana de Microsoft (con MFA)",
@@ -365,6 +368,9 @@ T = {
         "aas_listo": "Source: {etiqueta} ({n} tables, turned into a read-only queryable base).",
         "aas_servidor": "Server",
         "aas_modelo": "Model (MDW database)",
+        "aas_ver_modelos": "🔎 List the server's models",
+        "aas_modelo_lista": "Model (MDW database): pick it from the list",
+        "aas_modelo_mano": "…or type it in",
         "aas_auth": "How to sign in",
         "aas_auth_usuario": "Company user and password",
         "aas_auth_ventana": "Microsoft window (with MFA)",
@@ -584,6 +590,9 @@ T = {
         "aas_listo": "Fonte: {etiqueta} ({n} tabelas, convertidas em uma base consultável só leitura).",
         "aas_servidor": "Servidor",
         "aas_modelo": "Modelo (base do MDW)",
+        "aas_ver_modelos": "🔎 Ver os modelos do servidor",
+        "aas_modelo_lista": "Modelo (base do MDW): escolha na lista",
+        "aas_modelo_mano": "…ou digite à mão",
         "aas_auth": "Como entrar",
         "aas_auth_usuario": "Usuário e senha da empresa",
         "aas_auth_ventana": "Janela da Microsoft (com MFA)",
@@ -1801,7 +1810,6 @@ with st.sidebar:
         st.caption(t["aas_hint"])
         aas_srv = st.text_input(t["aas_servidor"], key="aas_srv",
                                 placeholder="asazure://region.asazure.windows.net/servidor")
-        aas_mod = st.text_input(t["aas_modelo"], key="aas_mod")
         aas_auth = st.selectbox(t["aas_auth"], list(conector_aas.AUTENTICACIONES), key="aas_auth",
                                 format_func=lambda k: t[f"aas_auth_{k}"])
         aas_usr = aas_clave = aas_tok = ""
@@ -1810,13 +1818,29 @@ with st.sidebar:
             aas_clave = st.text_input(t["aas_clave"], type="password", key="aas_clave")
         elif aas_auth == "token":
             aas_tok = st.text_input(t["aas_token"], type="password", key="aas_tok")
+        _aas_args = dict(auth=aas_auth, usuario=aas_usr, clave=aas_clave, token=aas_tok)
+        # El modelo se ELIGE de los que el servidor muestra para esta cuenta: antes había que saberse el nombre
+        # y, vacío, ni las tablas aparecían («no aparecen modelos ni nada»).
+        if st.button(t["aas_ver_modelos"], use_container_width=True, key="btn_aas_modelos"):
+            try:
+                with st.spinner("…"):
+                    ss["_aas_modelos"] = conector_aas.listar_modelos(aas_srv, **_aas_args)
+                ss.pop("_aas_tablas", None)
+            except conector_aas.ErrorAAS as e:
+                st.error(str(e))
+        if ss.get("_aas_modelos"):
+            aas_mod = st.selectbox(t["aas_modelo_lista"], ss["_aas_modelos"], key="aas_mod_lista")
+        else:
+            aas_mod = st.text_input(t["aas_modelo"], key="aas_mod", placeholder=t["aas_modelo_mano"])
+        if ss.get("_aas_tablas_de") not in (None, aas_mod):         # otro modelo: sus tablas son otras
+            ss.pop("_aas_tablas", None)
         aas_tope = int(st.number_input(t["aas_tope"], min_value=0, value=conector_aas.TOPE_DEFAULT,
                                        step=10_000, key="aas_tope"))
-        _aas_args = dict(auth=aas_auth, usuario=aas_usr, clave=aas_clave, token=aas_tok)
         if st.button(t["aas_ver_tablas"], use_container_width=True, key="btn_aas_tablas"):
             try:
                 with st.spinner("…"):
                     ss["_aas_tablas"] = conector_aas.listar_tablas(aas_srv, aas_mod, **_aas_args)
+                    ss["_aas_tablas_de"] = aas_mod
             except conector_aas.ErrorAAS as e:
                 st.error(str(e))
         aas_sel = (st.multiselect(t["aas_tablas"], ss["_aas_tablas"], key="aas_sel")
