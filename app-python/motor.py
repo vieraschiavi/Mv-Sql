@@ -254,6 +254,33 @@ def cobertura_esquema(sql, catalogo, recuperadas):
 
 
 # ──────────────────────────────────────────────────────────────
+# 4b) CONTEXTO DEL NEGOCIO (mercados conformados)
+# ──────────────────────────────────────────────────────────────
+#: Hasta dónde se manda el texto de definiciones del negocio al prompt.
+TOPE_CONOCIMIENTO = 12_000
+#: Una pregunta de mercado o de share: ahí van siempre las tablas de mercados conformados.
+_PREGUNTA_DE_MERCADO = re.compile(
+    r"mercad|market|share|\bms\b|ms ?%|particip|cuota|canasta|conformad|competid|competencia|concorr",
+    re.IGNORECASE)
+_COLUMNA_CONFORMADA = re.compile(r"conformad|conformed", re.IGNORECASE)
+
+
+def columnas_de_mercado_conformado(catalogo, excluir=()):
+    """«tabla.columna» (o «tabla (tabla)») donde el modelo de origen ya trae el mercado conformado aplicado."""
+    salida = []
+    for tabla, info in catalogo["tablas"].items():
+        if tabla in excluir:
+            continue
+        if _COLUMNA_CONFORMADA.search(tabla):
+            salida.append(f"{tabla} (tabla)")
+            continue
+        for c in info["columnas"]:
+            if _COLUMNA_CONFORMADA.search(c["columna"]):
+                salida.append(f"{tabla}.{c['columna']}")
+    return salida
+
+
+# ──────────────────────────────────────────────────────────────
 # 5) MOTOR COMPLETO
 # ──────────────────────────────────────────────────────────────
 class MotorMVSQL:
@@ -261,6 +288,11 @@ class MotorMVSQL:
     Motor principal. Recibe una ConexionBD ya conectada (conectores.py)
     y la configuración del proveedor de IA elegido por el cliente.
     """
+
+    # Sin contexto del negocio hasta que alguien lo sume (sumar_contexto). En la
+    # clase, y no sólo en __init__, para que un motor armado a mano también los tenga.
+    conocimiento = ""
+    tablas_clave = ()
 
     def __init__(self, conexion, ia):
         """
@@ -272,6 +304,69 @@ class MotorMVSQL:
         self.catalogo = conexion.extraer_catalogo()
         self.fichas = catalogo_a_fichas(self.catalogo)
         self.recuperador = RecuperadorEsquema(self.fichas)
+        # Definiciones del negocio que trae otro programa (la suite: mercados
+        # conformados, glosario). Van al prompt; no son datos de la base.
+        self.conocimiento = ""
+        self.tablas_clave = []
+
+    def sumar_contexto(self, conocimiento="", relaciones=(), tablas_clave=()):
+        """Suma lo que el esquema solo no dice: definiciones del negocio, JOINs del modelo y tablas de referencia.
+
+        Se llama DESPUÉS del recorte de tablas del rol: las relaciones y las
+        tablas clave que nombran algo que este usuario no ve se descartan, así
+        la IA no se entera de que existen.
+
+        conocimiento: texto (mercados conformados, glosario…), recortado a
+            TOPE_CONOCIMIENTO para no comerse el contexto de la IA.
+        relaciones: [{tabla_origen, columna_origen, tabla_destino,
+            columna_destino}] del modelo de origen. Entran al catálogo como
+            FKs y salen en las fichas («Relaciones (JOINs)»): sin ellas la IA
+            adivina los JOIN por el nombre de las columnas.
+        tablas_clave: tablas que acompañan siempre a una pregunta de mercado
+            o share, aunque el buscador TF-IDF no las elija.
+        """
+        texto = str(conocimiento or "").strip()
+        if len(texto) > TOPE_CONOCIMIENTO:
+            texto = texto[:TOPE_CONOCIMIENTO].rsplit("\n", 1)[0] + "\n[…definiciones recortadas]"
+        self.conocimiento = texto
+        cols = {t: {c["columna"] for c in info["columnas"]} for t, info in self.catalogo["tablas"].items()}
+        existentes = {(f["tabla_origen"], f["columna_origen"], f["tabla_destino"], f["columna_destino"])
+                      for f in self.catalogo["fks"]}
+        nuevas = []
+        for r in relaciones or ():
+            clave = (r.get("tabla_origen"), r.get("columna_origen"), r.get("tabla_destino"),
+                     r.get("columna_destino"))
+            if (clave[1] in cols.get(clave[0], ()) and clave[3] in cols.get(clave[2], ())
+                    and clave not in existentes):
+                existentes.add(clave)
+                nuevas.append(dict(zip(("tabla_origen", "columna_origen", "tabla_destino", "columna_destino"),
+                                       clave)))
+        if nuevas:
+            self.catalogo["fks"] = list(self.catalogo["fks"]) + nuevas
+            self.fichas = catalogo_a_fichas(self.catalogo)
+            self.recuperador = RecuperadorEsquema(self.fichas)
+        self.tablas_clave = [t for t in tablas_clave or () if t in self.catalogo["tablas"]]
+        return len(nuevas)
+
+    def _bloque_negocio(self):
+        """El bloque de definiciones del negocio del prompt ('' si no hay ninguna)."""
+        partes = [self.conocimiento] if self.conocimiento else []
+        propias = columnas_de_mercado_conformado(self.catalogo, excluir=self.tablas_clave)
+        if propias:
+            partes.append("En ESTE esquema el mercado conformado ya viene del modelo en: " + ", ".join(propias)
+                          + ". Usá eso para filtrar el mercado en vez de reconstruir la canasta.")
+        if not partes:
+            return ""
+        return ("DEFINICIONES DEL NEGOCIO (de la empresa: usalas para interpretar la pregunta; las tablas y "
+                "columnas siguen siendo SOLO las del esquema):\n" + "\n".join(partes) + "\n\n")
+
+    def _con_tablas_clave(self, pregunta, relevantes, sims):
+        """Suma las tablas clave a lo recuperado cuando la pregunta es de mercado o share."""
+        if not (self.tablas_clave and _PREGUNTA_DE_MERCADO.search(pregunta or "")):
+            return relevantes, sims
+        ya = {f["tabla"] for f in relevantes}
+        extra = [f for f in self.fichas if f["tabla"] in self.tablas_clave and f["tabla"] not in ya]
+        return relevantes + extra, list(sims) + [0.0] * len(extra)
 
     def _completar(self, system, user, max_tokens=1500):
         return completar(self.ia["proveedor"], self.ia.get("api_key"),
@@ -301,6 +396,7 @@ class MotorMVSQL:
 
         # 1) RAG
         relevantes, sims = self.recuperador.recuperar(pregunta, k=k)
+        relevantes, sims = self._con_tablas_clave(pregunta, relevantes, sims)
         resultado["tablas_recuperadas"] = [f["tabla"] for f in relevantes]
         sim_top = sims[0] if sims else 0.0
 
@@ -327,10 +423,10 @@ SQL:
 CONFIANZA: <entero 0-100: qué tan seguro estás de que la consulta responde exactamente la pregunta con este esquema>
 SUPUESTOS: <si asumiste algo (interpretación de fechas, qué columna usar), listalo en una línea; si no, "ninguno">
 
-ESQUEMA DISPONIBLE (usá solo esto):
+{negocio}ESQUEMA DISPONIBLE (usá solo esto):
 {esquema}
 """
-        system = _system_sql.format(dialecto=self.cx.dialecto, esquema=esquema)
+        system = _system_sql.format(dialecto=self.cx.dialecto, esquema=esquema, negocio=self._bloque_negocio())
         pregunta_ia = f"{pregunta}\n\n[Preferencias del usuario: {contexto}]" if contexto else pregunta
         crudo = self._completar(system, pregunta_ia)
         sql, conf_llm, supuestos = _parsear_respuesta_sql(crudo)

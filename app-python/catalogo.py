@@ -13,8 +13,25 @@ relevantes y se le pasan al LLM como contexto -> SQL sin nombres inventados.
 ==================================================================
 """
 
+import re
 import sqlite3
 import json
+
+#: Valores de ejemplo por columna de texto: pocos, salvo en las columnas de
+#: mercado (mercado, clase/ATC, molécula, área, región…). Ahí la IA tiene que
+#: escribir el valor EXACTO en el WHERE («OLMESARTAN», «C09C0»): con 8 de 84
+#: mercados adivinaba el resto, y un filtro mal escrito devuelve cero filas
+#: sin ningún error.
+MUESTRAS = 8
+MUESTRAS_MERCADO = 100
+_COLUMNA_DE_MERCADO = re.compile(
+    r"mercad|market|conformad|\bct\b|^ct_|_ct$|atc|clase|mol[eé]cul|droga|[aá]rea|regi[oó]n|pa[ií]s|canal",
+    re.IGNORECASE)
+
+
+def muestras_para(columna):
+    """Cuántos valores distintos de ejemplo se guardan de una columna de texto."""
+    return MUESTRAS_MERCADO if _COLUMNA_DE_MERCADO.search(str(columna)) else MUESTRAS
 
 
 # ──────────────────────────────────────────────────────────────
@@ -51,9 +68,9 @@ def extraer_catalogo_sqlite(db_path):
             if c["tipo"].upper() in ("TEXT", "VARCHAR") and not c["pk"]:
                 try:
                     cur.execute(f"SELECT DISTINCT {c['columna']} FROM {t} "
-                                f"WHERE {c['columna']} IS NOT NULL LIMIT 8")
+                                f"WHERE {c['columna']} IS NOT NULL LIMIT {muestras_para(c['columna'])}")
                     vals = [r[0] for r in cur.fetchall()]
-                    if vals and len(vals) <= 8:
+                    if vals:
                         muestras[c["columna"]] = vals
                 except Exception:
                     pass
@@ -202,8 +219,8 @@ def catalogo_a_fichas(catalogo):
                      generar el SQL — solo nombres de tablas y columnas.
 
     Los "valores de ejemplo" son datos reales del cliente (hasta 8 valores
-    distintos por columna de texto). Que existan las dos versiones es lo que
-    hace honesta la promesa de la landing: en modo normal viajan para dar
+    distintos por columna de texto; hasta 100 en las columnas de mercado).
+    Que existan las dos versiones es lo que hace honesta la promesa de la landing: en modo normal viajan para dar
     mejor calidad; en modo privacidad estricta, no viaja ninguno.
     """
     fichas = []
