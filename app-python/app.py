@@ -1781,8 +1781,11 @@ with st.sidebar:
     if _ext is not None:
         try:
             _ruta_ext = tablas_externas.a_sqlite(_ext["tablas"])
-            fuente.usar_usuario(ss, _armar_motor(ConexionBD("sqlite", ruta=_ruta_ext).conectar()),
-                                _ext.get("etiqueta") or t["aas"], f"externa:{_ext.get('ident')}")
+            _m_ext = _armar_motor(ConexionBD("sqlite", ruta=_ruta_ext).conectar())
+            # Mercados conformados, glosario y relaciones del modelo que manda la suite: con eso el share se mide
+            # contra la canasta oficial y los JOIN salen del modelo, no del nombre de las columnas.
+            _m_ext.sumar_contexto(*tablas_externas.contexto(_ext))
+            fuente.usar_usuario(ss, _m_ext, _ext.get("etiqueta") or t["aas"], f"externa:{_ext.get('ident')}")
             tablas_externas.marcar_aplicada(ss, _ext)
             st.rerun()
         except Exception as e:
@@ -1852,10 +1855,14 @@ with st.sidebar:
                 with st.spinner("…"):
                     _et, _tablas, _avisos = conector_aas.leer(aas_srv, aas_mod, tablas=aas_sel,
                                                              limite=aas_tope or None, **_aas_args)
-                    _ruta_aas = tablas_externas.a_sqlite(_tablas)
-                    fuente.usar_usuario(ss, _armar_motor(ConexionBD("sqlite", ruta=_ruta_aas).conectar()),
-                                        f"{_et} ({len(_tablas)})", f"aas:{aas_srv}/{aas_mod}:{_ruta_aas}")
-                    ss["_aas_avisos"] = _avisos
+                    # Con la suite al lado se suman los mercados conformados, el glosario y las relaciones
+                    # del modelo (best-effort: sin ellos se consulta igual, avisando).
+                    _paq_aas, _av_ctx = conector_aas.contexto(aas_srv, aas_mod, _et, _tablas, **_aas_args)
+                    _ruta_aas = tablas_externas.a_sqlite(_paq_aas["tablas"])
+                    _m_aas = _armar_motor(ConexionBD("sqlite", ruta=_ruta_aas).conectar())
+                    _m_aas.sumar_contexto(*tablas_externas.contexto(_paq_aas))
+                    fuente.usar_usuario(ss, _m_aas, f"{_et} ({len(_tablas)})", f"aas:{aas_srv}/{aas_mod}:{_ruta_aas}")
+                    ss["_aas_avisos"] = list(_avisos) + _av_ctx
                     _ok_aas = True
             except conector_aas.ErrorAAS as e:
                 st.error(str(e))

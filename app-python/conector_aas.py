@@ -116,3 +116,36 @@ def leer(servidor, modelo, auth="usuario", usuario="", clave="", token="", tabla
     if not datos:
         raise ErrorAAS("El modelo no devolvió tablas con datos (revisá los permisos sobre el modelo).")
     return f"Analysis Services · {modelo}", datos, list(getattr(lec, "avisos", ()))
+
+
+def contexto_suite():
+    """El armador del contexto de negocio de la suite (mercados conformados, glosario), o None."""
+    try:
+        from adium_allinone import sqlnlp_contexto
+    except Exception:          # suelto, o una suite anterior que todavía no lo trae
+        return None
+    return sqlnlp_contexto
+
+
+def contexto(servidor, modelo, etiqueta, tablas, auth="usuario", usuario="", clave="", token="", AS=None,
+             armador=None):
+    """(paquete, avisos): las tablas leídas + mercados conformados, glosario y relaciones del modelo.
+
+    Lo mismo que manda la suite cuando abre MV SQL NLP, pero para la conexión
+    directa. Todo es best-effort: si falta algo se consulta igual y se avisa,
+    porque las tablas ya están leídas y eso no se pierde por un extra."""
+    avisos = []
+    armador = armador or contexto_suite()
+    if armador is None:
+        return {"etiqueta": etiqueta, "tablas": dict(tablas)}, [
+            "Sin los mercados conformados ni el glosario: esta versión de la suite no los trae. Actualizala "
+            "para que el share se mida contra la canasta oficial."]
+    bims = []
+    AS = AS or motor_suite()
+    if AS is not None and hasattr(AS, "estructura"):
+        try:
+            bims.append((modelo, AS.estructura(servidor, modelo, token if auth == "token" else "")))
+        except Exception as e:  # sin permiso de lectura de la estructura: los JOIN se infieren por nombre
+            avisos.append(f"Sin las relaciones del modelo ({str(e)[:140]}): los JOIN se deducen por el nombre de "
+                          "las columnas.")
+    return armador.paquete(etiqueta, dict(tablas), bims), avisos
