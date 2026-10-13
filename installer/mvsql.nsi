@@ -211,6 +211,9 @@ Section "MV SQL NLP" SEC_MAIN
   File "${APP_SRC}\EULA_EN.txt"
   File "${APP_SRC}\EULA_PT.txt"
   File "${APP_SRC}\guardadas.py"
+  ; mapa_semantico.py: roles, sinonimos y JOINs deducidos de cualquier esquema.
+  ; Lo importan catalogo.py y motor.py: sin este File la app no abre.
+  File "${APP_SRC}\mapa_semantico.py"
   ; rutas.py decide en que carpeta va el estado (equipo, auditoria,
   ; licencia). Lo importan auditoria, equipo, eula, licencia y guardadas:
   ; sin este File, la app instalada revienta con ImportError al abrir.

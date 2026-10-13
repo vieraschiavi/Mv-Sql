@@ -18,9 +18,7 @@ Flujo:
 
 import re
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-
+import mapa_semantico as MS
 from catalogo import catalogo_a_fichas
 from proveedores_ia import completar
 
@@ -29,18 +27,31 @@ from proveedores_ia import completar
 # 1) RETRIEVAL (RAG) — TF-IDF local sobre las fichas del esquema
 # ──────────────────────────────────────────────────────────────
 class RecuperadorEsquema:
+    """RAG local: TF-IDF propio (sin sklearn) + mapa semántico.
+
+    El TF-IDF anterior tokenizaba con [a-zA-Z_]+: «FactSales» era una sola
+    palabra, «cliente_id» también, y el texto fijo de la ficha («Cantidad de
+    filas», «Columnas», los tipos) pesaba más que los nombres. «ventas por
+    cliente en 2024» y «sales by customer» daban similitud 0 contra una
+    estrella en inglés, y el top-4 dejaba afuera la tabla de hechos.
+
+    Ahora (mapa_semantico): los nombres se separan en palabras (snake, camel,
+    dígitos), sin tildes y en singular; cada palabra suma su concepto de
+    negocio ES/EN/PT (ventas = sales = vendas); la plantilla no se indexa; k
+    se adapta a lo cerca que quedan las siguientes, y entran las tablas puente
+    del camino de JOINs entre las elegidas.
+    """
+
     def __init__(self, fichas):
         self.fichas = fichas
         self.textos = [f["texto"] for f in fichas]
-        self.vec = TfidfVectorizer(lowercase=True, ngram_range=(1, 2),
-                                   token_pattern=r"[a-zA-Zàáâãéêíóôõúüçñ_]+")
-        self.matriz = self.vec.fit_transform(self.textos)
+        self.indice = MS.IndiceTfidf([MS.bolsa_de_ficha(f) for f in fichas])
+        self.padres = {f["tabla"]: list(f.get("padres") or ()) for f in fichas}
 
     def recuperar(self, pregunta, k=4):
-        """Devuelve (fichas_top_k, similitudes_top_k)."""
-        q = self.vec.transform([pregunta])
-        sims = cosine_similarity(q, self.matriz)[0]
-        idx = sims.argsort()[::-1][:max(k, 3)]
+        """Devuelve (fichas, similitudes), de la más a la menos relevante."""
+        sims = self.indice.similitudes(MS.analizar(pregunta or "", pregunta=True))
+        idx = MS.elegir_tablas([f["tabla"] for f in self.fichas], sims, self.padres, k=k)
         return [self.fichas[i] for i in idx], [float(sims[i]) for i in idx]
 
 
@@ -88,50 +99,324 @@ def _parsear_respuesta_sql(texto):
 # ──────────────────────────────────────────────────────────────
 # 3) VALIDADOR contra el catálogo
 # ──────────────────────────────────────────────────────────────
-PALABRAS_PROHIBIDAS = ["insert ", "update ", "delete ", "drop ", "alter ",
-                       "truncate ", "create ", "exec ", "execute ", "merge ",
-                       "grant ", "revoke ", "xp_", "sp_executesql"]
+# Se buscan como PALABRA (token), nunca como subcadena, y fuera de literales,
+# comentarios e identificadores citados. La lista vieja era de subcadenas
+# con espacio: «r.last_update FROM», «fecha_insert» o un literal 'drop
+# shipping' daban «Operación no permitida» sobre un SELECT legítimo.
+# La barrera dura de solo lectura sigue en conectores.asegurar_solo_lectura.
+PALABRAS_PROHIBIDAS = {"insert", "update", "delete", "drop", "alter", "truncate", "create", "exec",
+                       "execute", "merge", "grant", "revoke", "into"}
 
 PALABRAS_SQL = {
-    # keywords/aliases que el extractor de "tablas" puede confundir
+    # palabras que pueden aparecer donde va una tabla y no lo son
     "select", "where", "group", "order", "having", "limit", "offset", "union",
     "unnest", "generate_series", "dual", "values", "lateral",
 }
 
+# Tokens de SQL. Los literales, comentarios e identificadores citados se
+# reconocen ANTES que las palabras: así nada de lo que tengan adentro se
+# confunde con una palabra clave, una tabla o una columna.
+_TOK_SQL = re.compile(r"""
+    (?P<lit>'(?:[^']|'')*'?)
+  | (?P<com>--[^\n]*|/\*.*?(?:\*/|\Z))
+  | (?P<cit>"(?:[^"]|"")*"|\[[^\]]*\]|`[^`]*`)
+  | (?P<num>\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+)
+  | (?P<pal>[^\W\d][\w$]*)
+  | (?P<op>::|<>|!=|<=|>=|\|\||[-+*/%=<>(),.;])
+  | (?P<esp>\s+)
+  | (?P<otro>.)
+""", re.VERBOSE | re.DOTALL)
+
+# Palabras del lenguaje (y partes de fecha, tipos, hints) que pueden aparecer
+# sueltas sin ser columnas. Una que falte acá da, a lo sumo, una ADVERTENCIA.
+_CLAVES_SQL = set("""
+select from where group by order having limit offset fetch next first last only rows row ties top percent
+with recursive materialized not as distinct all any some union intersect except minus join inner left right
+full outer cross natural lateral apply on using and or in is null like ilike similar between exists case when
+then else end asc desc nulls over partition range groups unbounded preceding following current filter within
+window qualify true false unknown collate escape glob regexp rlike match div mod xor interval at zone time
+timestamp date datetime year years month months day days hour hours minute minutes second seconds quarter
+week weekday dow doy isodow isoyear epoch yy yyyy mm dd qq wk ww dw dy hh mi ss ms mcs ns microsecond
+millisecond nanosecond dayofyear dayofweek dayofmonth weekofyear tzoffset iso_week isowk isoww both leading
+trailing for placing cast as int integer bigint smallint tinyint numeric decimal real float double precision
+varchar nvarchar char nchar text varying character boolean bool bit money smallmoney uuid json jsonb signed
+unsigned binary varbinary blob clob current_date current_time current_timestamp localtime localtimestamp
+sysdate systimestamp rownum rowid oid level nolock readuncommitted readpast holdlock updlock rowlock
+tablock maxdop option recompile separator values default
+""".split())
+
+# Palabras tras las que un «(» NO abre una llamada a función.
+_NO_FUNCION = set("""
+in exists as any all some values over filter within using on and or not when then else select from join
+where by having union intersect except with recursive lateral apply case is between like return returns
+""".split())
+
+# Palabras que pueden seguir a una tabla y no son su alias.
+_NO_ALIAS = set("""
+where join inner left right full cross outer on group order having limit offset union except intersect
+with natural using fetch window qualify as hash loop merge remote apply pivot unpivot tablesample for
+lateral set into select
+""".split())
+
+# Tipos de token que pueden cerrar una expresión: un nombre que les sigue
+# directo es un alias implícito («SUM(x) total», «c.nombre cliente»).
+_FIN_EXPRESION = {"pal", "cit", "num", "lit"}
+
+
+def _tokens_sql(sql):
+    """[(tipo, texto, normalizado)] sin espacios ni comentarios."""
+    salida = []
+    for m in _TOK_SQL.finditer(sql or ""):
+        tipo = m.lastgroup
+        if tipo in ("esp", "com"):
+            continue
+        txt = m.group()
+        if tipo == "cit":
+            norm = txt[1:-1].replace('""', '"').lower()
+        else:
+            norm = txt.lower()
+        salida.append((tipo, txt, norm))
+    return salida
+
+
+def _es_nombre(tok):
+    return tok[0] == "cit" or (tok[0] == "pal" and tok[2] not in _CLAVES_SQL)
+
+
+def _analizar_sql(toks):
+    """Estructura mínima del SQL para validarlo contra el catálogo.
+
+    Devuelve un dict con: refs [(partes, alias)] de FROM/JOIN, ctes y sus
+    columnas, definidos (alias de columnas, de tablas, de subconsultas y de
+    ventanas), calificadas [(calificador, columna)] y sueltas [(norm, texto)].
+    """
+    n = len(toks)
+    usados = set()               # índices que no son una columna suelta
+    refs, ctes, cte_cols, definidos = [], set(), set(), set()
+
+    # CTEs: «WITH [RECURSIVE] x [(a, b)] AS [NOT] [MATERIALIZED] (» y ventanas «WINDOW w AS (».
+    for i in range(1, n):
+        if toks[i - 1][2] not in ("with", "recursive", ",", "window") or toks[i][0] not in ("pal", "cit"):
+            continue
+        j, cols = i + 1, []
+        if j < n and toks[j][1] == "(":
+            k = j + 1
+            while k < n and toks[k][1] != ")":
+                if toks[k][0] in ("pal", "cit"):
+                    cols.append(k)
+                elif toks[k][1] != ",":
+                    break
+                k += 1
+            if k >= n or toks[k][1] != ")":
+                continue
+            j = k + 1
+        if j < n and toks[j][2] == "as":
+            j += 1
+            while j < n and toks[j][2] in ("not", "materialized"):
+                j += 1
+            if j < n and toks[j][1] == "(":
+                (ctes if toks[i - 1][2] != "window" else definidos).add(toks[i][2])
+                usados.add(i)
+                for k in cols:
+                    cte_cols.add(toks[k][2])
+                    usados.add(k)
+
+    # Paréntesis: función, subconsulta o agrupación.
+    tipo_par, pila = {}, []
+    for i, tok in enumerate(toks):
+        if tok[1] == "(":
+            sig = toks[i + 1][2] if i + 1 < n else ""
+            prev = toks[i - 1] if i else None
+            if sig in ("select", "with"):
+                clase = "sub"
+            elif prev and prev[0] in ("pal", "cit") and prev[2] not in _NO_FUNCION:
+                clase = "func"
+            else:
+                clase = "grupo"
+            pila.append(clase)
+            tipo_par[i] = pila[:]
+        elif tok[1] == ")":
+            if pila:
+                pila.pop()
+        else:
+            tipo_par[i] = pila[:]
+
+    def leer_ref(j):
+        if j < n and toks[j][2] == "lateral":
+            j += 1
+        if j >= n or toks[j][0] not in ("pal", "cit") or (toks[j][0] == "pal" and toks[j][2] in _CLAVES_SQL):
+            return None, j
+        partes = [j]
+        j += 1
+        while j + 1 < n and toks[j][1] == "." and toks[j + 1][0] in ("pal", "cit"):
+            partes.append(j + 1)
+            j += 2
+        usados.update(partes)
+        if j < n and toks[j][1] == "(":                  # función de tabla: generate_series(…), json_each(…)
+            return None, j
+        alias = None
+        if j < n and toks[j][2] == "as":
+            usados.add(j)
+            j += 1
+        if j < n and toks[j][0] in ("pal", "cit") and toks[j][2] not in _NO_ALIAS:
+            alias = toks[j][2]
+            usados.add(j)
+            definidos.add(alias)
+            j += 1
+        refs.append(([toks[p] for p in partes], alias))
+        return True, j
+
+    for i, tok in enumerate(toks):
+        if tok[2] == "from" and tok[0] == "pal":
+            if "func" in (tipo_par.get(i) or [])[-1:]:
+                continue                                 # EXTRACT(YEAR FROM x), TRIM(BOTH ' ' FROM x)…
+            ok, j = leer_ref(i + 1)
+            while ok and j < n and toks[j][1] == ",":
+                ok, j = leer_ref(j + 1)
+        elif tok[2] == "join" and tok[0] == "pal":
+            leer_ref(i + 1)
+
+    # Alias de columnas («expr AS x», «expr x») y de subconsultas («(…) s»).
+    for i, tok in enumerate(toks):
+        if i in usados or tok[0] not in ("pal", "cit"):
+            continue
+        prev = toks[i - 1] if i else None
+        if prev and prev[2] == "as" and not (i + 1 < n and toks[i + 1][1] == "("):
+            if not (prev[0] == "pal" and "func" in (tipo_par.get(i) or [])[-1:]):   # CAST(x AS INT)
+                definidos.add(tok[2])
+            usados.add(i)
+        elif prev and _es_nombre(tok) and (
+                prev[1] == ")" or prev[2] == "end" or (prev[0] in _FIN_EXPRESION and _es_nombre(prev))
+                or prev[0] in ("num", "lit")):
+            if not (i + 1 < n and toks[i + 1][1] in ("(", ".")):
+                definidos.add(tok[2])
+                usados.add(i)
+        elif prev and prev[2] == "collate":
+            usados.add(i)
+
+    # Referencias a columnas.
+    calificadas, sueltas = [], []
+    i = 0
+    while i < n:
+        tok = toks[i]
+        if i in usados or tok[0] not in ("pal", "cit"):
+            i += 1
+            continue
+        if i + 1 < n and toks[i + 1][1] == ".":
+            cadena = [tok]
+            j = i + 1
+            while j + 1 < n and toks[j][1] == "." and (toks[j + 1][0] in ("pal", "cit") or toks[j + 1][1] == "*"):
+                cadena.append(toks[j + 1])
+                j += 2
+            if len(cadena) >= 2 and not (j < n and toks[j][1] == "("):   # esquema.funcion(…) no es columna
+                calificadas.append(([c[2] for c in cadena[:-1]], cadena[-1]))
+            i = j
+            continue
+        anterior = toks[i - 1] if i else None
+        siguiente = toks[i + 1] if i + 1 < n else None
+        if (tok[0] == "pal" and tok[2] in _CLAVES_SQL) or (siguiente and siguiente[1] == "(") or \
+                (anterior and (anterior[1] == "::" or (anterior[0] == "otro" and anterior[1] in "@:$#?"))):
+            i += 1
+            continue
+        sueltas.append((tok[2], tok[1]))
+        i += 1
+
+    return {"refs": refs, "ctes": ctes, "cte_cols": cte_cols, "definidos": definidos,
+            "calificadas": calificadas, "sueltas": sueltas}
+
 
 def validar_sql(sql, catalogo, ctes=None):
-    """Devuelve (es_valido, problemas, advertencias)."""
+    """Devuelve (es_valido, problemas, advertencias).
+
+    Problemas (rechazan): operaciones que no son de lectura, que no empiece
+    con SELECT/WITH, tablas que no existen en el catálogo.
+    Advertencias: columnas que no existen, o que existen pero en OTRA tabla
+    que la del alias («p.ciudad» con p = pagos: ciudad está en clientes).
+
+    Entiende identificadores citados ("x", [x], `x`), esquema.tabla, CTEs con
+    lista de columnas y RECURSIVE, y el FROM de EXTRACT/TRIM/SUBSTRING.
+    ctes: nombres extra que valen como tabla (por ejemplo, de un paso previo).
+    """
     problemas, advertencias = [], []
-    s = sql.lower()
 
-    for p in PALABRAS_PROHIBIDAS:
-        if p in s:
-            problemas.append(f"Operación no permitida: '{p.strip()}' — MV SQL NLP es solo lectura.")
-    inicio = s.lstrip()[:8]
-    if not (inicio.startswith("select") or inicio.startswith("with")):
-        problemas.append("La consulta debe empezar con SELECT o WITH (CTE).")
+    def problema(texto):
+        if texto not in problemas:
+            problemas.append(texto)
 
-    # nombres de CTE definidos en la consulta cuentan como tablas válidas
-    nombres_cte = set(re.findall(r"(?:with|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+as\s*\(", s))
+    def advertencia(texto):
+        if texto not in advertencias:
+            advertencias.append(texto)
 
-    tablas_catalogo = {t.lower() for t in catalogo["tablas"].keys()}
-    tablas_en_sql = set(re.findall(r"(?:from|join)\s+\[?([a-zA-Z_][a-zA-Z0-9_.]*)\]?", s))
-    for t in tablas_en_sql:
-        t_simple = t.split(".")[-1]
-        if t_simple in PALABRAS_SQL or t_simple in nombres_cte:
+    toks = _tokens_sql(sql)
+    for tipo, txt, norm in toks:
+        if tipo == "pal" and (norm in PALABRAS_PROHIBIDAS or norm.startswith("xp_") or norm == "sp_executesql"):
+            problema(f"Operación no permitida: '{norm}' — MV SQL NLP es solo lectura.")
+    if not toks or toks[0][2] not in ("select", "with"):
+        problema("La consulta debe empezar con SELECT o WITH (CTE).")
+
+    a = _analizar_sql(toks)
+    tablas = catalogo.get("tablas", {})
+    tablas_cat = {t.lower(): t for t in tablas}
+    cols_de = {t: {c["columna"].lower() for c in info.get("columnas", [])} for t, info in tablas.items()}
+    extra = {str(c).lower() for c in (ctes or ())}
+    cte_ok = a["ctes"] | extra
+
+    alias_a = {}                  # alias o nombre (minúscula) → {tablas reales} ; "<cte>" si es un CTE
+    usadas = []
+    for partes, alias in a["refs"]:
+        completo = ".".join(p[2] for p in partes)
+        ultimo = partes[-1][2]
+        real = tablas_cat.get(completo) or tablas_cat.get(ultimo)
+        if real:
+            if real not in usadas:
+                usadas.append(real)
+            for clave in {alias, ultimo, real.lower()} - {None}:
+                alias_a.setdefault(clave, set()).add(real)
+        elif ultimo in cte_ok or completo in cte_ok:
+            alias_a.setdefault(alias or ultimo, set()).add("<cte>")
+        elif ultimo not in PALABRAS_SQL:
+            problema(f"Tabla inexistente en el catálogo: '{'.'.join(p[1] for p in partes)}'")
+
+    def donde_esta(col):
+        return sorted(t for t in tablas if col in cols_de[t])
+
+    for calificador, (tipo, txt, col) in a["calificadas"]:
+        q = calificador[-1]
+        destinos = alias_a.get(q)
+        if destinos is None:
+            if q in tablas_cat:
+                destinos = {tablas_cat[q]}
+            elif q in cte_ok or q in a["definidos"]:
+                continue                                  # CTE o subconsulta: sus columnas no están en el catálogo
+            else:
+                advertencia(f"Alias o tabla no definida en la consulta: '{q}' (en '{q}.{txt}')")
+                continue
+        if "<cte>" in destinos or txt == "*":
             continue
-        if t_simple not in tablas_catalogo:
-            problemas.append(f"Tabla inexistente en el catálogo: '{t}'")
+        if any(col in cols_de[t] for t in destinos):
+            continue
+        en = ", ".join(sorted(destinos))
+        otras = donde_esta(col)
+        if otras:
+            advertencia(f"La columna '{txt}' no existe en la tabla '{en}' (alias '{q}'); "
+                        f"está en: {', '.join(otras)}")
+        else:
+            advertencia(f"Columna no reconocida en el catálogo: '{txt}' (tabla '{en}')")
 
-    columnas_catalogo = set()
-    for info in catalogo["tablas"].values():
-        for c in info["columnas"]:
-            columnas_catalogo.add(c["columna"].lower())
-
-    posibles = re.findall(r"[a-zA-Z_][a-zA-Z0-9_]*\.([a-zA-Z_][a-zA-Z0-9_]*)", s)
-    for col in set(posibles):
-        if col not in columnas_catalogo and col != "*" and col not in PALABRAS_SQL:
-            advertencias.append(f"Columna no reconocida en el catálogo: '{col}' (puede ser alias de CTE)")
+    en_consulta = set().union(*(cols_de[t] for t in usadas)) if usadas else set()
+    todas = set().union(*cols_de.values()) if cols_de else set()
+    conocidos = a["definidos"] | a["cte_cols"] | cte_ok | set(tablas_cat)
+    for norm, txt in a["sueltas"]:
+        if norm in conocidos or norm in en_consulta or norm in PALABRAS_PROHIBIDAS:
+            continue
+        if not usadas and norm in todas:
+            continue                                      # FROM sólo de CTEs/subconsultas: no se puede saber más
+        otras = donde_esta(norm)
+        if otras:
+            advertencia(f"La columna '{txt}' no está en las tablas de la consulta "
+                        f"({', '.join(usadas) or 'ninguna del catálogo'}); está en: {', '.join(otras)}")
+        else:
+            advertencia(f"Columna no reconocida en el catálogo: '{txt}'")
 
     return len(problemas) == 0, problemas, advertencias
 
@@ -140,43 +425,61 @@ def validar_sql(sql, catalogo, ctes=None):
 # 4) INTERVALO DE CONFIANZA
 # ──────────────────────────────────────────────────────────────
 def calcular_confianza(conf_llm, sim_rag, es_valido, n_advertencias, usa_cte,
-                       cobertura=None, ejecucion=None, medidas_faltantes=0):
+                       cobertura=None, ejecucion=None, medidas_faltantes=0, joins_validos=None):
     """
     Combina señales independientes en un puntaje 0-100 con intervalo.
 
-      45%  autoevaluación del modelo (qué tan seguro dijo estar)
-      20%  esquema: ¿las tablas que usa el SQL son las que el RAG trajo?
-      15%  validación estructural (catálogo + advertencias)
-      20%  ejecución: corrió, con filas, y trae cada medida pedida
+      40  autoevaluación del modelo (qué tan seguro dijo estar)
+      20  validación contra el catálogo (y sus advertencias)
+      20  ejecución: corrió, con filas, y trae cada medida pedida
+      10  JOINs: fracción de los JOIN del SQL que siguen una relación del
+          mapa semántico (FK declarada o deducida del nombre). Si el SQL no
+          tiene JOIN (joins_validos=None) estos 10 se reparten entre los demás
+      10  esquema: lo mejor entre la similitud TF-IDF y la cobertura (¿las
+          tablas del SQL son las que trajo el RAG?)
 
-    Antes la señal de esquema era SOLO la similitud TF-IDF pregunta↔ficha,
-    que con preguntas de negocio («ventas en unidades y dólares por
-    médico») contra columnas como `VentasUSD` da ~0.08: el RAG marcaba 25
-    aunque hubiera encontrado exactamente las tablas correctas, y hundía un
-    SQL bueno. Ahora vale lo mejor entre esa similitud y la cobertura real
-    (fracción de tablas del SQL que estaban entre las recuperadas).
+    Topes, porque ahí ningún promedio puede tapar lo que pasó:
+      - SQL rechazado por el validador: ≤ 30 (antes un SQL RECHAZADO y no
+        ejecutado salía 76 % si el modelo decía 90);
+      - error al ejecutar: ≤ 35;
+      - JOINs fuera del mapa: ≤ 60 + 25 × fracción válida. Unir por una
+        columna que no es una relación conocida es el error que más infla o
+        achica totales sin tirar ningún error.
 
-    La ejecución no se miraba: un SQL que tiraba error o que devolvía una
-    sola de las dos medidas pedidas (unidades y moneda) salía con la misma
-    confianza que uno perfecto.
+    La cobertura pesa 10 y no 20: el modelo sólo ve las tablas que trajo el
+    RAG, así que casi siempre vale 1 — medía poco más que eso. Y usar CTE ya
+    no suma: estructurar con WITH no hace más correcta la consulta
+    (`usa_cte` queda en la firma por compatibilidad).
+
+    El intervalo es `puntaje ± margen`, y el margen se angosta con cada
+    evidencia que hay (el modelo dio su confianza, se ejecutó, los JOINs se
+    verificaron contra el mapa).
 
     ejecucion: None (no se ejecutó), "ok", "vacio" o "error".
     """
     base_llm = conf_llm if conf_llm is not None else 60
     lexico = min(1.0, (sim_rag or 0) * 3.0)               # sim>0.33 satura
     senal_rag = max(lexico, cobertura if cobertura is not None else 0) * 100
-    senal_val = (100 if es_valido else 20) - min(30, n_advertencias * 10)
+    senal_val = max(0, (100 if es_valido else 0) - min(30, n_advertencias * 10))
     senal_ejec = {"ok": 100, "vacio": 55, "error": 0}.get(ejecucion, 60)
     senal_ejec = max(0, senal_ejec - 35 * medidas_faltantes)
 
-    puntaje = (0.45 * base_llm + 0.20 * senal_rag
-               + 0.15 * max(0, senal_val) + 0.20 * senal_ejec)
-    if usa_cte:
-        puntaje = min(100, puntaje + 2)   # estructura explícita: leve bonus
+    pesos = {"modelo": 0.40, "rag": 0.10, "validacion": 0.20, "ejecucion": 0.20}
+    valores = {"modelo": base_llm, "rag": senal_rag, "validacion": senal_val, "ejecucion": senal_ejec}
+    jv = None
+    if joins_validos is not None:
+        jv = max(0.0, min(1.0, float(joins_validos)))
+        pesos["joins"] = 0.10
+        valores["joins"] = jv * 100
+    puntaje = sum(pesos[k] * valores[k] for k in pesos) / sum(pesos.values())
+    if not es_valido:
+        puntaje = min(puntaje, 30)        # rechazado: ni se ejecutó
     if ejecucion == "error":
         puntaje = min(puntaje, 35)        # si no corrió, no puede ser alta
+    if jv is not None and jv < 1:
+        puntaje = min(puntaje, 60 + 25 * jv)
 
-    margen = 4
+    margen = 3
     if conf_llm is None:
         margen += 7
     if senal_rag < 15:
@@ -184,8 +487,12 @@ def calcular_confianza(conf_llm, sim_rag, es_valido, n_advertencias, usa_cte,
     if n_advertencias:
         margen += 3
     if ejecucion is None:
-        margen += 4                       # sin correrla sabemos menos
+        margen += 5                       # sin correrla sabemos menos
     if medidas_faltantes:
+        margen += 4
+    if jv is None:
+        margen += 1                       # ningún JOIN verificado contra el mapa
+    elif jv < 1:
         margen += 4
 
     puntaje = round(max(5, min(99, puntaje)))
@@ -196,8 +503,9 @@ def calcular_confianza(conf_llm, sim_rag, es_valido, n_advertencias, usa_cte,
         "componentes": {
             "modelo": round(base_llm),
             "rag": round(senal_rag),
-            "validacion": round(max(0, senal_val)),
+            "validacion": round(senal_val),
             "ejecucion": round(senal_ejec),
+            "joins": round(valores["joins"]) if jv is not None else None,
         },
     }
 
@@ -348,6 +656,20 @@ class MotorMVSQL:
         self.tablas_clave = [t for t in tablas_clave or () if t in self.catalogo["tablas"]]
         return len(nuevas)
 
+    def mapa(self):
+        """Mapa semántico del catálogo ACTUAL (mapa_semantico.construir_mapa).
+
+        Se rearma solo si el catálogo cambió: lo reemplaza el recorte por rol
+        (app.py) o le suma relaciones sumar_contexto. Como sale del catálogo
+        ya recortado, nunca nombra una tabla que el usuario no ve.
+        """
+        cat = self.catalogo
+        huella = (id(cat), len(cat.get("tablas", {})), len(cat.get("fks", [])))
+        if getattr(self, "_mapa_huella", None) != huella:
+            self._mapa_cache = MS.construir_mapa(cat)
+            self._mapa_huella = huella
+        return self._mapa_cache
+
     def _bloque_negocio(self):
         """El bloque de definiciones del negocio del prompt ('' si no hay ninguna)."""
         partes = [self.conocimiento] if self.conocimiento else []
@@ -411,7 +733,7 @@ REGLAS ESTRICTAS:
 2. El motor es {dialecto}. Usá exactamente su sintaxis.
 3. OPTIMIZACIÓN: si la consulta requiere agregaciones intermedias, subconsultas repetidas o pasos lógicos, estructurala con CTEs (WITH ... AS) con nombres descriptivos. Preferí CTE a subconsultas anidadas. Evitá SELECT *: listá solo las columnas necesarias. Filtrá lo antes posible (predicados en el WHERE más interno). Nunca apliques funciones sobre columnas indexables en el WHERE: usá rangos (col >= 'inicio' AND col < 'fin').
 4. Si la pregunta pide ranking o "top", agregá ORDER BY y limitá filas.
-5. Usá JOINs explícitos según las relaciones del esquema.
+5. Usá JOINs explícitos y uní tablas SOLO por las relaciones del esquema o los "JOINs válidos" del MAPA SEMÁNTICO. Si dos tablas no se unen directo, seguí el camino que indica el mapa. Si un nombre lleva espacios o es palabra reservada, citalo como pide el dialecto.
 6. Filtrá registros anulados/eliminados si existe la columna (anulada=0, deleted=0, activo=1).
 7. Solo SELECT (o WITH ... SELECT). Nunca INSERT/UPDATE/DELETE/DROP/ALTER/EXEC.
 8. Alias legibles en español para columnas calculadas (total_cobrado, promedio_mensual).
@@ -425,8 +747,14 @@ SUPUESTOS: <si asumiste algo (interpretación de fechas, qué columna usar), lis
 
 {negocio}ESQUEMA DISPONIBLE (usá solo esto):
 {esquema}
-"""
-        system = _system_sql.format(dialecto=self.cx.dialecto, esquema=esquema, negocio=self._bloque_negocio())
+{mapa}"""
+        # El mapa semántico de las tablas recuperadas: roles, sinónimos y los
+        # JOINs válidos — también los DEDUCIDOS, que antes se calculaban en el
+        # catálogo (joins_inferidos) y nunca llegaban al prompt. En privado va
+        # la versión mínima (JOINs y caminos); nunca lleva valores.
+        bloque_mapa = MS.bloque_prompt(self.mapa(), resultado["tablas_recuperadas"], privado=privado)
+        system = _system_sql.format(dialecto=self.cx.dialecto, esquema=esquema, negocio=self._bloque_negocio(),
+                                    mapa=("\n" + bloque_mapa + "\n") if bloque_mapa else "")
         pregunta_ia = f"{pregunta}\n\n[Preferencias del usuario: {contexto}]" if contexto else pregunta
         crudo = self._completar(system, pregunta_ia)
         sql, conf_llm, supuestos = _parsear_respuesta_sql(crudo)
@@ -485,12 +813,19 @@ SUPUESTOS: <si asumiste algo (interpretación de fechas, qué columna usar), lis
             ejec = None
         else:
             ejec = "ok" if len(resultado["filas"]) else "vacio"
+        # ¿Los JOIN del SQL siguen relaciones conocidas (declaradas o deducidas)?
+        jv, fuera = MS.revisar_joins(sql, self.mapa()) if resultado["valido"] else (None, [])
+        resultado["joins_validos"] = jv
         resultado["confianza"] = calcular_confianza(
             conf_llm, sim_top, resultado["valido"], len(resultado["advertencias"]),
             resultado["usa_cte"],
             cobertura=cobertura_esquema(sql, self.catalogo,
                                         resultado["tablas_recuperadas"]),
-            ejecucion=ejec, medidas_faltantes=len(faltan))
+            ejecucion=ejec, medidas_faltantes=len(faltan), joins_validos=jv)
+        if fuera:
+            # Después de la confianza: ya pesa ahí (joins_validos), no se cuenta dos veces.
+            resultado["advertencias"] = list(resultado["advertencias"]) + [
+                f"JOIN fuera del mapa semántico (no es una relación declarada ni deducida): {j}" for j in fuera]
 
         # 6) explicación en lenguaje natural
         if explicar and resultado["filas"] is not None:
