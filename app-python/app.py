@@ -78,6 +78,8 @@ T = {
         "conf_intervalo": "intervalo", "conf_modelo": "modelo",
         "conf_validacion": "validación",
         "conf_ejecucion": "ejecución",
+        # Fracción de los JOIN del SQL que siguen una relación del mapa semántico.
+        "conf_joins": "JOINs del mapa",
         # El pie decía "tu esquema nunca sale sin tu permiso, los datos
         # jamás". Lo segundo no es cierto: con el análisis escrito activado
         # viaja una muestra del resultado (ver tests/test_privacidad.py) —
@@ -274,10 +276,12 @@ T = {
                    "hay de dónde deducir cuándo se cargó.",
         "fr_nota_futura": "Hay tablas con fecha posterior a hoy: revisá el reloj del "
                           "servidor o si la carga usa fecha proyectada.",
-        "diagrama_pie": "Cada línea es una relación real entre tablas (clave foránea).",
+        "diagrama_pie": "Línea continua: clave foránea declarada. Línea punteada: relación deducida del nombre "
+                        "de las columnas (mapa semántico) — es la que la IA usa para unir esas tablas.",
         "diagrama_rel": "Relaciones detectadas", "diagrama_desde": "Desde",
         "diagrama_col": "Columna", "diagrama_hacia": "Hacia", "diagrama_col_dest": "Columna destino",
-        "diagrama_sin_rel": "No se detectaron claves foráneas declaradas en esta base.",
+        "diagrama_sin_rel": "No se detectaron relaciones en esta base: ni claves foráneas declaradas ni "
+                            "columnas que se puedan unir por el nombre.",
         "diagrama_sueltas": "Sin relaciones: {tablas}",
         "cua_titulo": "Cuadernos", "cua_vacio": "Todavía no creaste cuadernos. Un cuaderno es un informe reutilizable: texto, preguntas y SQL con variables que cambiás cada mes.",
         "cua_nuevo": "Nuevo cuaderno", "cua_nombre": "Nombre del cuaderno",
@@ -311,6 +315,7 @@ T = {
         "conf_intervalo": "range", "conf_modelo": "model",
         "conf_validacion": "validation",
         "conf_ejecucion": "execution",
+        "conf_joins": "map JOINs",
         "pie": "MV SQL NLP · you decide what travels to the AI: the schema to write "
                "the SQL, and not a single row of data with strict privacy mode on · "
                "SELECT only · optimized CTEs · mvsqlnlp.com",
@@ -496,10 +501,12 @@ T = {
                    "infer the load time from.",
         "fr_nota_futura": "Some tables have a date later than today: check the server "
                           "clock, or whether the load uses a projected date.",
-        "diagrama_pie": "Each line is a real relationship between tables (foreign key).",
+        "diagrama_pie": "Solid line: declared foreign key. Dashed line: relationship inferred from the column "
+                        "names (semantic map) — the one the AI uses to join those tables.",
         "diagrama_rel": "Relationships found", "diagrama_desde": "From",
         "diagrama_col": "Column", "diagrama_hacia": "To", "diagrama_col_dest": "Target column",
-        "diagrama_sin_rel": "No declared foreign keys were found in this database.",
+        "diagrama_sin_rel": "No relationships were found in this database: no declared foreign keys and no "
+                            "columns that can be joined by their names.",
         "diagrama_sueltas": "No relationships: {tablas}",
         "cua_titulo": "Notebooks", "cua_vacio": "No notebooks yet. A notebook is a reusable report: text, questions and SQL with variables you change every month.",
         "cua_nuevo": "New notebook", "cua_nombre": "Notebook name",
@@ -533,6 +540,7 @@ T = {
         "conf_intervalo": "intervalo", "conf_modelo": "modelo",
         "conf_validacion": "validação",
         "conf_ejecucion": "execução",
+        "conf_joins": "JOINs do mapa",
         "pie": "MV SQL NLP · você decide o que viaja para a IA: o esquema para gerar "
                "o SQL, e nenhuma linha de dados com o modo privacidade ativado · "
                "somente SELECT · CTEs otimizados · mvsqlnlp.com",
@@ -718,10 +726,12 @@ T = {
                    "deduzir quando foi carregada.",
         "fr_nota_futura": "Há tabelas com data posterior a hoje: verifique o relógio do "
                           "servidor ou se a carga usa data projetada.",
-        "diagrama_pie": "Cada linha é uma relação real entre tabelas (chave estrangeira).",
+        "diagrama_pie": "Linha contínua: chave estrangeira declarada. Linha tracejada: relação deduzida do nome "
+                        "das colunas (mapa semântico) — é a que a IA usa para unir essas tabelas.",
         "diagrama_rel": "Relações encontradas", "diagrama_desde": "De",
         "diagrama_col": "Coluna", "diagrama_hacia": "Para", "diagrama_col_dest": "Coluna destino",
-        "diagrama_sin_rel": "Não foram encontradas chaves estrangeiras declaradas neste banco.",
+        "diagrama_sin_rel": "Não foram encontradas relações neste banco: nem chaves estrangeiras declaradas nem "
+                            "colunas que possam ser unidas pelo nome.",
         "diagrama_sueltas": "Sem relações: {tablas}",
         "cua_titulo": "Cadernos", "cua_vacio": "Você ainda não criou cadernos. Um caderno é um relatório reutilizável: texto, perguntas e SQL com variáveis que você troca todo mês.",
         "cua_nuevo": "Novo caderno", "cua_nombre": "Nome do caderno",
@@ -1383,6 +1393,8 @@ def archivo_a_sqlite(nombre, contenido: bytes) -> str:
 def barra_confianza(conf, t):
     p, (lo, hi) = conf["puntaje"], conf["intervalo"]
     comp = conf["componentes"]
+    # Sin JOIN en el SQL no hay nada que verificar contra el mapa: no se muestra.
+    _joins = f" · {t['conf_joins']} {comp['joins']}" if comp.get("joins") is not None else ""
     st.markdown(f"""
 <div class="conf-box">
   <b>{t['confianza']}: {p}% &nbsp;<span style="color:#94a3b8">(±{conf['margen']} → {t['conf_intervalo']} {lo}–{hi}%)</span></b>
@@ -1391,7 +1403,7 @@ def barra_confianza(conf, t):
     <div class="conf-interval" style="left:{lo}%; width:{hi - lo}%"></div>
   </div>
   <div style="color:#94a3b8; font-size:.75rem; margin-top:.4rem">
-    {t['conf_modelo']} {comp['modelo']} · RAG {comp['rag']} · {t['conf_validacion']} {comp['validacion']} · {t['conf_ejecucion']} {comp.get('ejecucion', '—')}
+    {t['conf_modelo']} {comp['modelo']} · RAG {comp['rag']} · {t['conf_validacion']} {comp['validacion']} · {t['conf_ejecucion']} {comp.get('ejecucion', '—')}{_joins}
   </div>
 </div>""", unsafe_allow_html=True)
 
@@ -1953,7 +1965,12 @@ with st.sidebar:
         fuente.motor(ss).ia = ia_cfg  # refrescar credenciales sin reconectar
         st.success(f"{len(fuente.motor(ss).catalogo['tablas'])} {t['tablas_ok']}")
         with st.expander(f"{t['diagrama']}"):
-            _cat = fuente.motor(ss).catalogo
+            # Las relaciones del mapa semántico: las FKs declaradas MÁS las
+            # deducidas del nombre de las columnas (punteadas), que son las
+            # que la IA recibe como «JOINs válidos». Con sólo las declaradas,
+            # una base sin FKs (Fabric, un ERP) se veía sin ninguna relación.
+            _cat = dict(fuente.motor(ss).catalogo,
+                        fks=fuente.motor(ss).mapa()["relaciones"])
             _rels = esquema_visual.resumen_relaciones(_cat)
             _sueltas = esquema_visual.tablas_sin_relacion(_cat)
             _sel = st.multiselect(t["diagrama_tablas"], sorted(_cat["tablas"]),

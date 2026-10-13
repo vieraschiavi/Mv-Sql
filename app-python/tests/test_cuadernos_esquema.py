@@ -154,15 +154,29 @@ def _():
 print("\n== Diagrama de relaciones ==")
 
 col = lambda n, pk=0: {"columna": n, "tipo": "INTEGER" if pk else "TEXT", "pk": pk, "nullable": 1}
-CAT = {
-    "tablas": {
-        "clientes":    {"columnas": [col("cliente_id", 1), col("nombre")], "n_filas": 100},
-        "operaciones": {"columnas": [col("operacion_id", 1), col("cliente_id")], "n_filas": 500},
-        "feriados":    {"columnas": [col("fecha")], "n_filas": 20},
-    },
-    "fks": [{"tabla": "operaciones", "columna": "cliente_id",
-             "tabla_destino": "clientes", "columna_destino": "cliente_id"}],
-}
+
+
+def _catalogo_real():
+    """El catálogo como lo arma catalogo.py de verdad, de una base con una FK declarada.
+
+    Antes este test armaba las FKs a mano con claves «tabla»/«columna» que el
+    catálogo nunca produce (usa tabla_origen/columna_origen): el test pasaba
+    y en la app el diagrama no dibujaba ninguna relación.
+    """
+    import sqlite3
+    import catalogo
+    ruta = os.path.join(tempfile.mkdtemp(), "diagrama.db")
+    con = sqlite3.connect(ruta)
+    con.execute("CREATE TABLE clientes (cliente_id INTEGER PRIMARY KEY, nombre TEXT)")
+    con.execute("CREATE TABLE operaciones (operacion_id INTEGER PRIMARY KEY, "
+                "cliente_id INTEGER REFERENCES clientes(cliente_id))")
+    con.execute("CREATE TABLE feriados (fecha TEXT)")
+    con.commit()
+    con.close()
+    return catalogo.extraer_catalogo_sqlite(ruta)
+
+
+CAT = _catalogo_real()
 
 
 @test("genera un diagrama Mermaid válido")
@@ -212,6 +226,33 @@ def _():
 @test("detecta tablas sueltas, sin ninguna relación")
 def _():
     assert ev.tablas_sin_relacion(CAT) == ["feriados"]
+
+
+@test("el diagrama DOT dibuja la FK del catálogo real")
+def _():
+    d = ev.diagrama_dot(CAT)
+    assert "clientes -> operaciones" in d and 'label="cliente_id"' in d, d
+
+
+@test("compatibilidad: las claves viejas «tabla»/«columna» también se leen")
+def _():
+    viejo = dict(CAT, fks=[{"tabla": "operaciones", "columna": "cliente_id",
+                            "tabla_destino": "clientes", "columna_destino": "cliente_id"}])
+    assert ev.resumen_relaciones(viejo) == [("operaciones", "cliente_id", "clientes", "cliente_id")]
+    assert "clientes ||--o{ operaciones" in ev.diagrama_mermaid(viejo)
+
+
+@test("las relaciones deducidas por el mapa semántico se dibujan punteadas")
+def _():
+    import mapa_semantico
+    cat = {"tablas": {"FactVentas": {"columnas": [col("ClienteKey"), col("Importe")]},
+                      "DimCliente": {"columnas": [col("ClienteKey"), col("Nombre")]}}, "fks": []}
+    rels = mapa_semantico.construir_mapa(cat)["relaciones"]
+    assert len(rels) == 1 and rels[0]["origen"] == "deducida", rels
+    con_mapa = dict(cat, fks=rels)
+    assert "DimCliente ||..o{ FactVentas" in ev.diagrama_mermaid(con_mapa)
+    assert "style=dashed" in ev.diagrama_dot(con_mapa)
+    assert ev.tablas_sin_relacion(con_mapa) == []
 
 
 print("\n== Plan de ejecución ==")

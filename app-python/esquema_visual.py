@@ -23,6 +23,21 @@ import re
 # ──────────────────────────────────────────────────────────────
 # 1. Diagrama de relaciones (Mermaid: se dibuja sin dependencias)
 # ──────────────────────────────────────────────────────────────
+def _fk(fk):
+    """(origen, columna, destino, columna_destino, deducida) de una relación.
+
+    El catálogo (catalogo.py, conectores.py, sumar_contexto) guarda las FKs
+    como tabla_origen/columna_origen/tabla_destino/columna_destino. Este
+    módulo leía «tabla»/«columna», que no existen: el diagrama no dibujaba
+    NINGUNA relación y el test pasaba porque armaba las FKs a mano con las
+    claves equivocadas. Se aceptan las dos formas.
+    """
+    return (fk.get("tabla_origen") or fk.get("tabla"),
+            fk.get("columna_origen") or fk.get("columna") or "",
+            fk.get("tabla_destino"), fk.get("columna_destino") or "",
+            fk.get("origen") == "deducida")
+
+
 def diagrama_mermaid(catalogo: dict, tablas=None, max_columnas=8) -> str:
     """Diagrama entidad-relación en sintaxis Mermaid."""
     tablas_cat = catalogo.get("tablas", {})
@@ -51,15 +66,16 @@ def diagrama_mermaid(catalogo: dict, tablas=None, max_columnas=8) -> str:
 
     vistas = set()
     for fk in catalogo.get("fks", []):
-        origen, destino = fk.get("tabla"), fk.get("tabla_destino")
+        origen, columna, destino, _cd, deducida = _fk(fk)
         if origen not in elegidas or destino not in elegidas:
             continue
-        clave = (origen, destino, fk.get("columna", ""))
+        clave = (origen, destino, columna)
         if clave in vistas:
             continue
         vistas.add(clave)
-        etiqueta = fk.get("columna", "fk").replace('"', "")
-        lineas.append(f'    {_id_mermaid(destino)} ||--o{{ {_id_mermaid(origen)} : "{etiqueta}"')
+        etiqueta = (columna or "fk").replace('"', "")
+        linea = "||..o{" if deducida else "||--o{"      # punteada: deducida por el nombre
+        lineas.append(f'    {_id_mermaid(destino)} {linea} {_id_mermaid(origen)} : "{etiqueta}"')
 
     return "\n".join(lineas)
 
@@ -89,8 +105,8 @@ def resumen_relaciones(catalogo: dict) -> list:
     """Relaciones en texto: (origen, columna, destino, columna_destino)."""
     filas = []
     for fk in catalogo.get("fks", []):
-        filas.append((fk.get("tabla", ""), fk.get("columna", ""),
-                      fk.get("tabla_destino", ""), fk.get("columna_destino", "")))
+        origen, columna, destino, col_destino, _ = _fk(fk)
+        filas.append((origen or "", columna, destino or "", col_destino))
     return filas
 
 
@@ -99,8 +115,9 @@ def tablas_sin_relacion(catalogo: dict) -> list:
     sueltos, tablas viejas o un problema de diseño que conviene ver."""
     conectadas = set()
     for fk in catalogo.get("fks", []):
-        conectadas.add(fk.get("tabla"))
-        conectadas.add(fk.get("tabla_destino"))
+        origen, _c, destino, _cd, _ = _fk(fk)
+        conectadas.add(origen)
+        conectadas.add(destino)
     return sorted(t for t in catalogo.get("tablas", {}) if t not in conectadas)
 
 
@@ -232,15 +249,16 @@ def diagrama_dot(catalogo: dict, tablas=None, max_columnas=8) -> str:
 
     vistas = set()
     for fk in catalogo.get("fks", []):
-        origen, destino = fk.get("tabla"), fk.get("tabla_destino")
+        origen, columna, destino, _cd, deducida = _fk(fk)
         if origen not in elegidas or destino not in elegidas:
             continue
-        clave = (origen, destino, fk.get("columna", ""))
+        clave = (origen, destino, columna)
         if clave in vistas:
             continue
         vistas.add(clave)
+        estilo = ", style=dashed" if deducida else ""     # punteada: deducida por el nombre
         L.append(f'  {_id_mermaid(destino)} -> {_id_mermaid(origen)} '
-                 f'[label="{_escapar(fk.get("columna", ""))}"];')
+                 f'[label="{_escapar(columna)}"{estilo}];')
 
     L.append("}")
     return "\n".join(L)

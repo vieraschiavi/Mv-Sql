@@ -17,6 +17,8 @@ import re
 import sqlite3
 import json
 
+import mapa_semantico
+
 #: Valores de ejemplo por columna de texto: pocos, salvo en las columnas de
 #: mercado (mercado, clase/ATC, molécula, área, región…). Ahí la IA tiene que
 #: escribir el valor EXACTO en el WHERE («OLMESARTAN», «C09C0»): con 8 de 84
@@ -32,6 +34,18 @@ _COLUMNA_DE_MERCADO = re.compile(
 def muestras_para(columna):
     """Cuántos valores distintos de ejemplo se guardan de una columna de texto."""
     return MUESTRAS_MERCADO if _COLUMNA_DE_MERCADO.search(str(columna)) else MUESTRAS
+
+
+#: Tipos de texto que se muestrean. Antes era `tipo in ("TEXT", "VARCHAR")`
+#: exacto: VARCHAR(20), NVARCHAR(40) o CHAR(2) —lo normal en una base que no
+#: nació en SQLite— quedaban sin valores de ejemplo.
+_TIPO_TEXTO = re.compile(r"CHAR|TEXT|CLOB", re.IGNORECASE)
+
+
+def _q(nombre):
+    """Identificador SQLite citado. Sin comillas, una tabla «Ventas Mensuales»
+    o una llamada `order` tiraba OperationalError y la conexión entera caía."""
+    return '"' + str(nombre).replace('"', '""') + '"'
 
 
 # ──────────────────────────────────────────────────────────────
@@ -50,7 +64,7 @@ def extraer_catalogo_sqlite(db_path):
     # Columnas por tabla + conteo de filas
     columnas_por_tabla = {}
     for t in tablas:
-        cur.execute(f"PRAGMA table_info({t})")
+        cur.execute(f"PRAGMA table_info({_q(t)})")
         cols = []
         for cid, name, tipo, notnull, default, pk in cur.fetchall():
             cols.append({
@@ -59,16 +73,16 @@ def extraer_catalogo_sqlite(db_path):
             })
         columnas_por_tabla[t] = [c["columna"] for c in cols]
 
-        cur.execute(f"SELECT COUNT(*) FROM {t}")
+        cur.execute(f"SELECT COUNT(*) FROM {_q(t)}")
         n_filas = cur.fetchone()[0]
 
         # muestra de valores para columnas de texto (ayuda al LLM a entender dominios)
         muestras = {}
         for c in cols:
-            if c["tipo"].upper() in ("TEXT", "VARCHAR") and not c["pk"]:
+            if _TIPO_TEXTO.search(c["tipo"]) and not c["pk"]:
                 try:
-                    cur.execute(f"SELECT DISTINCT {c['columna']} FROM {t} "
-                                f"WHERE {c['columna']} IS NOT NULL LIMIT {muestras_para(c['columna'])}")
+                    cur.execute(f"SELECT DISTINCT {_q(c['columna'])} FROM {_q(t)} "
+                                f"WHERE {_q(c['columna'])} IS NOT NULL LIMIT {muestras_para(c['columna'])}")
                     vals = [r[0] for r in cur.fetchall()]
                     if vals:
                         muestras[c["columna"]] = vals
@@ -81,7 +95,7 @@ def extraer_catalogo_sqlite(db_path):
 
     # FKs declaradas
     for t in tablas:
-        cur.execute(f"PRAGMA foreign_key_list({t})")
+        cur.execute(f"PRAGMA foreign_key_list({_q(t)})")
         for row in cur.fetchall():
             # row: id, seq, table, from, to, on_update, on_delete, match
             catalogo["fks"].append({
@@ -222,7 +236,17 @@ def catalogo_a_fichas(catalogo):
     distintos por columna de texto; hasta 100 en las columnas de mercado).
     Que existan las dos versiones es lo que hace honesta la promesa de la landing: en modo normal viajan para dar
     mejor calidad; en modo privacidad estricta, no viaja ninguno.
+
+    Y unas claves más, que NO viajan a ningún lado (son del RAG local):
+      - "indice" / "indice_valores": lo que el buscador indexa — nombres de
+        la tabla y sus columnas, y aparte los valores de ejemplo, con menos
+        peso. Sin la plantilla fija («Cantidad de filas», tipos, «NOT NULL»),
+        que en el TF-IDF anterior pesaba más que los nombres.
+      - "vecinas" / "padres": las tablas con las que se une (y a cuáles
+        apunta), por FK declarada o deducida del nombre (mapa_semantico). Con
+        eso el RAG suma las tablas puente.
     """
+    mapa = mapa_semantico.construir_mapa(catalogo)
     fichas = []
     for tabla, info in catalogo["tablas"].items():
         cabecera = [f"TABLA: {tabla}"]
@@ -258,6 +282,10 @@ def catalogo_a_fichas(catalogo):
             "tabla": tabla,
             "texto": "\n".join(cabecera + cols_con + cola),
             "texto_min": "\n".join(cabecera + cols_sin + cola),
+            "indice": mapa_semantico.texto_indice(tabla, info),
+            "indice_valores": mapa_semantico.texto_valores(info),
+            "vecinas": list(mapa["vecinas"].get(tabla, [])),
+            "padres": list(mapa["padres"].get(tabla, [])),
         })
 
     return fichas
