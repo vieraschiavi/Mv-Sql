@@ -100,17 +100,39 @@ def listar_tablas(servidor, modelo, auth="usuario", usuario="", clave="", token=
         raise ErrorAAS(str(e)) from e
 
 
+def _anticipar_estructura(AS, servidor, modelo, auth, token):
+    """La estructura del modelo (la que `contexto` usa para los JOIN), pedida EN PARALELO con la lectura de las
+    tablas: el servidor la arma mientras llegan las filas y queda en la caché de la suite, así `contexto` no
+    vuelve a esperarla después. Con la ventana de inicio de sesión de Microsoft no: abriría otra ventana."""
+    if auth == "ventana" or not hasattr(AS, "estructura"):
+        return None
+    import contextvars
+    from concurrent.futures import ThreadPoolExecutor
+    ex = ThreadPoolExecutor(max_workers=1, thread_name_prefix="estructura")
+    previa = ex.submit(contextvars.copy_context().run, AS.estructura, servidor, modelo,
+                       token if auth == "token" else "")
+    ex.shutdown(wait=False)
+    return previa
+
+
 def leer(servidor, modelo, auth="usuario", usuario="", clave="", token="", tablas=None,
          limite=TOPE_DEFAULT, AS=None):
     """Trae las tablas (todas o las elegidas) en solo lectura. Devuelve (etiqueta, {tabla: DataFrame}, avisos)."""
     servidor, modelo = _validar(servidor, modelo, auth, usuario, clave, token)
     AS = _suite_o_error(AS)
     _preparar(AS, servidor, auth, usuario, clave)
+    previa = _anticipar_estructura(AS, servidor, modelo, auth, token)
     try:
         lec = AS.leer(servidor, modelo, token if auth == "token" else "", tablas=list(tablas) if tablas else None,
                       limite=limite or None)
     except Exception as e:
         raise ErrorAAS(str(e)) from e
+    finally:
+        if previa is not None:
+            try:
+                previa.result()
+            except Exception:  # sin permiso sobre la estructura: `contexto` lo vuelve a intentar y lo avisa
+                pass
     con_datos = getattr(lec, "con_datos", None) or getattr(lec, "tablas", ())
     datos = {t.nombre: t.datos for t in con_datos}
     if not datos:

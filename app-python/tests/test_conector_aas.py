@@ -143,6 +143,50 @@ if pd is not None:
                 cx.cerrar()
 
 
+if pd is not None:
+    @test("la estructura del modelo se pide mientras se leen las tablas, salvo con la ventana de Microsoft")
+    def _():
+        import threading
+
+        class _ConEstructura(_ASFalso):
+            def __init__(self):
+                super().__init__()
+                self.leyendo, self.en_paralelo = threading.Event(), False
+
+            def leer(self, *a, **k):
+                self.leyendo.set()
+                try:
+                    return super().leer(*a, **k)
+                finally:
+                    self.leyendo.clear()
+
+            def estructura(self, s, m, token=""):
+                self.en_paralelo = self.leyendo.wait(2) or self.en_paralelo
+                self.llamadas.append(("estructura", m, token, threading.current_thread().name))
+                return {"model": {"tables": []}}
+
+        AS = _ConEstructura()
+        C.leer(SRV, "Modelo", "usuario", "persona@empresa.com", "clave", AS=AS)
+        hechas = [x for x in AS.llamadas if x[0] == "estructura"]
+        assert len(hechas) == 1 and hechas[0][3].startswith("estructura"), hechas
+        assert AS.en_paralelo, "la estructura no se pidió mientras se leía"
+        AS = _ConEstructura()
+        C.leer(SRV, "Modelo", "token", token="eyJ.un.token", AS=AS)
+        assert [x[:3] for x in AS.llamadas if x[0] == "estructura"] == [("estructura", "Modelo", "eyJ.un.token")]
+        AS = _ConEstructura()
+        C.leer(SRV, "Modelo", "ventana", AS=AS)
+        assert not [x for x in AS.llamadas if x[0] == "estructura"], "con la ventana abriría otra ventana"
+
+    @test("si la estructura falla, la lectura de las tablas sigue igual")
+    def _():
+        class _SinPermiso(_ASFalso):
+            def estructura(self, *a, **k):
+                raise RuntimeError("sin permiso de lectura de la estructura")
+
+        _, datos, _ = C.leer(SRV, "Modelo", "usuario", "persona@empresa.com", "clave", AS=_SinPermiso())
+        assert list(datos) == ["Venta", "Producto"]
+
+
 @test("los modelos del servidor se listan sin saberse el nombre (y con los datos de entrada que faltan, avisa)")
 def _():
     AS = _ASFalso()
